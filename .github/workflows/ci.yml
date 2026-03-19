@@ -2,8 +2,11 @@ name: Laravel CI/CD
 
 on:
   push:
-    branches: [main]
+    branches:
+      - "*"   # run on ALL branches
   pull_request:
+    branches:
+      - main  # run when PR targets main
 
 jobs:
   laravel:
