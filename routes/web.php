@@ -5,6 +5,10 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 
+Route::get('/', function () {
+    return view('welcome');
+});
+
 Route::prefix('admin')->group(function () {
     Route::middleware('admin.guest')->group(function () {
         Route::get('/', [AuthController::class, 'showLogin'])->name('admin.login');
