@@ -12,34 +12,41 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('admin.guest')->group(function () {
-        Route::get('/', [AuthController::class, 'showLogin'])->name('admin.login');
-        Route::post('/login', [AuthController::class, 'login'])->name('admin.login.submit');
+        Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     });
 
+
     Route::middleware(['admin.auth'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'showDashboard'])->name('dashboard');
 
-        Route::get('/dashboard', [DashboardController::class, 'showDashboard'])->name('admin.dashboard');
-
-        // User Management
+        // ==================== USERS ====================
         Route::resource('users', UserController::class);
         Route::post('/users/{user}/activate', [UserController::class, 'activate'])->name('users.activate');
         Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
         Route::post('/users/bulk-action', [UserController::class, 'bulkAction'])->name('users.bulk-action');
 
-        // Role Management
+        // ==================== ROLES ====================
         Route::resource('roles', RoleController::class);
+        Route::get('/roles/{role}/assign-permissions', [RoleController::class, 'assignPermissions'])->name('roles.assign-permissions');
+        Route::post('/roles/{role}/sync-permissions', [RoleController::class, 'syncPermissions'])->name('roles.sync-permissions');
+        Route::post('/roles/bulk-action', [RoleController::class, 'bulkAction'])->name('roles.bulk-action');
 
-        // Permission Management
+        // ==================== PERMISSIONS ====================
         Route::resource('permissions', PermissionController::class);
+        Route::post('/permissions/bulk-action', [PermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
 
-        // Profile Management
-        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
-        Route::post('/profile/password', [ProfileController::class, 'changePassword'])->name('profile.password');
+        // ==================== PROFILE ====================
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [ProfileController::class, 'update'])->name('update');
+            Route::post('/avatar', [ProfileController::class, 'uploadAvatar'])->name('avatar');
+            Route::delete('/avatar', [ProfileController::class, 'deleteAvatar'])->name('avatar.delete');
+            Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('password');
+        });
 
-        Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
 });

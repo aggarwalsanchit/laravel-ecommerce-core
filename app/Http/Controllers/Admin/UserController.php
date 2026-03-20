@@ -10,33 +10,52 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
-    // public function __construct()
-    // {
-    //     $this->middleware('permission:view users')->only(['index', 'show']);
-    //     $this->middleware('permission:create users')->only(['create', 'store']);
-    //     $this->middleware('permission:edit users')->only(['edit', 'update']);
-    //     $this->middleware('permission:delete users')->only(['destroy']);
-    //     $this->middleware('permission:activate users')->only(['activate', 'deactivate']);
-    // }
+    /**
+     * Define middleware for this controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            'auth:admin',
+
+            new Middleware('permission:view users', only: ['index', 'show']),
+            new Middleware('permission:create users', only: ['create', 'store']),
+            new Middleware('permission:edit users', only: ['edit', 'update']),
+            new Middleware('permission:delete users', only: ['destroy']),
+            new Middleware('permission:activate users', only: ['activate']),
+            new Middleware('permission:deactivate users', only: ['deactivate']),
+        ];
+    }
 
     /**
      * Display a listing of users.
      */
-    public function showUsers(Request $request)
+    public function index(Request $request)
     {
-        $query = Admin::query();
+        $query = Admin::with('roles', 'permissions');
 
-        // Search functionality
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('email', 'like', '%' . $request->search . '%');
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->role($request->role);
         }
 
         // Filter by status
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', true);
             } elseif ($request->status === 'inactive') {
@@ -44,15 +63,23 @@ class UserController extends Controller
             }
         }
 
-        // Filter by role
-        if ($request->has('role') && $request->role != '') {
-            $query->role($request->role);
-        }
-
-        $users = $query->with('roles')->paginate(10);
+        $users = $query->paginate(10);
         $roles = Role::all();
 
-        return view('users.index', compact('users', 'roles'));
+        // If AJAX request, return JSON with table and pagination
+        if ($request->ajax()) {
+            $table = view('admin.pages.users.partials.users-table', compact('users'))->render();
+
+            // Use Laravel's default pagination view
+            $pagination = $users->links('pagination::bootstrap-5')->render();
+
+            return response()->json([
+                'table' => $table,
+                'pagination' => $pagination
+            ]);
+        }
+
+        return view('admin.pages.users.index', compact('users', 'roles'));
     }
 
     /**
@@ -63,7 +90,7 @@ class UserController extends Controller
         $roles = Role::all();
         $permissions = Permission::all();
 
-        return view('users.create', compact('roles', 'permissions'));
+        return view('admin.pages.users.create', compact('roles', 'permissions'));
     }
 
     /**
@@ -74,20 +101,21 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
+            'password' => 'required|min:8',
             'phone' => 'nullable|string|max:20',
-            'roles' => 'array',
-            'permissions' => 'array',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date',
+            'is_active' => 'boolean',
+            'role' => 'required|exists:roles,name',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'is_active' => $request->has('is_active'),
-        ];
+        $data = $request->except(['password', 'role', 'avatar']);
+        $data['password'] = Hash::make($request->password);
+        $data['is_active'] = $request->is_active ?? true;
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -97,18 +125,14 @@ class UserController extends Controller
 
         $user = Admin::create($data);
 
-        // Assign roles
-        if ($request->has('roles')) {
-            $user->syncRoles($request->roles);
-        }
+        // Assign the selected role
+        $user->assignRole($request->role);
 
-        // Assign direct permissions
-        if ($request->has('permissions')) {
-            $user->syncPermissions($request->permissions);
-        }
-
-        return redirect()->route('users.index')
-            ->with('success', 'User created successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'User created successfully with ' . $request->role . ' role.',
+            'user' => $user
+        ]);
     }
 
     /**
@@ -116,8 +140,10 @@ class UserController extends Controller
      */
     public function show(Admin $user)
     {
+        // Load relationships
         $user->load('roles', 'permissions');
-        return view('users.show', compact('user'));
+
+        return view('admin.pages.users.show', compact('user'));
     }
 
     /**
@@ -126,11 +152,9 @@ class UserController extends Controller
     public function edit(Admin $user)
     {
         $roles = Role::all();
-        $permissions = Permission::all();
-        $userRoles = $user->roles->pluck('name')->toArray();
-        $userPermissions = $user->permissions->pluck('name')->toArray();
+        $userRole = $user->roles->first() ? $user->roles->first()->name : '';
 
-        return view('users.edit', compact('user', 'roles', 'permissions', 'userRoles', 'userPermissions'));
+        return view('admin.pages.users.edit', compact('user', 'roles', 'userRole'));
     }
 
     /**
@@ -143,24 +167,34 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'roles' => 'array',
-            'permissions' => 'array',
+            'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'postal_code' => 'nullable|string|max:20',
+            'birth_date' => 'nullable|date',
+            'is_active' => 'boolean',
+            'role' => 'required|exists:roles,name',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'remove_avatar' => 'nullable|boolean',
         ]);
 
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'is_active' => $request->has('is_active'),
-        ];
+        $data = $request->except(['password', 'role', 'avatar', 'remove_avatar']);
 
-        // Update password if provided
+        // Update password only if provided
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
 
-        // Handle avatar upload
+        $data['is_active'] = $request->is_active ?? true;
+
+        // Handle avatar
+        if ($request->has('remove_avatar') && $request->remove_avatar) {
+            if ($user->avatar) {
+                Storage::disk('public')->delete('avatars/' . $user->avatar);
+                $data['avatar'] = null;
+            }
+        }
+
         if ($request->hasFile('avatar')) {
             // Delete old avatar
             if ($user->avatar) {
@@ -173,22 +207,13 @@ class UserController extends Controller
 
         $user->update($data);
 
-        // Sync roles
-        if ($request->has('roles')) {
-            $user->syncRoles($request->roles);
-        } else {
-            $user->syncRoles([]);
-        }
+        // Sync role (remove old roles and assign new one)
+        $user->syncRoles([$request->role]);
 
-        // Sync permissions
-        if ($request->has('permissions')) {
-            $user->syncPermissions($request->permissions);
-        } else {
-            $user->syncPermissions([]);
-        }
-
-        return redirect()->route('users.index')
-            ->with('success', 'User updated successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'User updated successfully with ' . $request->role . ' role.'
+        ]);
     }
 
     /**
@@ -196,19 +221,47 @@ class UserController extends Controller
      */
     public function destroy(Admin $user)
     {
+        // Check permission
+        if (!auth()->user()->can('delete users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to delete users.');
+        }
+
         // Prevent deleting yourself
         if ($user->id === auth()->id()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You cannot delete your own account.'], 403);
+            }
             return back()->with('error', 'You cannot delete your own account.');
         }
 
-        // Delete avatar
+        // Optional: Prevent deleting Super Admin users
+        if ($user->hasRole('Super Admin')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Super Admin users cannot be deleted.'], 403);
+            }
+            return back()->with('error', 'Super Admin users cannot be deleted.');
+        }
+
+        // Delete avatar if exists
         if ($user->avatar) {
             Storage::disk('public')->delete('avatars/' . $user->avatar);
         }
 
+        // Delete user
         $user->delete();
 
-        return redirect()->route('users.index')
+        // Return response based on request type
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully.'
+            ]);
+        }
+
+        return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
     }
 
@@ -217,7 +270,24 @@ class UserController extends Controller
      */
     public function activate(Admin $user)
     {
+        // Check permission
+        if (!auth('admin')->user()->can('activate users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to activate users.');
+        }
+
+        // Activate user
         $user->update(['is_active' => true]);
+
+        // Return response based on request type
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User activated successfully.'
+            ]);
+        }
 
         return back()->with('success', 'User activated successfully.');
     }
@@ -227,11 +297,40 @@ class UserController extends Controller
      */
     public function deactivate(Admin $user)
     {
-        if ($user->id === auth()->id()) {
+        // Check permission
+        if (!auth('admin')->user()->can('deactivate users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to deactivate users.');
+        }
+
+        // Prevent deactivating yourself
+        if ($user->id === auth('admin')->id()) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You cannot deactivate your own account.'], 403);
+            }
             return back()->with('error', 'You cannot deactivate your own account.');
         }
 
+        // Prevent deactivating Super Admin
+        if ($user->hasRole('Super Admin')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Super Admin users cannot be deactivated.'], 403);
+            }
+            return back()->with('error', 'Super Admin users cannot be deactivated.');
+        }
+
+        // Deactivate user
         $user->update(['is_active' => false]);
+
+        // Return response based on request type
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'User deactivated successfully.'
+            ]);
+        }
 
         return back()->with('success', 'User deactivated successfully.');
     }
@@ -243,28 +342,70 @@ class UserController extends Controller
     {
         $request->validate([
             'action' => 'required|in:activate,deactivate,delete',
-            'user_ids' => 'required|array',
-            'user_ids.*' => 'exists:users,id',
+            'user_ids' => 'required|string', // Comes as JSON string
         ]);
 
-        $users = Admin::whereIn('id', $request->user_ids)
-            ->where('id', '!=', auth()->id()) // Exclude current user
+        $action = $request->action;
+        $userIds = json_decode($request->user_ids); // Decode JSON string to array
+
+        // Check permission based on action
+        if ($action === 'activate' && !auth('admin')->user()->can('activate users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to activate users.');
+        }
+
+        if ($action === 'deactivate' && !auth('admin')->user()->can('deactivate users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to deactivate users.');
+        }
+
+        if ($action === 'delete' && !auth('admin')->user()->can('delete users')) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
+            }
+            return back()->with('error', 'You do not have permission to delete users.');
+        }
+
+        // Get users, excluding current admin and Super Admin
+        $users = Admin::whereIn('id', $userIds)
+            ->where('id', '!=', auth('admin')->id()) // Exclude current user
             ->get();
 
+        $count = 0;
         foreach ($users as $user) {
-            if ($request->action === 'activate') {
+            // Skip Super Admin users for deactivate and delete actions
+            if ($user->hasRole('Super Admin') && ($action === 'deactivate' || $action === 'delete')) {
+                continue; // Skip Super Admin
+            }
+
+            if ($action === 'activate') {
                 $user->update(['is_active' => true]);
-            } elseif ($request->action === 'deactivate') {
+                $count++;
+            } elseif ($action === 'deactivate') {
                 $user->update(['is_active' => false]);
-            } elseif ($request->action === 'delete') {
+                $count++;
+            } elseif ($action === 'delete') {
+                // Delete avatar if exists
                 if ($user->avatar) {
                     Storage::disk('public')->delete('avatars/' . $user->avatar);
                 }
                 $user->delete();
+                $count++;
             }
         }
 
-        $count = $users->count();
-        return back()->with('success', "{$count} users {$request->action}d successfully.");
+        // Return response based on request type
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$count} users {$action}d successfully."
+            ]);
+        }
+
+        return back()->with('success', "{$count} users {$action}d successfully.");
     }
 }

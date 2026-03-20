@@ -6,16 +6,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class PermissionController extends Controller
+class PermissionController extends Controller implements HasMiddleware
 {
-    // public function __construct()
-    // {
-    //     $this->middleware('permission:view permissions')->only(['index', 'show']);
-    //     $this->middleware('permission:create permissions')->only(['create', 'store']);
-    //     $this->middleware('permission:edit permissions')->only(['edit', 'update']);
-    //     $this->middleware('permission:delete permissions')->only(['destroy']);
-    // }
+    public static function middleware(): array
+    {
+        return [
+            'auth:admin',
+            new Middleware('permission:view permissions', only: ['index', 'show']),
+            new Middleware('permission:create permissions', only: ['create', 'store']),
+            new Middleware('permission:edit permissions', only: ['edit', 'update']),
+            new Middleware('permission:delete permissions', only: ['destroy']),
+        ];
+    }
 
     /**
      * Display a listing of permissions.
@@ -24,13 +29,42 @@ class PermissionController extends Controller
     {
         $query = Permission::query();
 
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
         }
 
-        $permissions = $query->paginate(20);
+        // Filter by module
+        if ($request->filled('module') && $request->module != '') {
+            $query->where('name', 'like', "%{$request->module}");
+        }
 
-        return view('permissions.index', compact('permissions'));
+        $permissions = $query->paginate(15);
+
+        // Get unique modules for filter
+        $allPermissions = Permission::all();
+        $modules = [];
+        foreach ($allPermissions as $perm) {
+            $parts = explode(' ', $perm->name);
+            $module = $parts[1] ?? 'other';
+            if (!in_array($module, $modules)) {
+                $modules[] = $module;
+            }
+        }
+
+        // If AJAX request
+        if ($request->ajax()) {
+            $table = view('admin.pages.permissions.partials.permissions-table', compact('permissions'))->render();
+            $pagination = $permissions->appends($request->query())->links('pagination::bootstrap-5')->render();
+
+            return response()->json([
+                'table' => $table,
+                'pagination' => $pagination
+            ]);
+        }
+
+        return view('admin.pages.permissions.index', compact('permissions', 'modules'));
     }
 
     /**
@@ -38,7 +72,7 @@ class PermissionController extends Controller
      */
     public function create()
     {
-        return view('permissions.create');
+        return view('admin.pages.permissions.create');
     }
 
     /**
@@ -47,12 +81,26 @@ class PermissionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:permissions,name',
+            'name' => 'required|unique:permissions,name|regex:/^[a-z]+ [a-z]+$/',
+        ], [
+            'name.regex' => 'Permission name must be in format: "action module" (e.g., "view users", "create posts")'
         ]);
 
-        Permission::create(['name' => $request->name]);
+        // Create permission with admin guard
+        $permission = Permission::create([
+            'name' => $request->name,
+            'guard_name' => 'admin' // Important: Set guard_name for admin permissions
+        ]);
 
-        return redirect()->route('permissions.index')
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission created successfully.',
+                'permission' => $permission
+            ]);
+        }
+
+        return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission created successfully.');
     }
 
@@ -63,7 +111,7 @@ class PermissionController extends Controller
     {
         $roles = $permission->roles()->paginate(10);
 
-        return view('permissions.show', compact('permission', 'roles'));
+        return view('admin.pages.permissions.show', compact('permission', 'roles'));
     }
 
     /**
@@ -71,7 +119,7 @@ class PermissionController extends Controller
      */
     public function edit(Permission $permission)
     {
-        return view('permissions.edit', compact('permission'));
+        return view('admin.pages.permissions.edit', compact('permission'));
     }
 
     /**
@@ -80,12 +128,19 @@ class PermissionController extends Controller
     public function update(Request $request, Permission $permission)
     {
         $request->validate([
-            'name' => 'required|unique:permissions,name,' . $permission->id,
+            'name' => 'required|unique:permissions,name,' . $permission->id . '|regex:/^[a-z]+ [a-z]+$/',
         ]);
 
         $permission->update(['name' => $request->name]);
 
-        return redirect()->route('permissions.index')
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission updated successfully.'
+            ]);
+        }
+
+        return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission updated successfully.');
     }
 
@@ -96,12 +151,59 @@ class PermissionController extends Controller
     {
         // Check if permission is assigned to any roles
         if ($permission->roles()->count() > 0) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete permission because it is assigned to roles.'
+                ], 422);
+            }
             return back()->with('error', 'Cannot delete permission because it is assigned to roles.');
         }
 
         $permission->delete();
 
-        return redirect()->route('permissions.index')
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Permission deleted successfully.'
+            ]);
+        }
+
+        return redirect()->route('admin.permissions.index')
             ->with('success', 'Permission deleted successfully.');
+    }
+
+    /**
+     * Bulk action on permissions.
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:delete',
+            'permission_ids' => 'required|string',
+        ]);
+
+        $action = $request->action;
+        $permissionIds = json_decode($request->permission_ids);
+
+        if (!auth('admin')->user()->can('delete permissions')) {
+            return response()->json(['success' => false, 'message' => 'Permission denied.'], 403);
+        }
+
+        $permissions = Permission::whereIn('id', $permissionIds)->get();
+        $count = 0;
+
+        foreach ($permissions as $permission) {
+            // Check if permission is assigned to any roles
+            if ($permission->roles()->count() == 0) {
+                $permission->delete();
+                $count++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} permissions deleted successfully."
+        ]);
     }
 }

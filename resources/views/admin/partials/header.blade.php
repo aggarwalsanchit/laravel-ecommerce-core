@@ -27,7 +27,8 @@
             </button>
 
             <!-- Button Trigger Search Modal -->
-            <div class="topbar-search text-muted d-none d-xl-flex gap-2 align-items-center" data-bs-toggle="modal" data-bs-target="#searchModal" type="button">
+            <div class="topbar-search text-muted d-none d-xl-flex gap-2 align-items-center" data-bs-toggle="modal"
+                data-bs-target="#searchModal" type="button">
                 <i class="ti ti-search fs-18"></i>
                 <span class="me-2">Search something..</span>
                 <button type="submit" class="ms-auto btn btn-sm btn-primary shadow-none">⌘K</span>
@@ -135,7 +136,8 @@
 
             <!-- Search for small devices -->
             <div class="topbar-item d-flex d-xl-none">
-                <button class="topbar-link btn btn-outline-primary btn-icon" data-bs-toggle="modal" data-bs-target="#searchModal" type="button">
+                <button class="topbar-link btn btn-outline-primary btn-icon" data-bs-toggle="modal"
+                    data-bs-target="#searchModal" type="button">
                     <i class="ti ti-search fs-22"></i>
                 </button>
             </div>
@@ -143,39 +145,47 @@
             <!-- Language Dropdown -->
             <div class="topbar-item">
                 <div class="dropdown">
-                    <button class="topbar-link btn btn-outline-primary btn-icon" data-bs-toggle="dropdown" data-bs-offset="0,24" type="button" aria-haspopup="false" aria-expanded="false">
-                        <img src="assets/images/flags/us.svg" alt="user-image" class="w-100 rounded" height="18" id="selected-language-image">
+                    <button class="topbar-link btn btn-outline-primary btn-icon" data-bs-toggle="dropdown"
+                        data-bs-offset="0,24" type="button" aria-haspopup="false" aria-expanded="false">
+                        <img src="assets/images/flags/us.svg" alt="user-image" class="w-100 rounded" height="18"
+                            id="selected-language-image">
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-end">
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item" data-translator-lang="en">
-                            <img src="assets/images/flags/us.svg" alt="user-image" class="me-1 rounded" height="18" data-translator-image> <span class="align-middle">English</span>
+                            <img src="assets/images/flags/us.svg" alt="user-image" class="me-1 rounded" height="18"
+                                data-translator-image> <span class="align-middle">English</span>
                         </a>
 
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item" data-translator-lang="hi">
-                            <img src="assets/images/flags/in.svg" alt="user-image" class="me-1 rounded" height="18" data-translator-image> <span class="align-middle">Hindi</span>
+                            <img src="assets/images/flags/in.svg" alt="user-image" class="me-1 rounded" height="18"
+                                data-translator-image> <span class="align-middle">Hindi</span>
                         </a>
 
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item">
-                            <img src="assets/images/flags/de.svg" alt="user-image" class="me-1 rounded" height="18"> <span class="align-middle">German</span>
+                            <img src="assets/images/flags/de.svg" alt="user-image" class="me-1 rounded" height="18">
+                            <span class="align-middle">German</span>
                         </a>
 
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item">
-                            <img src="assets/images/flags/it.svg" alt="user-image" class="me-1 rounded" height="18"> <span class="align-middle">Italian</span>
+                            <img src="assets/images/flags/it.svg" alt="user-image" class="me-1 rounded" height="18">
+                            <span class="align-middle">Italian</span>
                         </a>
 
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item">
-                            <img src="assets/images/flags/es.svg" alt="user-image" class="me-1 rounded" height="18"> <span class="align-middle">Spanish</span>
+                            <img src="assets/images/flags/es.svg" alt="user-image" class="me-1 rounded" height="18">
+                            <span class="align-middle">Spanish</span>
                         </a>
 
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item">
-                            <img src="assets/images/flags/ru.svg" alt="user-image" class="me-1 rounded" height="18"> <span class="align-middle">Russian</span>
+                            <img src="assets/images/flags/ru.svg" alt="user-image" class="me-1 rounded" height="18">
+                            <span class="align-middle">Russian</span>
                         </a>
 
                     </div>
@@ -185,7 +195,9 @@
             <!-- Notification Dropdown -->
             <div class="topbar-item">
                 <div class="dropdown">
-                    <button class="topbar-link btn btn-outline-primary btn-icon dropdown-toggle drop-arrow-none" data-bs-toggle="dropdown" data-bs-offset="0,24" type="button" data-bs-auto-close="outside" aria-haspopup="false" aria-expanded="false">
+                    <button class="topbar-link btn btn-outline-primary btn-icon dropdown-toggle drop-arrow-none"
+                        data-bs-toggle="dropdown" data-bs-offset="0,24" type="button" data-bs-auto-close="outside"
+                        aria-haspopup="false" aria-expanded="false">
                         <i class="ti ti-bell animate-ring fs-22"></i>
                         <span class="noti-icon-badge"></span>
                     </button>
@@ -198,7 +210,8 @@
                                 </div>
                                 <div class="col-auto">
                                     <div class="dropdown">
-                                        <a href="#" class="dropdown-toggle drop-arrow-none link-dark" data-bs-toggle="dropdown" data-bs-offset="0,15" aria-expanded="false">
+                                        <a href="#" class="dropdown-toggle drop-arrow-none link-dark"
+                                            data-bs-toggle="dropdown" data-bs-offset="0,15" aria-expanded="false">
                                             <i class="ti ti-settings fs-22 align-middle"></i>
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end">
@@ -221,19 +234,23 @@
                             <div class="dropdown-item notification-item py-2 text-wrap active" id="notification-1">
                                 <span class="d-flex align-items-center">
                                     <span class="me-3 position-relative flex-shrink-0">
-                                        <img src="assets/images/users/avatar-2.jpg" class="avatar-md rounded-circle" alt="" />
+                                        <img src="assets/images/users/avatar-2.jpg" class="avatar-md rounded-circle"
+                                            alt="" />
                                         <span class="position-absolute rounded-pill bg-danger notification-badge">
                                             <i class="ti ti-message-circle"></i>
                                             <span class="visually-hidden">unread messages</span>
                                         </span>
                                     </span>
                                     <span class="flex-grow-1 text-muted">
-                                        <span class="fw-medium text-body">Glady Haid</span> commented on <span class="fw-medium text-body">paces admin status</span>
+                                        <span class="fw-medium text-body">Glady Haid</span> commented on <span
+                                            class="fw-medium text-body">paces admin status</span>
                                         <br />
                                         <span class="fs-12">25m ago</span>
                                     </span>
                                     <span class="notification-item-close">
-                                        <button type="button" class="btn btn-ghost-danger rounded-circle btn-sm btn-icon" data-dismissible="#notification-1">
+                                        <button type="button"
+                                            class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                            data-dismissible="#notification-1">
                                             <i class="ti ti-x fs-16"></i>
                                         </button>
                                     </span>
@@ -244,19 +261,24 @@
                             <div class="dropdown-item notification-item py-2 text-wrap" id="notification-2">
                                 <span class="d-flex align-items-center">
                                     <span class="me-3 position-relative flex-shrink-0">
-                                        <img src="assets/images/users/avatar-4.jpg" class="avatar-md rounded-circle" alt="" />
+                                        <img src="assets/images/users/avatar-4.jpg" class="avatar-md rounded-circle"
+                                            alt="" />
                                         <span class="position-absolute rounded-pill bg-info notification-badge">
                                             <i class="ti ti-currency-dollar"></i>
                                             <span class="visually-hidden">unread messages</span>
                                         </span>
                                     </span>
                                     <span class="flex-grow-1 text-muted">
-                                        <span class="fw-medium text-body">Tommy Berry</span> donated <span class="text-success">$100.00</span> for <span class="fw-medium text-body">Carbon removal program</span>
+                                        <span class="fw-medium text-body">Tommy Berry</span> donated <span
+                                            class="text-success">$100.00</span> for <span
+                                            class="fw-medium text-body">Carbon removal program</span>
                                         <br />
                                         <span class="fs-12">58m ago</span>
                                     </span>
                                     <span class="notification-item-close">
-                                        <button type="button" class="btn btn-ghost-danger rounded-circle btn-sm btn-icon" data-dismissible="#notification-2">
+                                        <button type="button"
+                                            class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                            data-dismissible="#notification-2">
                                             <i class="ti ti-x fs-16"></i>
                                         </button>
                                     </span>
@@ -272,12 +294,15 @@
                                         </span>
                                     </div>
                                     <span class="flex-grow-1 text-muted">
-                                        You withdraw a <span class="fw-medium text-body">$500</span> by <span class="fw-medium text-body">New York ATM</span>
+                                        You withdraw a <span class="fw-medium text-body">$500</span> by <span
+                                            class="fw-medium text-body">New York ATM</span>
                                         <br />
                                         <span class="fs-12">2h ago</span>
                                     </span>
                                     <span class="notification-item-close">
-                                        <button type="button" class="btn btn-ghost-danger rounded-circle btn-sm btn-icon" data-dismissible="#notification-3">
+                                        <button type="button"
+                                            class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                            data-dismissible="#notification-3">
                                             <i class="ti ti-x fs-16"></i>
                                         </button>
                                     </span>
@@ -288,19 +313,23 @@
                             <div class="dropdown-item notification-item py-2 text-wrap" id="notification-4">
                                 <span class="d-flex align-items-center">
                                     <span class="me-3 position-relative flex-shrink-0">
-                                        <img src="assets/images/users/avatar-7.jpg" class="avatar-md rounded-circle" alt="" />
+                                        <img src="assets/images/users/avatar-7.jpg" class="avatar-md rounded-circle"
+                                            alt="" />
                                         <span class="position-absolute rounded-pill bg-secondary notification-badge">
                                             <i class="ti ti-plus"></i>
                                             <span class="visually-hidden">unread messages</span>
                                         </span>
                                     </span>
                                     <span class="flex-grow-1 text-muted">
-                                        <span class="fw-medium text-body">Richard Allen</span> followed you in <span class="fw-medium text-body">Facebook</span>
+                                        <span class="fw-medium text-body">Richard Allen</span> followed you in <span
+                                            class="fw-medium text-body">Facebook</span>
                                         <br />
                                         <span class="fs-12">3h ago</span>
                                     </span>
                                     <span class="notification-item-close">
-                                        <button type="button" class="btn btn-ghost-danger rounded-circle btn-sm btn-icon" data-dismissible="#notification-4">
+                                        <button type="button"
+                                            class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                            data-dismissible="#notification-4">
                                             <i class="ti ti-x fs-16"></i>
                                         </button>
                                     </span>
@@ -311,19 +340,23 @@
                             <div class="dropdown-item notification-item py-2 text-wrap" id="notification-5">
                                 <span class="d-flex align-items-center">
                                     <span class="me-3 position-relative flex-shrink-0">
-                                        <img src="assets/images/users/avatar-10.jpg" class="avatar-md rounded-circle" alt="" />
+                                        <img src="assets/images/users/avatar-10.jpg" class="avatar-md rounded-circle"
+                                            alt="" />
                                         <span class="position-absolute rounded-pill bg-danger notification-badge">
                                             <i class="ti ti-heart-filled"></i>
                                             <span class="visually-hidden">unread messages</span>
                                         </span>
                                     </span>
                                     <span class="flex-grow-1 text-muted">
-                                        <span class="fw-medium text-body">Victor Collier</span> liked you recent photo in <span class="fw-medium text-body">Instagram</span>
+                                        <span class="fw-medium text-body">Victor Collier</span> liked you recent photo
+                                        in <span class="fw-medium text-body">Instagram</span>
                                         <br />
                                         <span class="fs-12">10h ago</span>
                                     </span>
                                     <span class="notification-item-close">
-                                        <button type="button" class="btn btn-ghost-danger rounded-circle btn-sm btn-icon" data-dismissible="#notification-5">
+                                        <button type="button"
+                                            class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                            data-dismissible="#notification-5">
                                             <i class="ti ti-x fs-16"></i>
                                         </button>
                                     </span>
@@ -332,7 +365,8 @@
                         </div>
 
                         <!-- All-->
-                        <a href="javascript:void(0);" class="dropdown-item notification-item text-center text-reset text-decoration-underline link-offset-2 fw-bold notify-item border-top border-light py-2">
+                        <a href="javascript:void(0);"
+                            class="dropdown-item notification-item text-center text-reset text-decoration-underline link-offset-2 fw-bold notify-item border-top border-light py-2">
                             View All
                         </a>
                     </div>
@@ -431,8 +465,11 @@
             <!-- User Dropdown -->
             <div class="topbar-item">
                 <div class="dropdown">
-                    <a class="topbar-link btn btn-outline-primary dropdown-toggle drop-arrow-none" data-bs-toggle="dropdown" data-bs-offset="0,22" type="button" aria-haspopup="false" aria-expanded="false">
-                        <img src="assets/images/users/avatar-1.jpg" width="24" class="rounded-circle me-lg-2 d-flex" alt="user-image">
+                    <a class="topbar-link btn btn-outline-primary dropdown-toggle drop-arrow-none"
+                        data-bs-toggle="dropdown" data-bs-offset="0,22" type="button" aria-haspopup="false"
+                        aria-expanded="false">
+                        <img src="assets/images/users/avatar-1.jpg" width="24"
+                            class="rounded-circle me-lg-2 d-flex" alt="user-image">
                         <span class="d-lg-flex flex-column gap-1 d-none">
                             {{ Auth::guard('admin')->user()->name }}
                         </span>
