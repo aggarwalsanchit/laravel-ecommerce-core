@@ -72,23 +72,23 @@
 
 
                 <li class="side-nav-item">
-                    <a href="apps-calendar.html" class="side-nav-link">
+                    <a href="{{ route('admin.categories.index') }}" class="side-nav-link">
                         <span class="menu-icon"><i class="ti ti-calendar-filled"></i></span>
-                        <span class="menu-text"> Calendar </span>
+                        <span class="menu-text"> Categories </span>
                     </a>
                 </li>
 
                 <li class="side-nav-item">
-                    <a href="apps-email.html" class="side-nav-link">
+                    <a href="{{ route('admin.sizes.index') }}" class="side-nav-link">
                         <span class="menu-icon"><i class="ti ti-inbox"></i></span>
-                        <span class="menu-text"> Email </span>
+                        <span class="menu-text"> Sizes </span>
                     </a>
                 </li>
 
                 <li class="side-nav-item">
-                    <a href="apps-file-manager.html" class="side-nav-link">
+                    <a href="{{ route('admin.colors.index') }}" class="side-nav-link">
                         <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
-                        <span class="menu-text"> File Manager </span>
+                        <span class="menu-text"> Colour </span>
                     </a>
                 </li>
 
