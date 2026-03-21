@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
+use App\Http\Controllers\Admin\DiscountController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -72,6 +73,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/colors/{color}/toggle-status', [ColorController::class, 'toggleStatus'])->name('colors.toggle-status');
         Route::post('/colors/bulk-action', [ColorController::class, 'bulkAction'])->name('colors.bulk-action');
         Route::resource('colors', ColorController::class);
+
+
+        Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
+        Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
+        Route::post('/discounts/bulk-action', [DiscountController::class, 'bulkAction'])->name('discounts.bulk-action');
+        Route::resource('discounts', DiscountController::class);
+
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
