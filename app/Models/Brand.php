@@ -1,5 +1,5 @@
 <?php
-// app/Models/Fabric.php
+// app/Models/Brand.php
 
 namespace App\Models;
 
@@ -7,45 +7,57 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
-class Fabric extends Model
+class Brand extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
-        'code',
         'slug',
+        'code',
         'description',
-        'image',
+        'logo',
+        'banner',
+        'website',
+        'email',
+        'phone',
+        'address',
         'order',
         'status',
+        'is_featured',
         'product_count',
         'view_count',
         'order_count',
         'total_revenue',
+        'avg_rating',
+        'review_count',
         'meta_title',
         'meta_description',
+        'meta_keywords',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'is_featured' => 'boolean',
         'product_count' => 'integer',
         'view_count' => 'integer',
         'order_count' => 'integer',
         'total_revenue' => 'decimal:2',
+        'avg_rating' => 'decimal:2',
+        'review_count' => 'integer',
     ];
 
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($fabric) {
-            $fabric->slug = Str::slug($fabric->name);
+        static::creating(function ($brand) {
+            $brand->slug = Str::slug($brand->name);
         });
 
-        static::updating(function ($fabric) {
-            if ($fabric->isDirty('name')) {
-                $fabric->slug = Str::slug($fabric->name);
+        static::updating(function ($brand) {
+            if ($brand->isDirty('name')) {
+                $brand->slug = Str::slug($brand->name);
             }
         });
     }
@@ -76,8 +88,21 @@ class Fabric extends Model
         return '$' . number_format($this->total_revenue, 2);
     }
 
+    public function getFormattedRatingAttribute()
+    {
+        if ($this->avg_rating > 0) {
+            return number_format($this->avg_rating, 1) . ' ★';
+        }
+        return 'No ratings';
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', true);
+    }
+
+    public function scopeFeatured($query)
+    {
+        return $query->where('is_featured', true);
     }
 }

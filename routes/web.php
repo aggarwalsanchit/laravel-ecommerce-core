@@ -11,6 +11,11 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\DiscountController;
+use App\Http\Controllers\Admin\FabricController;
+use App\Http\Controllers\Admin\OccasionController;
+use App\Http\Controllers\Admin\CollectionController;
+use App\Http\Controllers\Admin\SeasonController;
+use App\Http\Controllers\Admin\BrandController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -74,6 +79,39 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/colors/bulk-action', [ColorController::class, 'bulkAction'])->name('colors.bulk-action');
         Route::resource('colors', ColorController::class);
 
+
+        Route::get('/fabrics/analytics', [FabricController::class, 'analytics'])->name('fabrics.analytics');
+        Route::post('/fabrics/{fabric}/toggle-status', [FabricController::class, 'toggleStatus'])->name('fabrics.toggle-status');
+        Route::post('/fabrics/bulk-action', [FabricController::class, 'bulkAction'])->name('fabrics.bulk-action');
+        Route::resource('fabrics', FabricController::class);
+
+
+        Route::get('/occasions/analytics', [OccasionController::class, 'analytics'])->name('occasions.analytics');
+        Route::post('/occasions/{occasion}/toggle-status', [OccasionController::class, 'toggleStatus'])->name('occasions.toggle-status');
+        Route::post('/occasions/{occasion}/toggle-featured', [OccasionController::class, 'toggleFeatured'])->name('occasions.toggle-featured');
+        Route::post('/occasions/bulk-action', [OccasionController::class, 'bulkAction'])->name('occasions.bulk-action');
+        Route::resource('occasions', OccasionController::class);
+
+
+        Route::get('/collections/analytics', [CollectionController::class, 'analytics'])->name('collections.analytics');
+        Route::post('/collections/{collection}/toggle-status', [CollectionController::class, 'toggleStatus'])->name('collections.toggle-status');
+        Route::post('/collections/{collection}/toggle-featured', [CollectionController::class, 'toggleFeatured'])->name('collections.toggle-featured');
+        Route::post('/collections/bulk-action', [CollectionController::class, 'bulkAction'])->name('collections.bulk-action');
+        Route::resource('collections', CollectionController::class);
+
+
+        Route::get('/seasons/analytics', [SeasonController::class, 'analytics'])->name('seasons.analytics');
+        Route::post('/seasons/{season}/toggle-status', [SeasonController::class, 'toggleStatus'])->name('seasons.toggle-status');
+        Route::post('/seasons/{season}/set-current', [SeasonController::class, 'setCurrent'])->name('seasons.set-current');
+        Route::post('/seasons/bulk-action', [SeasonController::class, 'bulkAction'])->name('seasons.bulk-action');
+        Route::resource('seasons', SeasonController::class);
+
+
+        Route::get('/brands/analytics', [BrandController::class, 'analytics'])->name('brands.analytics');
+        Route::post('/brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
+        Route::post('/brands/{brand}/toggle-featured', [BrandController::class, 'toggleFeatured'])->name('brands.toggle-featured');
+        Route::post('/brands/bulk-action', [BrandController::class, 'bulkAction'])->name('brands.bulk-action');
+        Route::resource('brands', BrandController::class);
 
         Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
