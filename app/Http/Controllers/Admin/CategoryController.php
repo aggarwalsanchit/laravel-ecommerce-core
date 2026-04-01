@@ -390,6 +390,18 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
+    public function getSubcategories($categoryId)
+{
+    $subcategories = Category::where('parent_id', $categoryId)
+        ->where('status', true)
+        ->orderBy('order')
+        ->get(['id', 'name']);
+    
+    return response()->json([
+        'subcategories' => $subcategories
+    ]);
+}
+
     /**
      * Toggle category status.
      */

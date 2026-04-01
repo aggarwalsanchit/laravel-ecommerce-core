@@ -158,7 +158,7 @@
                 </li>
 
                 <li class="side-nav-item">
-                    <a href="{{ route('admin.colors.index') }}" class="side-nav-link">
+                    <a href="{{ route('admin.products.index') }}" class="side-nav-link">
                         <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
                         <span class="menu-text"> Products </span>
                     </a>

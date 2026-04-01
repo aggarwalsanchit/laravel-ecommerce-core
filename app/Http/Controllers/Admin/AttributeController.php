@@ -264,4 +264,20 @@ class AttributeController extends Controller implements HasMiddleware
             default => 30
         };
     }
+
+    public function getByCategory($categoryId)
+{
+    $attributes = Attribute::where(function($q) use ($categoryId) {
+            $q->where('product_category_id', $categoryId)
+              ->orWhereNull('product_category_id');
+        })
+        ->where('status', true)
+        ->with('values')
+        ->orderBy('display_order')
+        ->get();
+    
+    return response()->json([
+        'attributes' => $attributes
+    ]);
+}
 }
