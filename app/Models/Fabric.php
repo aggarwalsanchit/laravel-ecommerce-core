@@ -1,5 +1,5 @@
 <?php
-// app/Models/Color.php
+// app/Models/Fabric.php
 
 namespace App\Models;
 
@@ -7,16 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
-class Color extends Model
+class Fabric extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
         'code',
-        'hex_code',
         'slug',
         'description',
+        'image',
         'order',
         'status',
         'product_count',
@@ -35,49 +35,31 @@ class Color extends Model
         'total_revenue' => 'decimal:2',
     ];
 
-    // Boot method to auto-generate slug
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($color) {
-            $color->slug = Str::slug($color->name);
+        static::creating(function ($fabric) {
+            $fabric->slug = Str::slug($fabric->name);
         });
 
-        static::updating(function ($color) {
-            if ($color->isDirty('name')) {
-                $color->slug = Str::slug($color->name);
+        static::updating(function ($fabric) {
+            if ($fabric->isDirty('name')) {
+                $fabric->slug = Str::slug($fabric->name);
             }
         });
     }
 
-    // Products relationship
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_colors')
-                    ->withPivot('color_image')
-                    ->withTimestamps();
+        return $this->hasMany(Product::class);
     }
 
-    // Variants using this color
-    public function variants()
-    {
-        return $this->hasMany(ProductVariant::class);
-    }
-
-    // Increment view count
     public function incrementViewCount()
     {
         $this->increment('view_count');
     }
 
-    // Get color preview HTML
-    public function getColorPreviewAttribute()
-    {
-        return '<span class="color-preview" style="background-color: ' . $this->hex_code . '; width: 30px; height: 30px; display: inline-block; border-radius: 50%; border: 1px solid #ddd;"></span>';
-    }
-
-    // Get formatted view count
     public function getFormattedViewCountAttribute()
     {
         if ($this->view_count >= 1000000) {
@@ -89,13 +71,11 @@ class Color extends Model
         return $this->view_count;
     }
 
-    // Get formatted revenue
     public function getFormattedRevenueAttribute()
     {
         return '$' . number_format($this->total_revenue, 2);
     }
 
-    // Scope for active colors
     public function scopeActive($query)
     {
         return $query->where('status', true);

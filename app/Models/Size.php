@@ -54,7 +54,14 @@ class Size extends Model
     // Products relationship
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_size');
+        return $this->belongsToMany(Product::class, 'product_size')->withPivot('stock', 'price_adjustment')
+                    ->withTimestamps();
+    }
+
+    // Variants using this size
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
     }
 
     // Increment view count
