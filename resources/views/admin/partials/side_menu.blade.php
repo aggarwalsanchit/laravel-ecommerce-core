@@ -93,7 +93,7 @@
                                     <span class="menu-text">Colour</span>
                                 </a>
                             </li>
-                            <li class="side-nav-item">
+                           <!-- <li class="side-nav-item">
                                 <a href="{{ route('admin.fabrics.index') }}" class="side-nav-link">
                                     <span class="menu-text">Fabrics</span>
                                 </a>
@@ -109,7 +109,7 @@
                                 </a>
                             </li>
                             <li class="side-nav-item">
-                                <a href="{{ route('admin.seasons.index') }}" class="side-nav-link">
+                                <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
                                     <span class="menu-text">Seasons</span>
                                 </a>
                             </li>
@@ -117,10 +117,37 @@
                                 <a href="{{ route('admin.brands.index') }}" class="side-nav-link">
                                     <span class="menu-text">Brands</span>
                                 </a>
-                            </li>
+                            </li> -->
                         </ul>
                     </div>
                 </li>
+
+                <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                        aria-controls="sidebarEcommerce" class="side-nav-link">
+                        <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                        <span class="menu-text"> Custom Attributes </span>
+                        <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarEcommerce">
+                        <ul class="sub-menu">
+                            <li class="side-nav-item">
+                                <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
+                                    <span class="menu-text">Attributes</span>
+                                </a>
+                            </li>
+                            <li class="side-nav-item">
+                                <a href="{{ route('admin.attribute-groups.index') }}" class="side-nav-link">
+                                    <span class="menu-text">Attributes Groups</span>
+                                </a>
+                            </li>
+                           
+                          
+                        </ul>
+                    </div>
+                </li>
+
+               
 
 
                 <li class="side-nav-item">

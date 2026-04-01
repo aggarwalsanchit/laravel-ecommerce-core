@@ -16,6 +16,9 @@ use App\Http\Controllers\Admin\OccasionController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\AttributeGroupController;
+use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\AttributeValueController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -117,6 +120,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
         Route::post('/discounts/bulk-action', [DiscountController::class, 'bulkAction'])->name('discounts.bulk-action');
         Route::resource('discounts', DiscountController::class);
+
+        Route::resource('attribute-groups', AttributeGroupController::class);
+        Route::post('/attribute-groups/{group}/toggle-status', [AttributeGroupController::class, 'toggleStatus'])->name('attribute-groups.toggle-status');
+
+        // Attributes
+        Route::resource('attributes', AttributeController::class);
+        Route::get('/attributes/{attribute}/analytics', [AttributeController::class, 'analytics'])->name('attributes.analytics');
+        Route::post('/attributes/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('attributes.toggle-status');
+
+        // Attribute Values
+        Route::get('/attributes/{attribute}/values', [AttributeValueController::class, 'index'])->name('attributes.values.index');
+        Route::post('/attributes/{attribute}/values', [AttributeValueController::class, 'store'])->name('attributes.values.store');
+        Route::put('/attribute-values/{value}', [AttributeValueController::class, 'update'])->name('attribute-values.update');
+        Route::delete('/attribute-values/{value}', [AttributeValueController::class, 'destroy'])->name('attribute-values.destroy');
+        Route::get('/attribute-values/export', [AttributeValueController::class, 'export'])->name('values.export');
+
+Route::prefix('attribute-values')->name('attribute-values.')->group(function () {
+    Route::get('/{value}', [AttributeValueController::class, 'show'])->name('show');
+    Route::get('/{value}/analytics', [AttributeValueController::class, 'analytics'])->name('analytics');
+    Route::put('/{value}', [AttributeValueController::class, 'update'])->name('update');
+    Route::delete('/{value}', [AttributeValueController::class, 'destroy'])->name('destroy');
+    Route::post('/{value}/toggle-default', [AttributeValueController::class, 'toggleDefault'])->name('toggle-default');
+    Route::post('/{value}/toggle-visibility', [AttributeValueController::class, 'toggleVisibility'])->name('toggle-visibility');
+    Route::post('/{value}/reorder', [AttributeValueController::class, 'reorder'])->name('reorder');
+});
+
+Route::resource('attribute-categories', AttributeCategoryController::class);
+    Route::post('/attribute-categories/{category}/toggle-status', [AttributeCategoryController::class, 'toggleStatus'])->name('attribute-categories.toggle-status');
+    Route::post('/attribute-categories/reorder', [AttributeCategoryController::class, 'reorder'])->name('attribute-categories.reorder');
+    Route::get('/attribute-categories/{category}/children', [AttributeCategoryController::class, 'getChildren'])->name('attribute-categories.children');
 
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

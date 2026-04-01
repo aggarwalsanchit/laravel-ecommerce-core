@@ -54,7 +54,15 @@ class Color extends Model
     // Products relationship
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_color');
+        return $this->belongsToMany(Product::class, 'product_colors')
+                    ->withPivot('color_image')
+                    ->withTimestamps();
+    }
+
+    // Variants using this color
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
     }
 
     // Increment view count
