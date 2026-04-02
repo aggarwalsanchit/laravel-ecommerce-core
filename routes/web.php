@@ -123,6 +123,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
         Route::post('/discounts/bulk-action', [DiscountController::class, 'bulkAction'])->name('discounts.bulk-action');
+        Route::get('products/{product}/discounts', [DiscountController::class, 'getProductDiscounts'])->name('products.discounts');
         Route::resource('discounts', DiscountController::class);
 
         Route::resource('attribute-groups', AttributeGroupController::class);
@@ -168,6 +169,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/attributes/quick-store', [AttributeController::class, 'quickStore'])->name('attributes.quick-store');
         Route::post('/attribute-values/quick-store', [AttributeValueController::class, 'quickStore'])->name('attribute-values.quick-store');
 
+        //  Route::resource('discounts', App\Http\Controllers\Admin\DiscountController::class);
 
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

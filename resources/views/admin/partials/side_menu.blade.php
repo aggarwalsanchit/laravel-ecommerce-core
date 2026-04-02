@@ -93,7 +93,7 @@
                                     <span class="menu-text">Colour</span>
                                 </a>
                             </li>
-                           <!-- <li class="side-nav-item">
+                            <!-- <li class="side-nav-item">
                                 <a href="{{ route('admin.fabrics.index') }}" class="side-nav-link">
                                     <span class="menu-text">Fabrics</span>
                                 </a>
@@ -141,17 +141,17 @@
                                     <span class="menu-text">Attributes Groups</span>
                                 </a>
                             </li>
-                           
-                          
+
+
                         </ul>
                     </div>
                 </li>
 
-               
+
 
 
                 <li class="side-nav-item">
-                    <a href="{{ route('admin.colors.index') }}" class="side-nav-link">
+                    <a href="{{ route('admin.discounts.index') }}" class="side-nav-link">
                         <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
                         <span class="menu-text"> Discount </span>
                     </a>

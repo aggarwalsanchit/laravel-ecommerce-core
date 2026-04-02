@@ -39,11 +39,6 @@ return new class extends Migration
                 'products',               // Specific products
                 'colors',                 // Specific colors
                 'sizes',                  // Specific sizes
-                'fabrics',                // Specific fabrics
-                'occasions',              // Specific occasions
-                'collections',            // Specific collections
-                'brands',                 // Specific brands
-                'seasons',                // Specific seasons
                 'user_groups',            // Specific user groups
                 'min_purchase',           // Minimum purchase amount
                 'first_purchase',         // First time customers
