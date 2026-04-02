@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 class AttributeValueController extends Controller
 {
     protected $imageCompressor;
-    
+
     public function __construct(ImageCompressionService $imageCompressor)
     {
         $this->imageCompressor = $imageCompressor;
@@ -26,14 +26,14 @@ class AttributeValueController extends Controller
     public function index(Attribute $attribute)
     {
         $values = $attribute->values()->orderBy('display_order')->get();
-        
+
         if (request()->ajax()) {
             return response()->json([
                 'values' => $values,
                 'attribute' => $attribute
             ]);
         }
-        
+
         return view('admin.pages.attributes.values.index', compact('attribute', 'values'));
     }
 
@@ -43,7 +43,7 @@ class AttributeValueController extends Controller
     public function show($id)
     {
         $value = AttributeValue::with('attribute')->findOrFail($id);
-        
+
         return response()->json([
             'id' => $value->id,
             'value' => $value->value,
@@ -86,7 +86,7 @@ class AttributeValueController extends Controller
         ]);
 
         $data = $request->except(['image']);
-        
+
         // Handle image upload
         if ($request->hasFile('image')) {
             $folder = 'attributes/' . $attribute->slug . '/values';
@@ -95,12 +95,12 @@ class AttributeValueController extends Controller
                 $data['image'] = $compressed['filename'];
             }
         }
-        
+
         // If this is default, remove default from others
         if ($request->has('is_default') && $request->is_default) {
             $attribute->values()->update(['is_default' => false]);
         }
-        
+
         $value = $attribute->values()->create($data);
 
         return response()->json([
@@ -117,7 +117,7 @@ class AttributeValueController extends Controller
     {
         $value = AttributeValue::findOrFail($id);
         $attribute = $value->attribute;
-        
+
         $request->validate([
             'value' => 'required|unique:attribute_values,value,' . $value->id . ',id,attribute_id,' . $attribute->id,
             'color_code' => 'nullable|regex:/^#[a-fA-F0-9]{6}$/',
@@ -131,7 +131,7 @@ class AttributeValueController extends Controller
         ]);
 
         $data = $request->except(['image', 'remove_image']);
-        
+
         // Handle image upload
         if ($request->hasFile('image')) {
             if ($value->image) {
@@ -143,19 +143,19 @@ class AttributeValueController extends Controller
                 $data['image'] = $compressed['filename'];
             }
         }
-        
+
         if ($request->has('remove_image') && $request->remove_image) {
             if ($value->image) {
                 Storage::disk('public')->delete('attributes/' . $attribute->slug . '/values/' . $value->image);
                 $data['image'] = null;
             }
         }
-        
+
         // If this is default, remove default from others
         if ($request->has('is_default') && $request->is_default && !$value->is_default) {
             $attribute->values()->update(['is_default' => false]);
         }
-        
+
         $value->update($data);
 
         return response()->json([
@@ -170,10 +170,10 @@ class AttributeValueController extends Controller
     public function analytics($id)
     {
         $value = AttributeValue::with('attribute')->findOrFail($id);
-        
+
         // Get daily analytics for last 30 days
         $startDate = now()->subDays(30);
-        
+
         $dailyStats = DB::table('attribute_analytics_logs')
             ->where('attribute_value_id', $value->id)
             ->where('created_at', '>=', $startDate)
@@ -185,14 +185,14 @@ class AttributeValueController extends Controller
             ->groupBy('date')
             ->orderBy('date')
             ->get();
-        
-        $chartLabels = $dailyStats->pluck('date')->map(function($date) {
+
+        $chartLabels = $dailyStats->pluck('date')->map(function ($date) {
             return \Carbon\Carbon::parse($date)->format('M d');
         })->toArray();
-        
+
         $chartViews = $dailyStats->pluck('views')->toArray();
         $chartOrders = $dailyStats->pluck('orders')->toArray();
-        
+
         // If no data, generate sample data for chart
         if (empty($chartLabels)) {
             for ($i = 29; $i >= 0; $i--) {
@@ -202,13 +202,13 @@ class AttributeValueController extends Controller
                 $chartOrders[] = rand(0, 10);
             }
         }
-        
+
         return response()->json([
             'view_count' => $value->view_count,
             'order_count' => $value->order_count,
             'total_revenue' => number_format($value->total_revenue, 2),
-            'conversion_rate' => $value->view_count > 0 
-                ? round(($value->order_count / $value->view_count) * 100, 2) 
+            'conversion_rate' => $value->view_count > 0
+                ? round(($value->order_count / $value->view_count) * 100, 2)
                 : 0,
             'chart_labels' => $chartLabels,
             'chart_views' => $chartViews,
@@ -223,13 +223,13 @@ class AttributeValueController extends Controller
     {
         $value = AttributeValue::findOrFail($id);
         $attribute = $value->attribute;
-        
+
         // Remove default from all values
         $attribute->values()->update(['is_default' => false]);
-        
+
         // Set this as default
         $value->update(['is_default' => true]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Default value updated successfully.'
@@ -243,7 +243,7 @@ class AttributeValueController extends Controller
     {
         $value = AttributeValue::findOrFail($id);
         $value->update(['is_visible' => !$value->is_visible]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Visibility updated successfully.',
@@ -258,16 +258,16 @@ class AttributeValueController extends Controller
     {
         $value = AttributeValue::findOrFail($id);
         $attribute = $value->attribute;
-        
+
         $direction = $request->direction;
         $currentOrder = $value->display_order;
-        
+
         if ($direction === 'up') {
             $newOrder = $currentOrder - 1;
             $swapValue = $attribute->values()
                 ->where('display_order', $newOrder)
                 ->first();
-            
+
             if ($swapValue) {
                 $swapValue->update(['display_order' => $currentOrder]);
                 $value->update(['display_order' => $newOrder]);
@@ -277,13 +277,13 @@ class AttributeValueController extends Controller
             $swapValue = $attribute->values()
                 ->where('display_order', $newOrder)
                 ->first();
-            
+
             if ($swapValue) {
                 $swapValue->update(['display_order' => $currentOrder]);
                 $value->update(['display_order' => $newOrder]);
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Order updated successfully.'
@@ -296,18 +296,18 @@ class AttributeValueController extends Controller
     public function destroy($id)
     {
         $value = AttributeValue::findOrFail($id);
-        
+
         if ($value->products()->count() > 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Cannot delete value because it is used by ' . $value->products()->count() . ' products.'
             ], 422);
         }
-        
+
         if ($value->image) {
             Storage::disk('public')->delete('attributes/' . $value->attribute->slug . '/values/' . $value->image);
         }
-        
+
         $value->delete();
 
         return response()->json([
@@ -322,12 +322,12 @@ class AttributeValueController extends Controller
     public function export(Attribute $attribute)
     {
         $values = $attribute->values()->get();
-        
+
         $filename = $attribute->slug . '-values-' . date('Y-m-d') . '.csv';
-        
+
         $handle = fopen('php://temp', 'w+');
         fputcsv($handle, ['ID', 'Value', 'Slug', 'Color Code', 'Price Adjustment', 'Stock', 'SKU', 'Order', 'Default']);
-        
+
         foreach ($values as $value) {
             fputcsv($handle, [
                 $value->id,
@@ -341,14 +341,32 @@ class AttributeValueController extends Controller
                 $value->is_default ? 'Yes' : 'No'
             ]);
         }
-        
+
         rewind($handle);
         $csv = stream_get_contents($handle);
         fclose($handle);
-        
+
         return response($csv, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'attribute_id' => 'required|exists:attributes,id',
+            'value' => 'required|unique:attribute_values,value,NULL,id,attribute_id,' . $request->attribute_id,
+            'color_code' => 'nullable|regex:/^#[a-fA-F0-9]{6}$/',
+        ]);
+
+        $value = AttributeValue::create([
+            'attribute_id' => $request->attribute_id,
+            'value' => $request->value,
+            'color_code' => $request->color_code,
+            'is_default' => $request->is_default ?? false,
+        ]);
+
+        return response()->json(['success' => true, 'value' => $value]);
     }
 }

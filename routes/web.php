@@ -47,7 +47,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/categories/bulk-action', [CategoryController::class, 'bulkAction'])->name('categories.bulk-action');
         Route::get('/categories/subcategories', [CategoryController::class, 'getSubcategories'])->name('categories.subcategories');
         Route::get('/categories/{category}/subcategories', [CategoryController::class, 'getSubcategories'])
-    ->name('admin.categories.subcategories');
+            ->name('admin.categories.subcategories');
 
         // ==================== USERS ====================
         Route::resource('users', UserController::class);
@@ -131,7 +131,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Attributes
         Route::resource('attributes', AttributeController::class);
         Route::get('/attributes/by-category/{category}', [AttributeController::class, 'getByCategory'])
-    ->name('admin.attributes.by-category');
+            ->name('admin.attributes.by-category');
         Route::get('/attributes/{attribute}/analytics', [AttributeController::class, 'analytics'])->name('attributes.analytics');
         Route::post('/attributes/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('attributes.toggle-status');
 
@@ -142,27 +142,33 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/attribute-values/{value}', [AttributeValueController::class, 'destroy'])->name('attribute-values.destroy');
         Route::get('/attribute-values/export', [AttributeValueController::class, 'export'])->name('attributes.values.export');
 
-Route::prefix('attribute-values')->name('attribute-values.')->group(function () {
-    Route::get('/{value}', [AttributeValueController::class, 'show'])->name('show');
-    Route::get('/{value}/analytics', [AttributeValueController::class, 'analytics'])->name('analytics');
-    Route::put('/{value}', [AttributeValueController::class, 'update'])->name('update');
-    Route::delete('/{value}', [AttributeValueController::class, 'destroy'])->name('destroy');
-    Route::post('/{value}/toggle-default', [AttributeValueController::class, 'toggleDefault'])->name('toggle-default');
-    Route::post('/{value}/toggle-visibility', [AttributeValueController::class, 'toggleVisibility'])->name('toggle-visibility');
-    Route::post('/{value}/reorder', [AttributeValueController::class, 'reorder'])->name('reorder');
-});
-
-Route::resource('attribute-categories', AttributeCategoryController::class);
-    Route::post('/attribute-categories/{category}/toggle-status', [AttributeCategoryController::class, 'toggleStatus'])->name('attribute-categories.toggle-status');
-    Route::post('/attribute-categories/reorder', [AttributeCategoryController::class, 'reorder'])->name('attribute-categories.reorder');
-    Route::get('/attribute-categories/{category}/children', [AttributeCategoryController::class, 'getChildren'])->name('attribute-categories.children');
+        Route::prefix('attribute-values')->name('attribute-values.')->group(function () {
+            Route::get('/{value}', [AttributeValueController::class, 'show'])->name('show');
+            Route::get('/{value}/analytics', [AttributeValueController::class, 'analytics'])->name('analytics');
+            Route::put('/{value}', [AttributeValueController::class, 'update'])->name('update');
+            Route::delete('/{value}', [AttributeValueController::class, 'destroy'])->name('destroy');
+            Route::post('/{value}/toggle-default', [AttributeValueController::class, 'toggleDefault'])->name('toggle-default');
+            Route::post('/{value}/toggle-visibility', [AttributeValueController::class, 'toggleVisibility'])->name('toggle-visibility');
+            Route::post('/{value}/reorder', [AttributeValueController::class, 'reorder'])->name('reorder');
+        });
 
 
-    Route::post('/products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
-    Route::post('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
-    Route::post('/products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
-    Route::get('/products/{product}/analytics', [ProductController::class, 'analytics'])->name('products.analytics');
-    Route::resource('products', ProductController::class);
+
+
+        Route::post('/products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
+        Route::post('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
+        Route::post('/products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
+        Route::get('/products/{product}/analytics', [ProductController::class, 'analytics'])->name('products.analytics');
+        Route::get('/products/get-fresh-data', [ProductController::class, 'getFreshData'])->name('products.get-fresh-data');
+        Route::resource('products', ProductController::class);
+
+        Route::post('/colors/quick-store', [ColorController::class, 'quickStore'])->name('colors.quick-store');
+        Route::post('/sizes/quick-store', [SizeController::class, 'quickStore'])->name('sizes.quick-store');
+        Route::post('/categories/quick-store', [CategoryController::class, 'quickStore'])->name('categories.quick-store');
+        Route::post('/attributes/quick-store', [AttributeController::class, 'quickStore'])->name('attributes.quick-store');
+        Route::post('/attribute-values/quick-store', [AttributeValueController::class, 'quickStore'])->name('attribute-values.quick-store');
+
+
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });
