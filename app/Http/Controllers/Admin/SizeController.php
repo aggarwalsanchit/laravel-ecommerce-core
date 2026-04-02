@@ -380,4 +380,31 @@ class SizeController extends Controller implements HasMiddleware
             Storage::disk('public')->delete($path);
         }
     }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:sizes,name',
+            'code' => 'nullable|unique:sizes,code',
+        ]);
+
+        $size = Size::create([
+            'name' => $request->name,
+            'code' => $request->code,
+            'slug' => Str::slug($request->name),
+            'status' => $request->status ?? true,
+        ]);
+
+        // Get updated sizes list
+        $sizes = Size::where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'success' => true,
+            'size' => $size,
+            'sizes' => $sizes,
+            'message' => 'Size added successfully'
+        ]);
+    }
 }

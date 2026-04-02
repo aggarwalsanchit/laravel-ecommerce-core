@@ -98,7 +98,7 @@ class CategoryController extends Controller implements HasMiddleware
         ];
 
         if ($request->ajax()) {
-            $table = view('admin.categories.partials.categories-table', compact('categories'))->render();
+            $table = view('admin.pages.categories.partials.categories-table', compact('categories'))->render();
             $pagination = $categories->appends($request->query())->links('pagination::bootstrap-5')->render();
 
             return response()->json([
@@ -390,6 +390,18 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
+    public function getSubcategories($categoryId)
+    {
+        $subcategories = Category::where('parent_id', $categoryId)
+            ->where('status', true)
+            ->orderBy('order')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'subcategories' => $subcategories
+        ]);
+    }
+
     /**
      * Toggle category status.
      */
@@ -551,5 +563,60 @@ class CategoryController extends Controller implements HasMiddleware
         if ($path && Storage::disk('public')->exists($path)) {
             Storage::disk('public')->delete($path);
         }
+    }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:categories,name',
+            'parent_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $category = Category::create([
+            'name' => $request->name,
+            'parent_id' => $request->parent_id,
+            'slug' => Str::slug($request->name),
+            'status' => $request->status ?? true,
+        ]);
+
+        // Get the updated list of categories for dropdown
+        $allCategories = Category::where('status', true)
+            ->orderBy('name')
+            ->get();
+
+        // Build hierarchical dropdown options
+        $dropdownOptions = $this->buildCategoryDropdown($allCategories);
+
+        // Get main categories for main dropdown
+        $mainCategories = Category::whereNull('parent_id')
+            ->where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'success' => true,
+            'category' => $category,
+            'main_categories' => $mainCategories,
+            'all_categories' => $dropdownOptions,
+            'message' => 'Category added successfully'
+        ]);
+    }
+
+    private function buildCategoryDropdown($categories, $parentId = null, $depth = 0)
+    {
+        $options = [];
+        foreach ($categories as $category) {
+            if ($category->parent_id == $parentId) {
+                $prefix = str_repeat('— ', $depth);
+                $options[] = [
+                    'id' => $category->id,
+                    'name' => $prefix . $category->name,
+                    'depth' => $depth
+                ];
+                $children = $this->buildCategoryDropdown($categories, $category->id, $depth + 1);
+                $options = array_merge($options, $children);
+            }
+        }
+        return $options;
     }
 }

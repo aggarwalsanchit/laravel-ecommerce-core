@@ -264,4 +264,43 @@ class AttributeController extends Controller implements HasMiddleware
             default => 30
         };
     }
+
+    public function getByCategory($categoryId)
+    {
+        $attributes = Attribute::where(function ($q) use ($categoryId) {
+            $q->where('product_category_id', $categoryId)
+                ->orWhereNull('product_category_id');
+        })
+            ->where('status', true)
+            ->with('values')
+            ->orderBy('display_order')
+            ->get();
+
+        return response()->json([
+            'attributes' => $attributes
+        ]);
+    }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:attributes,name',
+            'type' => 'required|in:text,select,multiselect,color,size,number,checkbox,radio',
+            'unit' => 'nullable|string|max:50',
+        ]);
+
+        $attribute = Attribute::create([
+            'name' => $request->name,
+            'slug' => Str::slug($request->name),
+            'type' => $request->type,
+            'unit' => $request->unit,
+            'status' => $request->status ?? true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'attribute' => $attribute,
+            'message' => 'Attribute created successfully'
+        ]);
+    }
 }

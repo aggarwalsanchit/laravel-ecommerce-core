@@ -336,4 +336,33 @@ class ColorController extends Controller implements HasMiddleware
             'errors' => $errors
         ]);
     }
+
+    public function quickStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|unique:colors,name',
+            'code' => 'nullable|unique:colors,code',
+            'hex_code' => 'nullable',
+        ]);
+
+        $color = Color::create([
+            'name' => $request->name,
+            'code' => $request->code,
+            'slug' => Str::slug($request->name),
+            'hex_code' => $request->hex_code ?? '#000000',
+            'status' => $request->status ?? true,
+        ]);
+
+        // Get updated colors list
+        $colors = Color::where('status', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json([
+            'success' => true,
+            'color' => $color,
+            'colors' => $colors,
+            'message' => 'Color added successfully'
+        ]);
+    }
 }
