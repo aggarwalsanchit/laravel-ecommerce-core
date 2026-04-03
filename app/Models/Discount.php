@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Discount extends Model
 {
+    protected $table = 'discounts';
+
     protected $fillable = [
         'name',
         'code',
@@ -41,9 +43,13 @@ class Discount extends Model
         'free_shipping_only' => 'boolean',
         'discount_value' => 'decimal:2',
         'min_purchase_amount' => 'decimal:2',
+        'buy_quantity' => 'integer',
+        'get_quantity' => 'integer',
+        'max_usage_per_user' => 'integer',
+        'total_usage_limit' => 'integer',
+        'used_count' => 'integer',
     ];
 
-    // Check if discount is valid
     public function isValid($product = null, $user = null, $cartTotal = null)
     {
         if (!$this->status) return false;
@@ -56,12 +62,16 @@ class Discount extends Model
 
         if ($this->min_purchase_amount && $cartTotal && $cartTotal < $this->min_purchase_amount) return false;
 
+        if ($this->user_groups && !empty($this->user_groups) && $user) {
+            $userGroup = $user->group ?? 'regular';
+            if (!in_array($userGroup, $this->user_groups)) return false;
+        }
+
         if ($product && !$this->isProductEligible($product)) return false;
 
         return true;
     }
 
-    // Check if product is eligible - Uses dynamic custom attributes
     public function isProductEligible($product)
     {
         if ($this->target_type === 'all_products') {
@@ -92,16 +102,29 @@ class Discount extends Model
                 return !empty(array_intersect($productSizeIds, $this->target_ids));
 
             case 'custom_attributes':
-                // Get all custom attribute values for this product
-                $productAttributeValues = $product->customAttributes()->pluck('attribute_value_id')->toArray();
-                return !empty(array_intersect($productAttributeValues, $this->target_ids));
+                $targetConfig = $this->target_ids;
+                $attributeId = $targetConfig['attribute_id'] ?? null;
+                $attributeValueIds = $targetConfig['attribute_value_ids'] ?? [];
+
+                if (!$attributeId || empty($attributeValueIds)) {
+                    return false;
+                }
+
+                $productAttributeValues = $product->customAttributes()
+                    ->where('attribute_id', $attributeId)
+                    ->pluck('attribute_value_id')
+                    ->toArray();
+
+                return !empty(array_intersect($productAttributeValues, $attributeValueIds));
+
+            case 'clearance':
+                return $product->is_clearance || $product->clearance == true;
 
             default:
                 return false;
         }
     }
 
-    // Calculate discount amount
     public function calculateDiscount($price, $quantity = 1)
     {
         $subtotal = $price * $quantity;
@@ -114,11 +137,12 @@ class Discount extends Model
                 $discount = min($this->discount_value, $subtotal);
                 break;
             case 'buy_x_get_y':
-                $freeItems = floor($quantity / ($this->buy_quantity + $this->get_quantity)) * $this->get_quantity;
-                $discount = $freeItems * $price;
-                break;
-            case 'free_shipping':
-                $discount = 0;
+                if ($this->buy_quantity && $this->get_quantity) {
+                    $freeItems = floor($quantity / ($this->buy_quantity + $this->get_quantity)) * $this->get_quantity;
+                    $discount = $freeItems * $price;
+                } else {
+                    $discount = 0;
+                }
                 break;
             default:
                 $discount = 0;
@@ -127,7 +151,6 @@ class Discount extends Model
         return $discount;
     }
 
-    // Get discount info for product display
     public function getDiscountInfo($product, $quantity = 1)
     {
         $discountAmount = $this->calculateDiscount($product->price, $quantity);
@@ -143,7 +166,38 @@ class Discount extends Model
             'original_price' => $product->price,
             'final_price' => $finalPrice,
             'save_amount' => $discountAmount / $quantity,
-            'save_percentage' => $product->price > 0 ? round(($discountAmount / ($product->price * $quantity)) * 100, 2) : 0
+            'save_percentage' => $product->price > 0 ? round(($discountAmount / ($product->price * $quantity)) * 100, 2) : 0,
+            'badge_text' => $this->getBadgeText(),
+            'badge_color' => $this->getBadgeColor()
         ];
+    }
+
+    private function getBadgeText()
+    {
+        switch ($this->discount_type) {
+            case 'percentage':
+                return $this->discount_value . '% OFF';
+            case 'fixed_amount':
+                return '$' . number_format($this->discount_value, 0) . ' OFF';
+            case 'buy_x_get_y':
+                return 'Buy ' . $this->buy_quantity . ' Get ' . $this->get_quantity . ' Free';
+            case 'free_shipping':
+                return 'Free Shipping';
+            default:
+                return $this->name;
+        }
+    }
+
+    private function getBadgeColor()
+    {
+        if ($this->is_featured) return 'danger';
+        if ($this->discount_type === 'percentage') return 'warning';
+        if ($this->discount_type === 'free_shipping') return 'info';
+        return 'success';
+    }
+
+    public function incrementUsage()
+    {
+        $this->increment('used_count');
     }
 }

@@ -124,6 +124,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
         Route::post('/discounts/bulk-action', [DiscountController::class, 'bulkAction'])->name('discounts.bulk-action');
         Route::get('products/{product}/discounts', [DiscountController::class, 'getProductDiscounts'])->name('products.discounts');
+        Route::get('discounts/attribute-values/{attributeId}', [App\Http\Controllers\Admin\DiscountController::class, 'getAttributeValues'])
+            ->name('discounts.attribute-values');
         Route::resource('discounts', DiscountController::class);
 
         Route::resource('attribute-groups', AttributeGroupController::class);

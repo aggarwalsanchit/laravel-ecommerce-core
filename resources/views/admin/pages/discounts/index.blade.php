@@ -1,4 +1,4 @@
-{{-- resources/views/admin/pages/discounts/index.blade.php --}}
+{{-- resources/views/admin/discounts/index.blade.php --}}
 @extends('admin.layouts.app')
 
 @section('title', 'Discounts')
@@ -20,8 +20,8 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
@@ -29,7 +29,9 @@
                                     <th>Type</th>
                                     <th>Value</th>
                                     <th>Target</th>
-                                    <th>Dates</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Used</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -39,7 +41,7 @@
                                     <tr>
                                         <td>{{ $discount->id }}</td>
                                         <td>{{ $discount->name }}</td>
-                                        <td>{{ $discount->code }}</td>
+                                        <td><strong>{{ $discount->code }}</strong></td>
                                         <td>
                                             <span
                                                 class="badge bg-info">{{ str_replace('_', ' ', $discount->discount_type) }}</span>
@@ -60,23 +62,21 @@
                                                 class="badge bg-secondary">{{ str_replace('_', ' ', $discount->target_type) }}</span>
                                         </td>
                                         <td>
-                                            @if ($discount->start_date)
-                                                {{ \Carbon\Carbon::parse($discount->start_date)->format('Y-m-d') }}
-                                            @else
-                                                Any
-                                            @endif
-                                            →
-                                            @if ($discount->end_date)
-                                                {{ \Carbon\Carbon::parse($discount->end_date)->format('Y-m-d') }}
-                                            @else
-                                                Any
-                                            @endif
+                                            {{ $discount->start_date ? \Carbon\Carbon::parse($discount->start_date)->format('Y-m-d') : '-' }}
                                         </td>
                                         <td>
-                                            @if ($discount->status)
+                                            {{ $discount->end_date ? \Carbon\Carbon::parse($discount->end_date)->format('Y-m-d') : '-' }}
+                                        </td>
+                                        <td>
+                                            {{ $discount->used_count }} / {{ $discount->total_usage_limit ?? '∞' }}
+                                        </td>
+                                        <td>
+                                            @if ($discount->status && (!$discount->end_date || $discount->end_date >= now()))
                                                 <span class="badge bg-success">Active</span>
-                                            @else
+                                            @elseif(!$discount->status)
                                                 <span class="badge bg-danger">Inactive</span>
+                                            @else
+                                                <span class="badge bg-warning">Expired</span>
                                             @endif
                                         </td>
                                         <td>
@@ -92,7 +92,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">No discounts found. <a
+                                        <td colspan="11" class="text-center">No discounts found. <a
                                                 href="{{ route('admin.discounts.create') }}">Create one</a></td>
                                     </tr>
                                 @endforelse

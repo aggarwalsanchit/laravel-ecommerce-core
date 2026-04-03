@@ -26,27 +26,29 @@ return new class extends Migration
             ])->default('percentage');
 
             // Discount Value
-            $table->decimal('discount_value', 10, 2)->nullable(); // For percentage or fixed amount
-            $table->integer('buy_quantity')->nullable(); // For buy X get Y
-            $table->integer('get_quantity')->nullable(); // For buy X get Y
-            $table->boolean('free_shipping_only')->default(false); // For free shipping
+            $table->decimal('discount_value', 10, 2)->nullable();
+            $table->integer('buy_quantity')->nullable();
+            $table->integer('get_quantity')->nullable();
+            $table->boolean('free_shipping_only')->default(false);
 
-            // Target Type - What the discount applies to
+            // Target Type - Including Custom Attributes
             $table->enum('target_type', [
-                'all_products',           // Entire website
-                'categories',             // Specific categories
-                'subcategories',          // Specific subcategories
-                'products',               // Specific products
-                'colors',                 // Specific colors
-                'sizes',                  // Specific sizes
-                'user_groups',            // Specific user groups
-                'min_purchase',           // Minimum purchase amount
-                'first_purchase',         // First time customers
-                'holiday_special',        // Holiday special offers
-                'clearance'               // Clearance items
+                'all_products',
+                'products',
+                'categories',
+                'subcategories',
+                'colors',
+                'sizes',
+                'custom_attributes',  // New: For dynamic custom attributes
+                'user_groups',
+                'min_purchase',
+                'first_purchase',
+                'holiday_special',
+                'clearance'
             ])->default('all_products');
 
             // Target IDs (JSON for multiple IDs)
+            // For custom_attributes, store: {attribute_id: 1, attribute_value_ids: [1,2,3]}
             $table->json('target_ids')->nullable();
 
             // Conditions
@@ -62,10 +64,10 @@ return new class extends Migration
             // Status
             $table->boolean('status')->default(true);
             $table->boolean('is_featured')->default(false);
-            $table->boolean('stackable')->default(false); // Can combine with other discounts?
+            $table->boolean('stackable')->default(false);
 
             // User Groups
-            $table->json('user_groups')->nullable(); // e.g., ['new', 'vip', 'premium']
+            $table->json('user_groups')->nullable();
 
             $table->timestamps();
         });
