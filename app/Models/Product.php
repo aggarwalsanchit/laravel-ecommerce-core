@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
 use App\Services\DiscountService;
 
 class Product extends Model
@@ -297,5 +298,31 @@ class Product extends Model
     public function getFinalPriceAttribute()
     {
         return $this->discount_info['final_price'];
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function isOwnStoreProduct()
+    {
+        return $this->vendor && $this->vendor->vendor_type === 'own_store';
+    }
+
+    public function getVendorNameAttribute()
+    {
+        return $this->vendor ? $this->vendor->shop_name : 'Admin Store';
+    }
+
+    // Add global scope for vendors
+    protected static function booted()
+    {
+        static::addGlobalScope('vendor', function (Builder $builder) {
+            if (auth()->check() && auth()->user()->hasRole('Vendor')) {
+                $vendorId = auth()->user()->vendor->id;
+                $builder->where('vendor_id', $vendorId);
+            }
+        });
     }
 }

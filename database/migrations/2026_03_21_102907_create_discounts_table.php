@@ -39,7 +39,7 @@ return new class extends Migration
                 'subcategories',
                 'colors',
                 'sizes',
-                'custom_attributes',  // New: For dynamic custom attributes
+                'custom_attributes',
                 'user_groups',
                 'min_purchase',
                 'first_purchase',

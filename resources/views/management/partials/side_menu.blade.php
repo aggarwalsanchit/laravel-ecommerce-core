@@ -30,140 +30,148 @@
 
             <!--- Sidenav Menu -->
             <ul class="side-nav">
+                @if (Auth::guard('admin')->check())
+                    <li class="side-nav-item">
+                        <a href="{{ route('admin.dashboard') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
+                            <span class="menu-text"> Dashboard </span>
+                        </a>
+                    </li>
 
-                <li class="side-nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
-                        <span class="menu-text"> Dashboard </span>
-                    </a>
-                </li>
+                    <li class="side-nav-title mt-2">Apps & Pages</li>
 
-                <li class="side-nav-title mt-2">Apps & Pages</li>
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Users </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.users.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Users</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.permissions.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Permissions</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.roles.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Roles</span>
+                                    </a>
+                                </li>
 
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                        aria-controls="sidebarEcommerce" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
-                        <span class="menu-text"> Users </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="sidebarEcommerce">
-                        <ul class="sub-menu">
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.users.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Users</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.permissions.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Permissions</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.roles.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Roles</span>
-                                </a>
-                            </li>
+                            </ul>
+                        </div>
+                    </li>
+                @elseif(Auth::guard('vendor')->check())
+                    <li class="side-nav-item">
+                        <a href="{{ route('vendor.dashboard') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
+                            <span class="menu-text"> Dashboard </span>
+                        </a>
+                    </li>
 
-                        </ul>
-                    </div>
-                </li>
+                    <li class="side-nav-title mt-2">Apps & Pages</li>
 
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                        aria-controls="sidebarEcommerce" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
-                        <span class="menu-text"> Product Attributes </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="sidebarEcommerce">
-                        <ul class="sub-menu">
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.categories.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Categories</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.sizes.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Sizes</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.colors.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Colour</span>
-                                </a>
-                            </li>
-                            <!-- <li class="side-nav-item">
-                                <a href="{{ route('admin.fabrics.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Fabrics</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.occasions.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Occasions</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.collections.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Collections</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Seasons</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.brands.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Brands</span>
-                                </a>
-                            </li> -->
-                        </ul>
-                    </div>
-                </li>
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Users </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.users.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Users</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.permissions.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Permissions</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.roles.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Roles</span>
+                                    </a>
+                                </li>
 
-                <li class="side-nav-item">
-                    <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                        aria-controls="sidebarEcommerce" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
-                        <span class="menu-text"> Custom Attributes </span>
-                        <span class="menu-arrow"></span>
-                    </a>
-                    <div class="collapse" id="sidebarEcommerce">
-                        <ul class="sub-menu">
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Attributes</span>
-                                </a>
-                            </li>
-                            <li class="side-nav-item">
-                                <a href="{{ route('admin.attribute-groups.index') }}" class="side-nav-link">
-                                    <span class="menu-text">Attributes Groups</span>
-                                </a>
-                            </li>
+                            </ul>
+                        </div>
+                    </li>
 
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Product Attributes </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.categories.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Categories</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.sizes.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Sizes</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.colors.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Colour</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
 
-                        </ul>
-                    </div>
-                </li>
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Custom Attributes </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.attributes.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Add Attributes</span>
+                                    </a>
+                                </li>
+                                <li class="side-nav-item">
+                                    <a href="{{ route('vendor.attribute-groups.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Attributes Groups</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
 
+                    <li class="side-nav-item">
+                        <a href="{{ route('vendor.discounts.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
+                            <span class="menu-text"> Discount </span>
+                        </a>
+                    </li>
 
-
-
-                <li class="side-nav-item">
-                    <a href="{{ route('admin.discounts.index') }}" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
-                        <span class="menu-text"> Discount </span>
-                    </a>
-                </li>
-
-                <li class="side-nav-item">
-                    <a href="{{ route('admin.products.index') }}" class="side-nav-link">
-                        <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
-                        <span class="menu-text"> Products </span>
-                    </a>
-                </li>
-
+                    <li class="side-nav-item">
+                        <a href="{{ route('vendor.products.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
+                            <span class="menu-text"> Products </span>
+                        </a>
+                    </li>
+                @endif
                 <li class="side-nav-item">
                     <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
                         aria-controls="sidebarEcommerce" class="side-nav-link">

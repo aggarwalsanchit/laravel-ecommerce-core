@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    @include('admin.partials.head')
+    @include('management.partials.head')
 
     {{-- Page-specific CSS --}}
     @stack('styles')
@@ -14,10 +14,11 @@
         @yield('content')
     </main>
 
-    @include('admin.partials.scripts')
+    @include('management.partials.scripts')
 
     {{-- Global JS --}}
     @stack('scripts')
 
 </body>
+
 </html>

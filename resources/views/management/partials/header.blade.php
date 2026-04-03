@@ -471,7 +471,7 @@
                         <img src="assets/images/users/avatar-1.jpg" width="24"
                             class="rounded-circle me-lg-2 d-flex" alt="user-image">
                         <span class="d-lg-flex flex-column gap-1 d-none">
-                            {{ Auth::guard('admin')->user()->name }}
+
                         </span>
                         <i class="ti ti-chevron-down d-none d-lg-block align-middle ms-2"></i>
                     </a>

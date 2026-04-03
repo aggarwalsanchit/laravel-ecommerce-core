@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Vendor;
 
 return [
 
@@ -42,9 +43,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-         'admin' => [
+        'admin' => [
             'driver' => 'session',
             'provider' => 'admins',
+        ],
+        'vendor' => [
+            'driver' => 'session',
+            'provider' => 'vendors',
         ],
     ],
 
@@ -73,6 +78,10 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
+        ],
+        'vendors' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Vendor::class,
         ],
         // 'users' => [
         //     'driver' => 'database',
@@ -103,6 +112,18 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'admins' => [
+            'provider' => 'admins',
+            'table' => 'admin_password_reset_tokens',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        'vendors' => [
+            'provider' => 'vendors',
+            'table' => 'vendor_password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],
