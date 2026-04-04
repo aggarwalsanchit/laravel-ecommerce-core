@@ -16,7 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'admin.guest' => \App\Http\Middleware\RedirectIfAdminAuthenticated::class,
+            'vendor.guest' => \App\Http\Middleware\RedirectIfVendorAuthenticated::class,
             'admin.auth' => \App\Http\Middleware\AdminMiddleware::class,
+            'vendor.auth' => \App\Http\Middleware\VendorMiddleware::class,
+            'vendor.permission' => \App\Http\Middleware\VendorPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

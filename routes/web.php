@@ -20,6 +20,18 @@ use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Vendor\VendorRegistrationController;
+use App\Http\Controllers\Vendor\VendorManagementController;
+use App\Http\Controllers\Vendor\VendorAuthController;
+use App\Http\Controllers\Vendor\VendorDashboardController;
+use App\Http\Controllers\Vendor\VendorProductController;
+use App\Http\Controllers\Vendor\VendorOrderController;
+use App\Http\Controllers\Vendor\VendorStaffController;
+use App\Http\Controllers\Vendor\VendorProfileController;
+use App\Http\Controllers\Vendor\VendorSettingsController;
+use App\Http\Controllers\Vendor\VendorUserController;
+use App\Http\Controllers\Vendor\VendorRoleController;
+use App\Http\Controllers\Vendor\VendorPermissionController;
 
 
 Route::get('/', function () {
@@ -74,6 +86,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('password');
         });
 
+        // Admin Vendor Management Routes
+        Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
+            Route::get('/vendors', [VendorManagementController::class, 'index'])->name('vendors.index');
+            Route::get('/vendors/{id}', [VendorManagementController::class, 'show'])->name('vendors.show');
+            Route::post('/vendors/{id}/approve', [VendorManagementController::class, 'approve'])->name('vendors.approve');
+            Route::post('/vendors/{id}/reject', [VendorManagementController::class, 'reject'])->name('vendors.reject');
+            Route::post('/vendors/{id}/toggle-status', [VendorManagementController::class, 'toggleStatus'])->name('vendors.toggle-status');
+            Route::post('/vendors/create-own-store', [VendorManagementController::class, 'createOwnStore'])->name('vendors.create-own-store');
+        });
+
 
         Route::get('/sizes/analytics', [SizeController::class, 'analytics'])->name('sizes.analytics');
         Route::post('/sizes/{size}/toggle-status', [SizeController::class, 'toggleStatus'])->name('sizes.toggle-status');
@@ -123,6 +145,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
         Route::post('/discounts/bulk-action', [DiscountController::class, 'bulkAction'])->name('discounts.bulk-action');
+        Route::get('products/{product}/discounts', [DiscountController::class, 'getProductDiscounts'])->name('products.discounts');
+        Route::get('discounts/attribute-values/{attributeId}', [App\Http\Controllers\Admin\DiscountController::class, 'getAttributeValues'])
+            ->name('discounts.attribute-values');
         Route::resource('discounts', DiscountController::class);
 
         Route::resource('attribute-groups', AttributeGroupController::class);
@@ -168,8 +193,97 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/attributes/quick-store', [AttributeController::class, 'quickStore'])->name('attributes.quick-store');
         Route::post('/attribute-values/quick-store', [AttributeValueController::class, 'quickStore'])->name('attribute-values.quick-store');
 
+        //  Route::resource('discounts', App\Http\Controllers\Admin\DiscountController::class);
 
 
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    });
+});
+
+
+
+Route::prefix('marketplace')->name('vendor.')->group(function () {
+
+    // Guest Routes (Not logged in as vendor)
+    Route::middleware('vendor.guest')->group(function () {
+        Route::get('/become-seller', [VendorAuthController::class, 'showRegistrationForm'])->name('register');
+        Route::post('/register', [VendorAuthController::class, 'register'])->name('register.submit');
+        Route::get('/', [VendorAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [VendorAuthController::class, 'login'])->name('login.submit');
+        Route::get('/forgot-password', [VendorAuthController::class, 'showForgotForm'])->name('password.request');
+        Route::post('/forgot-password', [VendorAuthController::class, 'sendResetLink'])->name('password.email');
+    });
+
+    // Authenticated Vendor Routes
+    Route::middleware('vendor.auth')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [VendorDashboardController::class, 'index'])->name('dashboard');
+
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [VendorProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [VendorProfileController::class, 'updateProfile'])->name('update');
+            Route::post('/avatar', [VendorProfileController::class, 'uploadAvatar'])->name('avatar');
+            Route::delete('/avatar', [VendorProfileController::class, 'deleteAvatar'])->name('avatar.delete');
+            Route::post('/change-password', [VendorProfileController::class, 'changePassword'])->name('password');
+        });
+
+        // ==================== USERS ====================
+        Route::resource('users', VendorUserController::class);
+        Route::post('/users/{user}/activate', [VendorUserController::class, 'activate'])->name('users.activate');
+        Route::post('/users/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('/users/bulk-action', [VendorUserController::class, 'bulkAction'])->name('users.bulk-action');
+
+        // ==================== ROLES ====================
+        Route::resource('roles', VendorRoleController::class);
+        Route::get('/roles/{role}/assign-permissions', [VendorRoleController::class, 'assignPermissions'])->name('roles.assign-permissions');
+        Route::post('/roles/{role}/sync-permissions', [VendorRoleController::class, 'syncPermissions'])->name('roles.sync-permissions');
+        Route::post('/roles/bulk-action', [VendorRoleController::class, 'bulkAction'])->name('roles.bulk-action');
+
+        // ==================== PERMISSIONS ====================
+        Route::resource('permissions', VendorPermissionController::class);
+        Route::post('/permissions/bulk-action', [VendorPermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
+
+
+
+
+
+
+
+
+        Route::get('vendor-profile', [VendorProfileController::class, 'showCompleteForm'])->name('complete-profile');
+        Route::get('/orders', [VendorOrderController::class, 'index'])->name('orders');
+
+        Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
+
+        // Profile Management
+
+
+        // Shop Settings
+        Route::get('/settings', [VendorSettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [VendorSettingsController::class, 'update'])->name('settings.update');
+
+        // Product Management
+        Route::resource('products', VendorProductController::class);
+        Route::post('/products/{product}/toggle-status', [VendorProductController::class, 'toggleStatus'])->name('products.toggle-status');
+        Route::post('/products/bulk-action', [VendorProductController::class, 'bulkAction'])->name('products.bulk-action');
+
+        // Order Management
+        Route::get('/products', [VendorOrderController::class, 'index'])->name('products');
+        Route::get('/orders/{order}', [VendorOrderController::class, 'show'])->name('orders.show');
+        Route::post('/orders/{order}/update-status', [VendorOrderController::class, 'updateStatus'])->name('orders.update-status');
+
+        // Staff Management (for vendors with multiple users)
+        Route::resource('staff', VendorStaffController::class);
+        Route::post('/staff/{staff}/toggle-status', [VendorStaffController::class, 'toggleStatus'])->name('staff.toggle-status');
+
+        // Reports
+        Route::get('/reports/sales', [VendorDashboardController::class, 'salesReport'])->name('reports.sales');
+        Route::get('/reports/products', [VendorDashboardController::class, 'productReport'])->name('reports.products');
+
+        // Analytics
+        Route::get('/analytics', [VendorDashboardController::class, 'analytics'])->name('analytics');
+
+        // Payouts
+        Route::get('/payouts', [VendorDashboardController::class, 'payouts'])->name('payouts');
     });
 });
