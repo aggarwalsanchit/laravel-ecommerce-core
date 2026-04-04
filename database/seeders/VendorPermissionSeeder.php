@@ -21,6 +21,7 @@ class VendorPermissionSeeder extends Seeder
             'change_password',
             'upload_avatar',
             'complete_profile',
+            'view_activity_logs',
 
             // Full permissions (for approved vendors)
             'view_products',
@@ -51,6 +52,7 @@ class VendorPermissionSeeder extends Seeder
             'change_password',
             'upload_avatar',
             'complete_profile',
+            'view_activity_logs'
         ]);
 
         $this->command->info('========================================');

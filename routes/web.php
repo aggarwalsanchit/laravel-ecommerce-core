@@ -32,6 +32,7 @@ use App\Http\Controllers\Vendor\VendorSettingsController;
 use App\Http\Controllers\Vendor\VendorUserController;
 use App\Http\Controllers\Vendor\VendorRoleController;
 use App\Http\Controllers\Vendor\VendorPermissionController;
+use App\Http\Controllers\Vendor\VendorActivityLogController;
 
 
 Route::get('/', function () {
@@ -218,6 +219,10 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
     Route::middleware('vendor.auth')->group(function () {
         // Dashboard
         Route::get('/dashboard', [VendorDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('activity-logs', [VendorActivityLogController::class, 'index'])->name('activity-logs');
+        Route::get('activity-logs/{id}', [VendorActivityLogController::class, 'show'])->name('activity-logs.show');
+        Route::get('activity-logs/export/csv', [VendorActivityLogController::class, 'export'])->name('activity-logs.export');
 
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [VendorProfileController::class, 'edit'])->name('edit');

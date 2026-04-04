@@ -492,6 +492,10 @@
                                 <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
                                 <span class="align-middle">Vendor Profile</span>
                             </a>
+                            <a href="{{ route('vendor.activity-logs') }}" class="dropdown-item">
+                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                <span class="align-middle">Vendor Activity Logs</span>
+                            </a>
                         @endif
 
                         <!-- item-->
