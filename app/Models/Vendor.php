@@ -9,11 +9,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\VendorPermissionTrait;
 
 class Vendor extends Authenticatable
 {
 
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, VendorPermissionTrait;
 
     protected $guard = 'vendor';
 
@@ -181,5 +182,16 @@ class Vendor extends Authenticatable
     public function getBannerUrlAttribute()
     {
         return $this->shop_banner ? Storage::url($this->shop_banner) : null;
+    }
+
+    public function isStoreOwner()
+    {
+        return $this->hasRole('store_owner');
+    }
+
+    // Helper method to check if vendor can manage staff
+    public function canManageStaff()
+    {
+        return $this->hasPermissionTo('manage_staff', 'vendor');
     }
 }

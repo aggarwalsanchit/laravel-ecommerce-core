@@ -482,10 +482,17 @@
                         </div>
 
                         <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item">
-                            <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
-                            <span class="align-middle">My Account</span>
-                        </a>
+                        @if (Auth::guard('admin')->check())
+                            <a href="javascript:void(0);" class="dropdown-item">
+                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                <span class="align-middle">My Account</span>
+                            </a>
+                        @elseif(Auth::guard('vendor')->check())
+                            <a href="{{ route('vendor.complete-profile') }}" class="dropdown-item">
+                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                <span class="align-middle">Vendor Profile</span>
+                            </a>
+                        @endif
 
                         <!-- item-->
                         {{-- <a href="javascript:void(0);" class="dropdown-item">
@@ -514,13 +521,23 @@
                         </a>
 
                         <!-- item-->
-                        <form method="POST" action="{{ route('admin.logout') }}" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="dropdown-item active fw-semibold text-danger">
-                                <i class="ti ti-logout me-1 fs-17 align-middle"></i>
-                                <span class="align-middle">Sign Out</span>
-                            </button>
-                        </form>
+                        @if (Auth::guard('admin')->check())
+                            <form method="POST" action="{{ route('admin.logout') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="dropdown-item active fw-semibold text-danger">
+                                    <i class="ti ti-logout me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">Sign Out</span>
+                                </button>
+                            </form>
+                        @elseif(Auth::guard('vendor')->check())
+                            <form method="POST" action="{{ route('vendor.logout') }}" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="dropdown-item active fw-semibold text-danger">
+                                    <i class="ti ti-logout me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">Sign Out</span>
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>

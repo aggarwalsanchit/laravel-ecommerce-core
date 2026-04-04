@@ -69,45 +69,48 @@
                         </div>
                     </li>
                 @elseif(Auth::guard('vendor')->check())
-                    <li class="side-nav-item">
-                        <a href="{{ route('vendor.dashboard') }}" class="side-nav-link">
-                            <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
-                            <span class="menu-text"> Dashboard </span>
-                        </a>
-                    </li>
-
+                    @php $vendor = auth()->guard('vendor')->user(); @endphp
+                    @if ($vendor->can('view_dashboard'))
+                        <li class="side-nav-item">
+                            <a href="{{ route('vendor.dashboard') }}"
+                                class="side-nav-link {{ request()->routeIs('vendor.dashboard') ? 'active' : '' }}">
+                                <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
+                                <span class="menu-text"> Dashboard </span>
+                            </a>
+                        </li>
+                    @endif
                     <li class="side-nav-title mt-2">Apps & Pages</li>
+                    @if ($vendor->can('view_users'))
+                        <li class="side-nav-item">
+                            <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                                aria-controls="sidebarEcommerce" class="side-nav-link">
+                                <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                                <span class="menu-text"> Users </span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <div class="collapse" id="sidebarEcommerce">
+                                <ul class="sub-menu">
+                                    <li class="side-nav-item">
+                                        <a href="{{ route('vendor.users.index') }}" class="side-nav-link">
+                                            <span class="menu-text">Users</span>
+                                        </a>
+                                    </li>
+                                    <li class="side-nav-item">
+                                        <a href="{{ route('vendor.permissions.index') }}" class="side-nav-link">
+                                            <span class="menu-text">Permissions</span>
+                                        </a>
+                                    </li>
+                                    <li class="side-nav-item">
+                                        <a href="{{ route('vendor.roles.index') }}" class="side-nav-link">
+                                            <span class="menu-text">Roles</span>
+                                        </a>
+                                    </li>
 
-                    <li class="side-nav-item">
-                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                            aria-controls="sidebarEcommerce" class="side-nav-link">
-                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
-                            <span class="menu-text"> Users </span>
-                            <span class="menu-arrow"></span>
-                        </a>
-                        <div class="collapse" id="sidebarEcommerce">
-                            <ul class="sub-menu">
-                                <li class="side-nav-item">
-                                    <a href="{{ route('vendor.users.index') }}" class="side-nav-link">
-                                        <span class="menu-text">Users</span>
-                                    </a>
-                                </li>
-                                <li class="side-nav-item">
-                                    <a href="{{ route('vendor.permissions.index') }}" class="side-nav-link">
-                                        <span class="menu-text">Permissions</span>
-                                    </a>
-                                </li>
-                                <li class="side-nav-item">
-                                    <a href="{{ route('vendor.roles.index') }}" class="side-nav-link">
-                                        <span class="menu-text">Roles</span>
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-                    </li>
-
-                    <li class="side-nav-item">
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                    {{-- <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
                             aria-controls="sidebarEcommerce" class="side-nav-link">
                             <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
@@ -170,7 +173,7 @@
                             <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
                             <span class="menu-text"> Products </span>
                         </a>
-                    </li>
+                    </li> --}}
                 @endif
                 <li class="side-nav-item">
                     <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"

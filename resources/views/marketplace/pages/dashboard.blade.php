@@ -20,11 +20,13 @@
                         </div>
                         <div class="mt-3 mt-sm-0">
                             <div class="row g-2 mb-0 align-items-center">
-                                <div class="col-auto">
-                                    <a href="{{ route('vendor.products.create') }}" class="btn btn-primary">
-                                        <i class="ti ti-plus me-1"></i> Add New Product
-                                    </a>
-                                </div>
+                                @if ($vendor->can('create_products'))
+                                    <div class="col-auto">
+                                        <a href="{{ route('vendor.products.create') }}" class="btn btn-primary">
+                                            <i class="ti ti-plus me-1"></i> Add New Product
+                                        </a>
+                                    </div>
+                                @endif
                                 <div class="col-sm-auto">
                                     <div class="input-group">
                                         <input type="text" class="form-control" data-provider="flatpickr"
@@ -49,8 +51,10 @@
                             <i class="ti ti-alert-circle me-2"></i>
                             <strong>Account Pending Verification!</strong> Your store is under review. Complete your profile
                             to get verified.
-                            <a href="{{ route('vendor.complete-profile') }}" class="alert-link">Click here to complete
-                                profile</a>
+                            @if ($vendor->can('complete_profile'))
+                                <a href="{{ route('vendor.complete-profile') }}" class="alert-link">Click here to complete
+                                    profile</a>
+                            @endif
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     </div>
@@ -242,7 +246,9 @@
                     <div class="card">
                         <div class="card-header d-flex flex-wrap align-items-center gap-2 border-bottom border-dashed">
                             <h4 class="header-title me-auto">Recent Orders</h4>
-                            <a href="{{ route('vendor.orders') }}" class="btn btn-sm btn-primary">View All Orders</a>
+                            @if ($vendor->can('view_orders'))
+                                <a href="{{ route('vendor.orders') }}" class="btn btn-sm btn-primary">View All Orders</a>
+                            @endif
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -306,7 +312,10 @@
                     <div class="card">
                         <div class="card-header d-flex flex-wrap align-items-center gap-2 border-bottom border-dashed">
                             <h4 class="header-title me-auto">Top Selling Products</h4>
-                            <a href="{{ route('vendor.products') }}" class="btn btn-sm btn-secondary">Manage Products</a>
+                            @if ($vendor->can('view_products'))
+                                <a href="{{ route('vendor.products') }}" class="btn btn-sm btn-secondary">Manage
+                                    Products</a>
+                            @endif
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -346,9 +355,12 @@
                                             <tr>
                                                 <td colspan="5" class="text-center py-4">
                                                     <i class="ti ti-package-off fs-1 text-muted"></i>
-                                                    <p class="mt-2">No products yet. <a
-                                                            href="{{ route('vendor.products.create') }}">Add your first
-                                                            product</a></p>
+                                                    <p class="mt-2">No products yet.
+                                                        @if ($vendor->can('create_products'))
+                                                            <a href="{{ route('vendor.products.create') }}">Add your first
+                                                                product</a>
+                                                        @endif
+                                                    </p>
                                                 </td>
                                             </tr>
                                         @endforelse
@@ -416,12 +428,16 @@
                             <hr>
 
                             <div class="d-grid gap-2">
-                                <a href="{{ route('vendor.complete-profile') }}" class="btn btn-outline-primary">
-                                    <i class="ti ti-edit me-1"></i> Edit Store Profile
-                                </a>
-                                <a href="{{ route('vendor.products.create') }}" class="btn btn-outline-success">
-                                    <i class="ti ti-plus me-1"></i> Add New Product
-                                </a>
+                                @if ($vendor->can('complete_profile'))
+                                    <a href="{{ route('vendor.complete-profile') }}" class="btn btn-outline-primary">
+                                        <i class="ti ti-edit me-1"></i> Edit Store Profile
+                                    </a>
+                                @endif
+                                @if ($vendor->can('create_products'))
+                                    <a href="{{ route('vendor.products.create') }}" class="btn btn-outline-success">
+                                        <i class="ti ti-plus me-1"></i> Add New Product
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     </div>

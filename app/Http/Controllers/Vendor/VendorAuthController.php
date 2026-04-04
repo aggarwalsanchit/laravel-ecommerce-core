@@ -64,38 +64,45 @@ class VendorAuthController extends Controller
 
         DB::beginTransaction();
 
-        try {
-            $vendor = Vendor::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'phone' => $validated['phone'],
-                'shop_name' => $validated['shop_name'],
-                'shop_slug' => $validated['shop_slug'] ?? Str::slug($validated['shop_name']),
-                'shop_description' => $validated['shop_description'],
-                'shop_email' => $validated['shop_email'],
-                'shop_phone' => $validated['shop_phone'],
-                'business_type' => $validated['business_type'],
-                'shop_address' => $validated['shop_address'],
-                'shop_city' => $validated['shop_city'],
-                'shop_state' => $validated['shop_state'],
-                'shop_country' => $validated['shop_country'],
-                'shop_postal_code' => $validated['shop_postal_code'],
-                'vendor_type' => 'third_party',
-                'account_status' => 'pending',
-                'verification_status' => 'pending',
-                'commission_rate' => 10,
-            ]);
+        // try {
+        $vendor = Vendor::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'phone' => $validated['phone'],
+            'shop_name' => $validated['shop_name'],
+            'shop_slug' => $validated['shop_slug'] ?? Str::slug($validated['shop_name']),
+            'shop_description' => $validated['shop_description'],
+            'shop_email' => $validated['shop_email'],
+            'shop_phone' => $validated['shop_phone'],
+            'business_type' => $validated['business_type'],
+            'shop_address' => $validated['shop_address'],
+            'shop_city' => $validated['shop_city'],
+            'shop_state' => $validated['shop_state'],
+            'shop_country' => $validated['shop_country'],
+            'shop_postal_code' => $validated['shop_postal_code'],
+            'vendor_type' => 'third_party',
+            'account_status' => 'pending',
+            'verification_status' => 'pending',
+            'commission_rate' => 10,
+            'last_login_at' => now()
+        ]);
 
-            DB::commit();
+        DB::commit();
 
-            // Redirect to login page with success message
-            return redirect()->route('vendor.login')
-                ->with('success', 'Registration successful! Please login after admin approval.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Registration failed: ' . $e->getMessage())->withInput();
-        }
+        // Assign store_owner role to the vendor
+        $vendor->assignRole('store_owner');
+
+        // Auto login after registration
+        Auth::guard('vendor')->login($vendor);
+
+        // Redirect to login page with success message
+        return redirect()->route('vendor.dashboard')
+            ->with('success', 'Registration successful! Please login after admin approval.');
+        // } catch (\Exception $e) {
+        //     DB::rollBack();
+        //     return back()->with('error', 'Registration failed: ' . $e->getMessage())->withInput();
+        // }
     }
 
     public function login(Request $request)
@@ -161,6 +168,6 @@ class VendorAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('marketplace.login');
+        return redirect()->route('vendor.login');
     }
 }

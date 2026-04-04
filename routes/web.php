@@ -29,6 +29,9 @@ use App\Http\Controllers\Vendor\VendorOrderController;
 use App\Http\Controllers\Vendor\VendorStaffController;
 use App\Http\Controllers\Vendor\VendorProfileController;
 use App\Http\Controllers\Vendor\VendorSettingsController;
+use App\Http\Controllers\Vendor\VendorUserController;
+use App\Http\Controllers\Vendor\VendorRoleController;
+use App\Http\Controllers\Vendor\VendorPermissionController;
 
 
 Route::get('/', function () {
@@ -215,15 +218,45 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
     Route::middleware('vendor.auth')->group(function () {
         // Dashboard
         Route::get('/dashboard', [VendorDashboardController::class, 'index'])->name('dashboard');
-        Route::get('complete-profile', [VendorProfileController::class, 'showCompleteForm'])->name('complete-profile');
+
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [VendorProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [VendorProfileController::class, 'updateProfile'])->name('update');
+            Route::post('/avatar', [VendorProfileController::class, 'uploadAvatar'])->name('avatar');
+            Route::delete('/avatar', [VendorProfileController::class, 'deleteAvatar'])->name('avatar.delete');
+            Route::post('/change-password', [VendorProfileController::class, 'changePassword'])->name('password');
+        });
+
+        // ==================== USERS ====================
+        Route::resource('users', VendorUserController::class);
+        Route::post('/users/{user}/activate', [VendorUserController::class, 'activate'])->name('users.activate');
+        Route::post('/users/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('/users/bulk-action', [VendorUserController::class, 'bulkAction'])->name('users.bulk-action');
+
+        // ==================== ROLES ====================
+        Route::resource('roles', VendorRoleController::class);
+        Route::get('/roles/{role}/assign-permissions', [VendorRoleController::class, 'assignPermissions'])->name('roles.assign-permissions');
+        Route::post('/roles/{role}/sync-permissions', [VendorRoleController::class, 'syncPermissions'])->name('roles.sync-permissions');
+        Route::post('/roles/bulk-action', [VendorRoleController::class, 'bulkAction'])->name('roles.bulk-action');
+
+        // ==================== PERMISSIONS ====================
+        Route::resource('permissions', VendorPermissionController::class);
+        Route::post('/permissions/bulk-action', [VendorPermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
+
+
+
+
+
+
+
+
+        Route::get('vendor-profile', [VendorProfileController::class, 'showCompleteForm'])->name('complete-profile');
         Route::get('/orders', [VendorOrderController::class, 'index'])->name('orders');
 
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');
 
         // Profile Management
-        Route::get('/profile', [VendorProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/profile', [VendorProfileController::class, 'update'])->name('profile.update');
-        Route::post('/profile/avatar', [VendorProfileController::class, 'uploadAvatar'])->name('profile.avatar');
+
 
         // Shop Settings
         Route::get('/settings', [VendorSettingsController::class, 'edit'])->name('settings.edit');
