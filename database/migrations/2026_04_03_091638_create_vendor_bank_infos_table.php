@@ -30,10 +30,6 @@ return new class extends Migration
             $table->string('stripe_account_id')->nullable();
             $table->string('razorpay_account_id')->nullable();
 
-            // Documents
-            $table->string('cancelled_cheque')->nullable();
-            $table->string('bank_statement')->nullable();
-
             // Verification
             $table->enum('verification_status', ['pending', 'verified', 'rejected'])->default('pending');
             $table->timestamp('verified_at')->nullable();

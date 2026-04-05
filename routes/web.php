@@ -20,7 +20,7 @@ use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Vendor\VendorRegistrationController;
+use App\Http\Controllers\Vendor\VendorApprovedController;
 use App\Http\Controllers\Vendor\VendorManagementController;
 use App\Http\Controllers\Vendor\VendorAuthController;
 use App\Http\Controllers\Vendor\VendorDashboardController;
@@ -219,25 +219,27 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
     Route::middleware('vendor.auth')->group(function () {
         // Dashboard
         Route::get('/dashboard', [VendorDashboardController::class, 'index'])->name('dashboard');
+        Route::get('complete-profile', [VendorApprovedController::class, 'showCompleteForm'])->name('complete-profile');
+        Route::post('complete-profile', [VendorApprovedController::class, 'saveTab'])->name('profile.save-tab');
 
         Route::get('activity-logs', [VendorActivityLogController::class, 'index'])->name('activity-logs');
         Route::get('activity-logs/{id}', [VendorActivityLogController::class, 'show'])->name('activity-logs.show');
         Route::get('activity-logs/export/csv', [VendorActivityLogController::class, 'export'])->name('activity-logs.export');
 
         Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [VendorProfileController::class, 'edit'])->name('edit');
-            Route::put('/', [VendorProfileController::class, 'updateProfile'])->name('update');
-            Route::post('/avatar', [VendorProfileController::class, 'uploadAvatar'])->name('avatar');
-            Route::delete('/avatar', [VendorProfileController::class, 'deleteAvatar'])->name('avatar.delete');
-            Route::post('/change-password', [VendorProfileController::class, 'changePassword'])->name('password');
+            Route::get('/edit', [VendorProfileController::class, 'edit'])->name('edit');
+            Route::put('update', [VendorProfileController::class, 'update'])->name('update');
+            Route::get('/change-password', [VendorProfileController::class, 'changePassword'])->name('change-password');
+            Route::post('/update-password', [VendorProfileController::class, 'updatePassword'])->name('update-password');
         });
 
         // ==================== USERS ====================
-        Route::resource('users', VendorUserController::class);
-        Route::post('/users/{user}/activate', [VendorUserController::class, 'activate'])->name('users.activate');
-        Route::post('/users/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('users.deactivate');
-        Route::post('/users/bulk-action', [VendorUserController::class, 'bulkAction'])->name('users.bulk-action');
-
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::resource('/', VendorUserController::class);
+            Route::post('/{user}/activate', [VendorUserController::class, 'activate'])->name('activate');
+            Route::post('/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('deactivate');
+            Route::post('/bulk-action', [VendorUserController::class, 'bulkAction'])->name('bulk-action');
+        });
         // ==================== ROLES ====================
         Route::resource('roles', VendorRoleController::class);
         Route::get('/roles/{role}/assign-permissions', [VendorRoleController::class, 'assignPermissions'])->name('roles.assign-permissions');
@@ -255,7 +257,7 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
 
 
 
-        Route::get('vendor-profile', [VendorProfileController::class, 'showCompleteForm'])->name('complete-profile');
+        
         Route::get('/orders', [VendorOrderController::class, 'index'])->name('orders');
 
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');

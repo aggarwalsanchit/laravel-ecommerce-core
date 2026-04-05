@@ -125,7 +125,7 @@ class VendorAuthController extends Controller
             $vendor = Auth::guard('vendor')->user();
 
             // Log login activity
-            $vendor->logLogin('Logged into vendor dashboard');
+            // $vendor->logLogin('Logged into vendor dashboard');
 
             // Check if suspended
             if ($vendor->account_status === 'suspended') {

@@ -80,6 +80,22 @@
                         </li>
                     @endif
                     <li class="side-nav-title mt-2">Apps & Pages</li>
+                    {{-- Complete Profile Menu (Show for pending vendors OR if profile not complete) --}}
+                    @if ($vendor->account_status === 'pending' || $vendor->profile_completed < 80)
+                        @if ($vendor->can('complete_profile'))
+                            <li class="side-nav-item">
+                                <a href="{{ route('vendor.complete-profile') }}"
+                                    class="side-nav-link {{ request()->routeIs('vendor.complete-profile') ? 'active' : '' }}">
+                                    <span class="menu-icon"><i class="ti ti-edit"></i></span>
+                                    <span class="menu-text">Complete Profile</span>
+                                    @if ($vendor->profile_completed > 0)
+                                        <span class="badge bg-warning ms-0">{{ $vendor->profile_completed }}%</span>
+                                    @endif
+                                </a>
+                            </li>
+                        @endif
+                    @endif
+                    
                     @if ($vendor->can('view_users'))
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
