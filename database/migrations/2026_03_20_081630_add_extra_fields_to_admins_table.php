@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::table('admins', function (Blueprint $table) {
             $table->text('address')->nullable()->after('phone');
             $table->int('city_id')->nullable()->after('address');
-            $table->int('state_id')->nullable()->after('city');
-            $table->int('country_id')->nullable()->after('state');
-            $table->string('postal_code')->nullable()->after('country');
+            $table->int('state_id')->nullable()->after('city_id');
+            $table->int('country_id')->nullable()->after('state_id');
+            $table->string('postal_code')->nullable()->after('country_id');
             $table->date('birth_date')->nullable()->after('postal_code');
         });
     }
