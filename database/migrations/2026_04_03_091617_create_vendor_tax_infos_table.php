@@ -17,11 +17,9 @@ return new class extends Migration
             $table->string('gst_number')->nullable()->unique();
             $table->enum('gst_type', ['regular', 'composition', 'casual', 'unregistered'])->nullable();
             $table->date('gst_registration_date')->nullable();
-            $table->string('gst_certificate')->nullable();
 
             // PAN Information (India)
             $table->string('pan_number')->nullable()->unique();
-            $table->string('pan_card_document')->nullable();
             $table->string('pan_holder_name')->nullable();
 
             // International Tax

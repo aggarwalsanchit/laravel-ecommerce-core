@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 
 class Admin extends Authenticatable
 {
@@ -16,10 +17,12 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        'phone_code',
         'phone',
         'address',
-        'city',
-        'country',
+        'city_id',
+        'state_id',
+        'country_id',
         'postal_code',
         'birth_date',
         'is_active',
@@ -38,12 +41,36 @@ class Admin extends Authenticatable
         'birth_date' => 'date',
     ];
 
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country_id');
+    }
+    
+    public function state()
+    {
+        return $this->belongsTo(State::class, 'state_id');
+    }
+    
+    public function city()
+    {
+        return $this->belongsTo(City::class, 'city_id');
+    }
+
+    public function getFullPhoneAttribute()
+    {
+        if ($this->phone_code && $this->phone) {
+            return $this->phone_code . $this->phone;
+        }
+        return $this->phone;
+    }
+
     // Accessor for avatar URL
     public function getAvatarUrlAttribute()
     {
-        return $this->avatar
-            ? asset('storage/avatars/' . $this->avatar)
-            : 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=0D6EFD&color=fff';
+        if ($this->avatar && Storage::disk('public')->exists($this->avatar)) {
+            return Storage::url($this->avatar);
+        }
+        return asset('dummy-avatar.jpg');
     }
 
     /**
@@ -104,5 +131,17 @@ class Admin extends Authenticatable
     public function getPermissionCount()
     {
         return $this->getAllPermissions()->count();
+    }
+
+    public function getFullAddressAttribute()
+    {
+        $parts = [];
+        if ($this->address) $parts[] = $this->address;
+        if ($this->city) $parts[] = $this->city->name;
+        if ($this->state) $parts[] = $this->state->name;
+        if ($this->country) $parts[] = $this->country->name;
+        if ($this->postal_code) $parts[] = $this->postal_code;
+        
+        return implode(', ', $parts);
     }
 }

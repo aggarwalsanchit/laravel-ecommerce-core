@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Middleware\PermissionMiddleware;
+use App\Traits\LogsVendorActivity;
 
 class VendorProfileController extends Controller
 {
+    use LogsVendorActivity;
     protected $imageCompressor;
 
     public function __construct(ImageCompressionService $imageCompressor)
@@ -333,6 +335,9 @@ class VendorProfileController extends Controller
             $vendor->load(['taxInfo', 'bankInfo', 'documents']);
             $completionPercentage = $this->calculateCompletion($vendor);
             $vendor->update(['profile_completed' => $completionPercentage]);
+
+            // Log profile update
+            $vendor->logUpdate('profile', $vendor, $oldValues, 'Updated store profile');
 
             DB::commit();
 

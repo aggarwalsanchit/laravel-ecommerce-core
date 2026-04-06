@@ -31,43 +31,141 @@
             <!--- Sidenav Menu -->
             <ul class="side-nav">
                 @if (Auth::guard('admin')->check())
+                @php $admin = auth()->guard('admin')->user(); @endphp
+                    @if ($admin->can('view dashboard'))
                     <li class="side-nav-item">
-                        <a href="{{ route('admin.dashboard') }}" class="side-nav-link">
+                        <a href="{{ route('admin.dashboard') }}" class="side-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                             <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
                             <span class="menu-text"> Dashboard </span>
                         </a>
                     </li>
+                    @endif
 
                     <li class="side-nav-title mt-2">Apps & Pages</li>
-
+                    @if ($admin->can('view users'))
                     <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            aria-controls="sidebarEcommerce" class="side-nav-link {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
                             <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
                             <span class="menu-text"> Users </span>
                             <span class="menu-arrow"></span>
                         </a>
                         <div class="collapse" id="sidebarEcommerce">
                             <ul class="sub-menu">
+                            @if ($admin->can('view users'))
                                 <li class="side-nav-item">
                                     <a href="{{ route('admin.users.index') }}" class="side-nav-link">
                                         <span class="menu-text">Users</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if ($admin->can('view permissions'))
                                 <li class="side-nav-item">
                                     <a href="{{ route('admin.permissions.index') }}" class="side-nav-link">
                                         <span class="menu-text">Permissions</span>
                                     </a>
                                 </li>
+                                @endif
+                                @if ($admin->can('view roles'))
                                 <li class="side-nav-item">
                                     <a href="{{ route('admin.roles.index') }}" class="side-nav-link">
                                         <span class="menu-text">Roles</span>
                                     </a>
                                 </li>
-
+@endif
                             </ul>
                         </div>
                     </li>
+                    @endif
+                    @if ($admin->can('view vendors'))
+                    <li class="side-nav-item">
+                        <a href="{{ route('admin.vendors.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-users"></i></span>
+                            <span class="menu-text"> Vendors </span>
+                        </a>
+                    </li>
+@endif
+@if ($admin->can('view attributes'))
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Product Attributes </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                            
+@if ($admin->can('view categories'))
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.categories.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Categories</span>
+                                    </a>
+                                </li>
+                                @endif
+@if ($admin->can('view sizes'))
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.sizes.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Sizes</span>
+                                    </a>
+                                </li>
+                                @endif
+@if ($admin->can('view colors'))
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.colors.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Colour</span>
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </div>
+                    </li>
+@endif
+@if ($admin->can('view attributegroups'))
+                    <li class="side-nav-item">
+                        <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
+                            aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
+                            <span class="menu-text"> Custom Attributes </span>
+                            <span class="menu-arrow"></span>
+                        </a>
+                        <div class="collapse" id="sidebarEcommerce">
+                            <ul class="sub-menu">
+                            
+@if ($admin->can('create attributegroups'))
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Add Attributes</span>
+                                    </a>
+                                </li>
+                                @endif
+@if ($admin->can('view attributegroups'))
+                                <li class="side-nav-item">
+                                    <a href="{{ route('admin.attribute-groups.index') }}" class="side-nav-link">
+                                        <span class="menu-text">Attributes Groups</span>
+                                    </a>
+                                </li>
+                                @endif
+                            </ul>
+                        </div>
+                    </li>
+@endif
+@if ($admin->can('view dicounts'))
+                    <li class="side-nav-item">
+                        <a href="{{ route('admin.discounts.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
+                            <span class="menu-text"> Discount </span>
+                        </a>
+                    </li>
+@endif
+@if ($admin->can('view products'))
+                    <li class="side-nav-item">
+                        <a href="{{ route('admin.products.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
+                            <span class="menu-text"> Products </span>
+                        </a>
+                    </li>
+                    @endif
                 @elseif(Auth::guard('vendor')->check())
                     @php $vendor = auth()->guard('vendor')->user(); @endphp
                     @if ($vendor->can('view_dashboard'))
@@ -80,6 +178,22 @@
                         </li>
                     @endif
                     <li class="side-nav-title mt-2">Apps & Pages</li>
+                    {{-- Complete Profile Menu (Show for pending vendors OR if profile not complete) --}}
+                    @if ($vendor->account_status === 'pending' || $vendor->profile_completed < 80)
+                        @if ($vendor->can('complete_profile'))
+                            <li class="side-nav-item">
+                                <a href="{{ route('vendor.complete-profile') }}"
+                                    class="side-nav-link {{ request()->routeIs('vendor.complete-profile') ? 'active' : '' }}">
+                                    <span class="menu-icon"><i class="ti ti-edit"></i></span>
+                                    <span class="menu-text">Complete Profile</span>
+                                    @if ($vendor->profile_completed > 0)
+                                        <span class="badge bg-warning ms-0">{{ $vendor->profile_completed }}%</span>
+                                    @endif
+                                </a>
+                            </li>
+                        @endif
+                    @endif
+                    
                     @if ($vendor->can('view_users'))
                         <li class="side-nav-item">
                             <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"

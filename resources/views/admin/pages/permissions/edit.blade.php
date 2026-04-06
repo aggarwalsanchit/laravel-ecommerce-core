@@ -1,5 +1,5 @@
 {{-- resources/views/admin/permissions/edit.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Edit Permission')
 

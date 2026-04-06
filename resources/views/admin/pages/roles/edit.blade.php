@@ -1,5 +1,5 @@
 {{-- resources/views/admin/roles/edit.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Edit Role')
 

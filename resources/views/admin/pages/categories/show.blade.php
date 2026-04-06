@@ -1,5 +1,5 @@
 {{-- resources/views/admin/categories/show.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Category Details')
 

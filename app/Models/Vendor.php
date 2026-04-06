@@ -10,11 +10,12 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\VendorPermissionTrait;
+use App\Traits\LogsVendorActivity;
 
 class Vendor extends Authenticatable
 {
 
-    use HasFactory, Notifiable, HasRoles, VendorPermissionTrait;
+    use HasFactory, Notifiable, HasRoles, VendorPermissionTrait, LogsVendorActivity;
 
     protected $guard = 'vendor';
 
@@ -193,5 +194,15 @@ class Vendor extends Authenticatable
     public function canManageStaff()
     {
         return $this->hasPermissionTo('manage_staff', 'vendor');
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(VendorActivityLog::class)->latest();
+    }
+
+    public function getRecentActivityLogs($limit = 50)
+    {
+        return $this->activityLogs()->limit($limit)->get();
     }
 }

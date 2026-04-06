@@ -6,7 +6,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\AdminVendorController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\AdminActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
@@ -20,7 +22,7 @@ use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Vendor\VendorRegistrationController;
+use App\Http\Controllers\Vendor\VendorApprovedController;
 use App\Http\Controllers\Vendor\VendorManagementController;
 use App\Http\Controllers\Vendor\VendorAuthController;
 use App\Http\Controllers\Vendor\VendorDashboardController;
@@ -32,6 +34,7 @@ use App\Http\Controllers\Vendor\VendorSettingsController;
 use App\Http\Controllers\Vendor\VendorUserController;
 use App\Http\Controllers\Vendor\VendorRoleController;
 use App\Http\Controllers\Vendor\VendorPermissionController;
+use App\Http\Controllers\Vendor\VendorActivityLogController;
 
 
 Route::get('/', function () {
@@ -79,22 +82,45 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // ==================== PROFILE ====================
         Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-            Route::put('/', [ProfileController::class, 'update'])->name('update');
-            Route::post('/avatar', [ProfileController::class, 'uploadAvatar'])->name('avatar');
-            Route::delete('/avatar', [ProfileController::class, 'deleteAvatar'])->name('avatar.delete');
-            Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('password');
-        });
+        Route::get('/', [ProfileController::class, 'index'])->name('index');
+        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::put('/update', [ProfileController::class, 'update'])->name('update');
+        Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
+        Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
+    });
+    
+Route::get('location/states/{countryId}', [ProfileController::class, 'getStates'])->name('location.states');
+    Route::get('location/cities/{stateId}', [ProfileController::class, 'getCities'])->name('location.cities');
+    Route::get('admin/location/phone-code/{countryId}', [ProfileController::class, 'getPhoneCode'])->name('admin.location.phone-code');
+
+    Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
+        Route::get('/', [AdminActivityLogController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminActivityLogController::class, 'show'])->name('show');
+        Route::get('/export/csv', [AdminActivityLogController::class, 'export'])->name('export');
+    });
 
         // Admin Vendor Management Routes
-        Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
-            Route::get('/vendors', [VendorManagementController::class, 'index'])->name('vendors.index');
-            Route::get('/vendors/{id}', [VendorManagementController::class, 'show'])->name('vendors.show');
-            Route::post('/vendors/{id}/approve', [VendorManagementController::class, 'approve'])->name('vendors.approve');
-            Route::post('/vendors/{id}/reject', [VendorManagementController::class, 'reject'])->name('vendors.reject');
-            Route::post('/vendors/{id}/toggle-status', [VendorManagementController::class, 'toggleStatus'])->name('vendors.toggle-status');
-            Route::post('/vendors/create-own-store', [VendorManagementController::class, 'createOwnStore'])->name('vendors.create-own-store');
-        });
+        Route::prefix('vendors')->name('vendors.')->group(function () {
+        Route::get('/', [AdminVendorController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminVendorController::class, 'show'])->name('show');
+        
+        // Approval routes
+        Route::get('/{id}/approve', [AdminVendorController::class, 'approveForm'])->name('approve.form');
+        Route::post('/{id}/approve', [AdminVendorController::class, 'approve'])->name('approve');
+        
+        // Rejection routes
+        Route::post('/{id}/reject', [AdminVendorController::class, 'reject'])->name('reject');
+        
+        // Suspension routes
+        Route::post('/{id}/suspend', [AdminVendorController::class, 'suspend'])->name('suspend');
+        Route::get('/{id}/activate', [AdminVendorController::class, 'activate'])->name('activate');
+        
+        // Delete route
+        Route::delete('/{id}', [AdminVendorController::class, 'destroy'])->name('destroy');
+        
+        // Bulk Action Route - ADD THIS LINE
+        Route::post('/bulk-action', [AdminVendorController::class, 'bulkAction'])->name('bulk-action');
+    });
 
 
         Route::get('/sizes/analytics', [SizeController::class, 'analytics'])->name('sizes.analytics');
@@ -218,21 +244,27 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
     Route::middleware('vendor.auth')->group(function () {
         // Dashboard
         Route::get('/dashboard', [VendorDashboardController::class, 'index'])->name('dashboard');
+        Route::get('complete-profile', [VendorApprovedController::class, 'showCompleteForm'])->name('complete-profile');
+        Route::post('complete-profile', [VendorApprovedController::class, 'saveTab'])->name('profile.save-tab');
+
+        Route::get('activity-logs', [VendorActivityLogController::class, 'index'])->name('activity-logs');
+        Route::get('activity-logs/{id}', [VendorActivityLogController::class, 'show'])->name('activity-logs.show');
+        Route::get('activity-logs/export/csv', [VendorActivityLogController::class, 'export'])->name('activity-logs.export');
 
         Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [VendorProfileController::class, 'edit'])->name('edit');
-            Route::put('/', [VendorProfileController::class, 'updateProfile'])->name('update');
-            Route::post('/avatar', [VendorProfileController::class, 'uploadAvatar'])->name('avatar');
-            Route::delete('/avatar', [VendorProfileController::class, 'deleteAvatar'])->name('avatar.delete');
-            Route::post('/change-password', [VendorProfileController::class, 'changePassword'])->name('password');
+            Route::get('/edit', [VendorProfileController::class, 'edit'])->name('edit');
+            Route::put('update', [VendorProfileController::class, 'update'])->name('update');
+            Route::get('/change-password', [VendorProfileController::class, 'changePassword'])->name('change-password');
+            Route::post('/update-password', [VendorProfileController::class, 'updatePassword'])->name('update-password');
         });
 
         // ==================== USERS ====================
-        Route::resource('users', VendorUserController::class);
-        Route::post('/users/{user}/activate', [VendorUserController::class, 'activate'])->name('users.activate');
-        Route::post('/users/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('users.deactivate');
-        Route::post('/users/bulk-action', [VendorUserController::class, 'bulkAction'])->name('users.bulk-action');
-
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::resource('/', VendorUserController::class);
+            Route::post('/{user}/activate', [VendorUserController::class, 'activate'])->name('activate');
+            Route::post('/{user}/deactivate', [VendorUserController::class, 'deactivate'])->name('deactivate');
+            Route::post('/bulk-action', [VendorUserController::class, 'bulkAction'])->name('bulk-action');
+        });
         // ==================== ROLES ====================
         Route::resource('roles', VendorRoleController::class);
         Route::get('/roles/{role}/assign-permissions', [VendorRoleController::class, 'assignPermissions'])->name('roles.assign-permissions');
@@ -250,7 +282,7 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
 
 
 
-        Route::get('vendor-profile', [VendorProfileController::class, 'showCompleteForm'])->name('complete-profile');
+        
         Route::get('/orders', [VendorOrderController::class, 'index'])->name('orders');
 
         Route::post('/logout', [VendorAuthController::class, 'logout'])->name('logout');

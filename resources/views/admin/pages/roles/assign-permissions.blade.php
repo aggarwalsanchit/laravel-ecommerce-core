@@ -1,5 +1,5 @@
 {{-- resources/views/admin/roles/assign-permissions.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Assign Permissions')
 

@@ -16,9 +16,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
+use App\Traits\LogsVendorActivity;
+
 
 class VendorAuthController extends Controller
 {
+
+    use LogsVendorActivity;
     /**
      * Show vendor registration form
      */
@@ -90,8 +94,8 @@ class VendorAuthController extends Controller
 
         DB::commit();
 
-        // Assign store_owner role to the vendor
-        $vendor->assignRole('store_owner');
+        // Assign vendor role to the vendor
+        $vendor->assignRole('vendor');
 
         // Auto login after registration
         Auth::guard('vendor')->login($vendor);
@@ -119,6 +123,9 @@ class VendorAuthController extends Controller
 
         if (Auth::guard('vendor')->attempt($credentials, $request->remember)) {
             $vendor = Auth::guard('vendor')->user();
+
+            // Log login activity
+            // $vendor->logLogin('Logged into vendor dashboard');
 
             // Check if suspended
             if ($vendor->account_status === 'suspended') {
@@ -164,6 +171,12 @@ class VendorAuthController extends Controller
 
     public function logout(Request $request)
     {
+        $vendor = Auth::guard('vendor')->user();
+
+        if ($vendor) {
+            $vendor->logLogout('Logged out from vendor panel');
+        }
+
         Auth::guard('vendor')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

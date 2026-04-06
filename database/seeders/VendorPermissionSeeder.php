@@ -1,3 +1,5 @@
+// database/seeders/VendorPermissionSeeder.php
+
 <?php
 
 namespace Database\Seeders;
@@ -11,17 +13,18 @@ class VendorPermissionSeeder extends Seeder
     public function run()
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
-
-        // ========== CREATE ALL PERMISSIONS ==========
-        $permissions = [
-            // Limited permissions (for pending vendors)
+        
+        // Delete existing
+        Role::where('guard_name', 'vendor')->delete();
+        Permission::where('guard_name', 'vendor')->delete();
+        
+        // ========== CREATE PERMISSIONS ==========
+        $allPermissions = [
+            // Basic permissions (for pending vendors)
             'view_dashboard',
-            'view_profile',
-            'update_profile',
-            'change_password',
-            'upload_avatar',
             'complete_profile',
-
+            'change_password',
+            
             // Full permissions (for approved vendors)
             'view_products',
             'create_products',
@@ -34,28 +37,33 @@ class VendorPermissionSeeder extends Seeder
             'view_analytics',
             'manage_staff',
             'manage_store_settings',
+            'view_activity_logs',
         ];
-
-        foreach ($permissions as $permission) {
+        
+        foreach ($allPermissions as $permission) {
             Permission::create(['name' => $permission, 'guard_name' => 'vendor']);
         }
-
-        // Create store_owner role (gets ALL permissions)
-        $storeOwner = Role::create(['name' => 'store_owner', 'guard_name' => 'vendor']);
-
-        // Initially assign ONLY limited permissions
-        $storeOwner->givePermissionTo([
+        
+        // ========== CREATE ROLES ==========
+        
+        // Role 1: Vendor (for pending/unapproved vendors) - Limited permissions
+        $vendorRole = Role::create(['name' => 'vendor', 'guard_name' => 'vendor']);
+        $vendorRole->givePermissionTo([
             'view_dashboard',
-            'view_profile',
-            'update_profile',
-            'change_password',
-            'upload_avatar',
             'complete_profile',
+            'change_password',
         ]);
-
+        
+        // Role 2: Store Owner (for approved vendors) - Full permissions
+        $storeOwnerRole = Role::create(['name' => 'store_owner', 'guard_name' => 'vendor']);
+        $storeOwnerRole->givePermissionTo($allPermissions);
+        
         $this->command->info('========================================');
-        $this->command->info('Store owner role created with limited permissions!');
-        $this->command->info('Admin will grant full permissions after approval');
+        $this->command->info('Vendor permissions created!');
+        $this->command->info('========================================');
+        $this->command->info('Roles created:');
+        $this->command->info('  - vendor (limited permissions for pending)');
+        $this->command->info('  - store_owner (full permissions after approval)');
         $this->command->info('========================================');
     }
 }
