@@ -27,6 +27,8 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminSeeder::class);
         $this->command->line('------------------------');
 
+        $this->call(CountryStateCitySeeder::class);
+
         $this->command->info('🎉 All seeding completed successfully!');
     }
 }

@@ -1,5 +1,5 @@
 {{-- resources/views/admin/categories/create.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Add New Category')
 

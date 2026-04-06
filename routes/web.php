@@ -6,7 +6,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\AdminVendorController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\AdminActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
@@ -80,22 +82,45 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // ==================== PROFILE ====================
         Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [ProfileController::class, 'edit'])->name('edit');
-            Route::put('/', [ProfileController::class, 'update'])->name('update');
-            Route::post('/avatar', [ProfileController::class, 'uploadAvatar'])->name('avatar');
-            Route::delete('/avatar', [ProfileController::class, 'deleteAvatar'])->name('avatar.delete');
-            Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('password');
-        });
+        Route::get('/', [ProfileController::class, 'index'])->name('index');
+        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+        Route::put('/update', [ProfileController::class, 'update'])->name('update');
+        Route::get('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
+        Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
+    });
+    
+Route::get('location/states/{countryId}', [ProfileController::class, 'getStates'])->name('location.states');
+    Route::get('location/cities/{stateId}', [ProfileController::class, 'getCities'])->name('location.cities');
+    Route::get('admin/location/phone-code/{countryId}', [ProfileController::class, 'getPhoneCode'])->name('admin.location.phone-code');
+
+    Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
+        Route::get('/', [AdminActivityLogController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminActivityLogController::class, 'show'])->name('show');
+        Route::get('/export/csv', [AdminActivityLogController::class, 'export'])->name('export');
+    });
 
         // Admin Vendor Management Routes
-        Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
-            Route::get('/vendors', [VendorManagementController::class, 'index'])->name('vendors.index');
-            Route::get('/vendors/{id}', [VendorManagementController::class, 'show'])->name('vendors.show');
-            Route::post('/vendors/{id}/approve', [VendorManagementController::class, 'approve'])->name('vendors.approve');
-            Route::post('/vendors/{id}/reject', [VendorManagementController::class, 'reject'])->name('vendors.reject');
-            Route::post('/vendors/{id}/toggle-status', [VendorManagementController::class, 'toggleStatus'])->name('vendors.toggle-status');
-            Route::post('/vendors/create-own-store', [VendorManagementController::class, 'createOwnStore'])->name('vendors.create-own-store');
-        });
+        Route::prefix('vendors')->name('vendors.')->group(function () {
+        Route::get('/', [AdminVendorController::class, 'index'])->name('index');
+        Route::get('/{id}', [AdminVendorController::class, 'show'])->name('show');
+        
+        // Approval routes
+        Route::get('/{id}/approve', [AdminVendorController::class, 'approveForm'])->name('approve.form');
+        Route::post('/{id}/approve', [AdminVendorController::class, 'approve'])->name('approve');
+        
+        // Rejection routes
+        Route::post('/{id}/reject', [AdminVendorController::class, 'reject'])->name('reject');
+        
+        // Suspension routes
+        Route::post('/{id}/suspend', [AdminVendorController::class, 'suspend'])->name('suspend');
+        Route::get('/{id}/activate', [AdminVendorController::class, 'activate'])->name('activate');
+        
+        // Delete route
+        Route::delete('/{id}', [AdminVendorController::class, 'destroy'])->name('destroy');
+        
+        // Bulk Action Route - ADD THIS LINE
+        Route::post('/bulk-action', [AdminVendorController::class, 'bulkAction'])->name('bulk-action');
+    });
 
 
         Route::get('/sizes/analytics', [SizeController::class, 'analytics'])->name('sizes.analytics');

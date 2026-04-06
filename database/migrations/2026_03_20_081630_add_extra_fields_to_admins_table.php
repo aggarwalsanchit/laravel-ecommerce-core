@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::table('admins', function (Blueprint $table) {
             $table->text('address')->nullable()->after('phone');
-            $table->string('city')->nullable()->after('address');
-            $table->string('country')->nullable()->after('city');
+            $table->int('city_id')->nullable()->after('address');
+            $table->int('state_id')->nullable()->after('city');
+            $table->int('country_id')->nullable()->after('state');
             $table->string('postal_code')->nullable()->after('country');
             $table->date('birth_date')->nullable()->after('postal_code');
         });

@@ -1,5 +1,5 @@
 {{-- resources/views/admin/categories/analytics.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Category Analytics')
 

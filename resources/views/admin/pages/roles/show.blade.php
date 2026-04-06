@@ -1,5 +1,5 @@
 {{-- resources/views/admin/roles/show.blade.php --}}
-@extends('admin.layouts.app')
+@extends('management.layouts.app')
 
 @section('title', 'Role Details')
 

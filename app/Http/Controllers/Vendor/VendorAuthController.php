@@ -94,8 +94,8 @@ class VendorAuthController extends Controller
 
         DB::commit();
 
-        // Assign store_owner role to the vendor
-        $vendor->assignRole('store_owner');
+        // Assign vendor role to the vendor
+        $vendor->assignRole('vendor');
 
         // Auto login after registration
         Auth::guard('vendor')->login($vendor);

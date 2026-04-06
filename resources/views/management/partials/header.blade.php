@@ -483,9 +483,13 @@
 
                         <!-- item-->
                         @if (Auth::guard('admin')->check())
-                            <a href="javascript:void(0);" class="dropdown-item">
+                            <a href="{{ route('admin.profile.index') }}" class="dropdown-item">
                                 <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
                                 <span class="align-middle">My Account</span>
+                            </a>
+                            <a href="{{ route('admin.activity-logs.index') }}" class="dropdown-item">
+                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                <span class="align-middle">Activity Logs</span>
                             </a>
                         @elseif(Auth::guard('vendor')->check())
                             <a href="{{ route('vendor.complete-profile') }}" class="dropdown-item">
