@@ -1,5 +1,4 @@
 <?php
-// database/seeders/AdminSeeder.php
 
 namespace Database\Seeders;
 
@@ -9,74 +8,156 @@ use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
-    public function run(): void
+    public function run()
     {
-        // Create Super Admin user
+        // =============================================
+        // CREATE ADMIN USERS WITH DIFFERENT ROLES
+        // =============================================
+
+        // 1. SUPER ADMIN (Full Control)
         $superAdmin = Admin::create([
-            'name' => 'Super Administrator',
-            'email' => 'super@admin.com',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@example.com',
             'password' => Hash::make('password'),
-            'is_active' => true,
             'phone' => '+1234567890',
-            'email_verified_at' => now(),
-        ]);
-        $superAdmin->assignRole('Super Admin');
-        $this->command->info('✓ Super Admin user created');
-
-        // Create Admin user
-        $admin = Admin::create([
-            'name' => 'Admin User',
-            'email' => 'admin@admin.com',
-            'password' => Hash::make('password'),
+            'avatar' => null,
             'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $superAdmin->assignRole('super_admin');
+
+        // 2. ADMIN MANAGER (Can manage other admins)
+        $adminManager = Admin::create([
+            'name' => 'Admin Manager',
+            'email' => 'adminmanager@example.com',
+            'password' => Hash::make('password'),
             'phone' => '+1234567891',
-            'email_verified_at' => now(),
-        ]);
-        $admin->assignRole('Admin');
-        $this->command->info('✓ Admin user created');
-
-        // Create Manager user
-        $manager = Admin::create([
-            'name' => 'Manager User',
-            'email' => 'manager@admin.com',
-            'password' => Hash::make('password'),
+            'avatar' => null,
             'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $adminManager->assignRole('admin_manager');
+
+        // 3. VENDOR MANAGER (Manages all vendors)
+        $vendorManager = Admin::create([
+            'name' => 'Vendor Manager',
+            'email' => 'vendormanager@example.com',
+            'password' => Hash::make('password'),
             'phone' => '+1234567892',
-            'email_verified_at' => now(),
-        ]);
-        $manager->assignRole('Manager');
-        $this->command->info('✓ Manager user created');
-
-        // Create Editor user
-        $editor = Admin::create([
-            'name' => 'Editor User',
-            'email' => 'editor@admin.com',
-            'password' => Hash::make('password'),
+            'avatar' => null,
             'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $vendorManager->assignRole('vendor_manager');
+
+        // 4. PRODUCT MANAGER (Manages products, categories, brands)
+        $productManager = Admin::create([
+            'name' => 'Product Manager',
+            'email' => 'productmanager@example.com',
+            'password' => Hash::make('password'),
             'phone' => '+1234567893',
-            'email_verified_at' => now(),
-        ]);
-        $editor->assignRole('Editor');
-        $this->command->info('✓ Editor user created');
-
-        // Create Viewer user
-        $viewer = Admin::create([
-            'name' => 'Viewer User',
-            'email' => 'viewer@admin.com',
-            'password' => Hash::make('password'),
+            'avatar' => null,
             'is_active' => true,
-            'phone' => '+1234567894',
-            'email_verified_at' => now(),
+            'last_login_at' => now(),
         ]);
-        $viewer->assignRole('Viewer');
-        $this->command->info('✓ Viewer user created');
+        $productManager->assignRole('product_manager');
 
-        // Create 20 random users with Viewer role
-        Admin::factory(20)->create()->each(function ($user) {
-            $user->assignRole('Viewer');
-        });
-        $this->command->info('✓ 20 random viewer users created');
+        // 5. ORDER MANAGER (Manages all orders)
+        $orderManager = Admin::create([
+            'name' => 'Order Manager',
+            'email' => 'ordermanager@example.com',
+            'password' => Hash::make('password'),
+            'phone' => '+1234567894',
+            'avatar' => null,
+            'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $orderManager->assignRole('order_manager');
 
-        $this->command->info('✅ All users created successfully!');
+        // 6. SUPPORT AGENT (Handles customer support)
+        $supportAgent = Admin::create([
+            'name' => 'Support Agent',
+            'email' => 'supportagent@example.com',
+            'password' => Hash::make('password'),
+            'phone' => '+1234567895',
+            'avatar' => null,
+            'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $supportAgent->assignRole('support_agent');
+
+        // 7. ACCOUNTANT (Views financial reports)
+        $accountant = Admin::create([
+            'name' => 'Accountant',
+            'email' => 'accountant@example.com',
+            'password' => Hash::make('password'),
+            'phone' => '+1234567896',
+            'avatar' => null,
+            'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $accountant->assignRole('accountant');
+
+        // 8. VIEWER (Read-only access)
+        $viewer = Admin::create([
+            'name' => 'Viewer',
+            'email' => 'viewer@example.com',
+            'password' => Hash::make('password'),
+            'phone' => '+1234567897',
+            'avatar' => null,
+            'is_active' => true,
+            'last_login_at' => now(),
+        ]);
+        $viewer->assignRole('viewer');
+
+        // =============================================
+        // INACTIVE ADMIN (For testing)
+        // =============================================
+        $inactiveAdmin = Admin::create([
+            'name' => 'Inactive Admin',
+            'email' => 'inactive@example.com',
+            'password' => Hash::make('password'),
+            'phone' => '+1234567898',
+            'avatar' => null,
+            'is_active' => false,
+            'last_login_at' => null,
+        ]);
+        $inactiveAdmin->assignRole('viewer');
+
+        $this->command->info('========================================');
+        $this->command->info('Admin users created successfully!');
+        $this->command->info('========================================');
+        $this->command->info('SUPER ADMIN (Full Access):');
+        $this->command->info('  Email: superadmin@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('ADMIN MANAGER:');
+        $this->command->info('  Email: adminmanager@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('VENDOR MANAGER:');
+        $this->command->info('  Email: vendormanager@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('PRODUCT MANAGER:');
+        $this->command->info('  Email: productmanager@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('ORDER MANAGER:');
+        $this->command->info('  Email: ordermanager@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('SUPPORT AGENT:');
+        $this->command->info('  Email: supportagent@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('ACCOUNTANT:');
+        $this->command->info('  Email: accountant@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('');
+        $this->command->info('VIEWER (Read-Only):');
+        $this->command->info('  Email: viewer@example.com');
+        $this->command->info('  Password: password');
+        $this->command->info('========================================');
     }
 }

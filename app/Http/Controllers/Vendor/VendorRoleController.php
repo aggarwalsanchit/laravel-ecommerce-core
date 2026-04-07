@@ -16,11 +16,11 @@ class VendorRoleController extends Controller implements HasMiddleware
     {
         return [
             'auth:vendor',
-            new Middleware('permission:view roles', only: ['index', 'show']),
-            new Middleware('permission:create roles', only: ['create', 'store']),
-            new Middleware('permission:edit roles', only: ['edit', 'update']),
-            new Middleware('permission:delete roles', only: ['destroy']),
-            new Middleware('permission:assign permissions', only: ['assignPermissions', 'syncPermissions']),
+            new Middleware('permission:view_roles', only: ['index', 'show']),
+            new Middleware('permission:create_roles', only: ['create', 'store']),
+            new Middleware('permission:edit_roles', only: ['edit', 'update']),
+            new Middleware('permission:delete_roles', only: ['destroy']),
+            new Middleware('permission:assign_permissions', only: ['assignPermissions', 'syncPermissions']),
         ];
     }
 

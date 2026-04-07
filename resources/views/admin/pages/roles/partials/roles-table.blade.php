@@ -63,7 +63,7 @@
                 </td>
                 <td class="pe-3">
                     <div class="hstack gap-1 justify-content-end">
-                        @can('view roles')
+                        @can('view_roles')
                             <a href="{{ route('admin.roles.show', $role->id) }}"
                                 class="btn btn-soft-primary btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                 title="View Details">
@@ -71,7 +71,7 @@
                             </a>
                         @endcan
 
-                        @can('edit roles')
+                        @can('edit_roles')
                             @if ($role->name !== 'Super Admin')
                                 <a href="{{ route('admin.roles.edit', $role->id) }}"
                                     class="btn btn-soft-success btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
@@ -81,7 +81,7 @@
                             @endif
                         @endcan
 
-                        @can('assign permissions')
+                        @can('assign_permissions')
                             @if ($role->name !== 'Super Admin')
                                 <a href="{{ route('admin.roles.assign-permissions', $role->id) }}"
                                     class="btn btn-soft-info btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
@@ -91,7 +91,7 @@
                             @endif
                         @endcan
 
-                        @can('delete roles')
+                        @can('delete_roles')
                             @if ($role->name !== 'Super Admin' && $userCount == 0)
                                 <button type="button" class="btn btn-soft-danger btn-icon btn-sm rounded-circle"
                                     onclick="confirmDelete({{ $role->id }}, '{{ $role->name }}')"

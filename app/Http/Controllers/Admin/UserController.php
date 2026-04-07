@@ -23,12 +23,12 @@ class UserController extends Controller implements HasMiddleware
         return [
             'auth:admin',
 
-            new Middleware('permission:view users', only: ['index', 'show']),
-            new Middleware('permission:create users', only: ['create', 'store']),
-            new Middleware('permission:edit users', only: ['edit', 'update']),
-            new Middleware('permission:delete users', only: ['destroy']),
-            new Middleware('permission:activate users', only: ['activate']),
-            new Middleware('permission:deactivate users', only: ['deactivate']),
+            new Middleware('permission:view_users', only: ['index', 'show']),
+            new Middleware('permission:create_users', only: ['create', 'store']),
+            new Middleware('permission:edit_users', only: ['edit', 'update']),
+            new Middleware('permission:delete_users', only: ['destroy']),
+            new Middleware('permission:activate_users', only: ['activate']),
+            new Middleware('permission:deactivate_users', only: ['deactivate']),
         ];
     }
 
@@ -66,20 +66,36 @@ class UserController extends Controller implements HasMiddleware
         $users = $query->paginate(10);
         $roles = Role::all();
 
+        // ========== STATISTICS FOR 4 BOXES (Based on Filters) ==========
+        // Total users (without any filter)
+        $stats = [
+            'total' => Admin::count(),
+            'active' => Admin::where('is_active', true)->count(),
+            'inactive' => Admin::where('is_active', false)->count(),
+            'roles' => Role::count(),
+        ];
+
+        // If you want filtered stats (current filtered result count)
+        $filteredStats = [
+            'filtered_total' => $query->count(),
+            'filtered_active' => (clone $query)->where('is_active', true)->count(),
+            'filtered_inactive' => (clone $query)->where('is_active', false)->count(),
+        ];
+
         // If AJAX request, return JSON with table and pagination
         if ($request->ajax()) {
             $table = view('admin.pages.users.partials.users-table', compact('users'))->render();
-
-            // Use Laravel's default pagination view
             $pagination = $users->links('pagination::bootstrap-5')->render();
 
             return response()->json([
                 'table' => $table,
-                'pagination' => $pagination
+                'pagination' => $pagination,
+                'stats' => $stats, // Include stats for real-time update
+                'filteredStats' => $filteredStats
             ]);
         }
 
-        return view('admin.pages.users.index', compact('users', 'roles'));
+        return view('admin.pages.users.index', compact('users', 'roles', 'stats', 'filteredStats'));
     }
 
     /**
@@ -222,7 +238,7 @@ class UserController extends Controller implements HasMiddleware
     public function destroy(Admin $user)
     {
         // Check permission
-        if (!auth()->user()->can('delete users')) {
+        if (!auth()->user()->can('delete_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
             }
@@ -271,7 +287,7 @@ class UserController extends Controller implements HasMiddleware
     public function activate(Admin $user)
     {
         // Check permission
-        if (!auth('admin')->user()->can('activate users')) {
+        if (!auth('admin')->user()->can('activate_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
             }
@@ -298,7 +314,7 @@ class UserController extends Controller implements HasMiddleware
     public function deactivate(Admin $user)
     {
         // Check permission
-        if (!auth('admin')->user()->can('deactivate users')) {
+        if (!auth('admin')->user()->can('deactivate_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
             }
@@ -349,21 +365,21 @@ class UserController extends Controller implements HasMiddleware
         $userIds = json_decode($request->user_ids); // Decode JSON string to array
 
         // Check permission based on action
-        if ($action === 'activate' && !auth('admin')->user()->can('activate users')) {
+        if ($action === 'activate' && !auth('admin')->user()->can('activate_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
             }
             return back()->with('error', 'You do not have permission to activate users.');
         }
 
-        if ($action === 'deactivate' && !auth('admin')->user()->can('deactivate users')) {
+        if ($action === 'deactivate' && !auth('admin')->user()->can('deactivate_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
             }
             return back()->with('error', 'You do not have permission to deactivate users.');
         }
 
-        if ($action === 'delete' && !auth('admin')->user()->can('delete users')) {
+        if ($action === 'delete' && !auth('admin')->user()->can('delete_users')) {
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
             }

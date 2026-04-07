@@ -1,5 +1,6 @@
-<?php
 // database/migrations/xxxx_xx_xx_xxxxxx_create_vendor_staff_table.php
+
+<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,16 +12,43 @@ return new class extends Migration
     {
         Schema::create('vendor_staff', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('role', ['admin', 'manager', 'inventory', 'fulfillment', 'support']);
+
+            // Vendor relation
+            $table->foreignId('vendor_id')->constrained('vendors')->onDelete('cascade');
+
+            // Staff personal information
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->string('phone')->nullable();
+            $table->string('avatar')->nullable();
+            $table->text('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('country')->nullable();
+            $table->string('postal_code')->nullable();
+
+            // Staff role and permissions
+            $table->enum('role', ['admin', 'manager', 'inventory', 'fulfillment', 'support'])->default('support');
             $table->json('custom_permissions')->nullable();
+
+            // Account status
             $table->boolean('is_active')->default(true);
+            $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('last_login_at')->nullable();
+            $table->string('last_login_ip')->nullable();
+
+            // Optional relation to main user table
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+
+            $table->rememberToken();
             $table->timestamps();
 
-            $table->unique(['vendor_id', 'user_id']);
-            $table->index('role');
+            // Indexes
+            $table->index(['vendor_id', 'role']);
+            $table->index('email');
+            $table->index('is_active');
+            $table->unique(['vendor_id', 'email']);
         });
     }
 

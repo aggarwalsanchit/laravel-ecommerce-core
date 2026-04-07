@@ -4,15 +4,54 @@
         <div class="d-flex align-items-center gap-2">
 
             <!-- Brand Logo -->
-            <a href="index.html" class="logo">
+            <a href="{{ route('admin.dashboard') }}" class="logo">
+                @php
+                    use App\Models\WebsiteSetting;
+                    use Illuminate\Support\Facades\Storage;
+
+                    $settings = WebsiteSetting::first();
+
+                    // Get logo light (large)
+                    $logoLightLarge = 'assets/images/logo.png';
+                    if ($settings && $settings->logo_light && Storage::disk('public')->exists($settings->logo_light)) {
+                        $logoLightLarge = asset('storage/' . $settings->logo_light);
+                    } elseif (!file_exists(public_path('assets/images/logo.png'))) {
+                        $logoLightLarge = asset('dummy-admin-logo.webp');
+                    }
+
+                    // Get logo dark (large)
+                    $logoDarkLarge = 'assets/images/logo-dark.png';
+                    if ($settings && $settings->logo_dark && Storage::disk('public')->exists($settings->logo_dark)) {
+                        $logoDarkLarge = asset('storage/' . $settings->logo_dark);
+                    } elseif (!file_exists(public_path('assets/images/logo-dark.png'))) {
+                        $logoDarkLarge = asset('dummy-admin-logo.webp');
+                    }
+
+                    // Get small logo (sidebar)
+                    $logoSmall = 'assets/images/logo-sm.png';
+                    if (
+                        $settings &&
+                        $settings->logo_sidebar &&
+                        Storage::disk('public')->exists($settings->logo_sidebar)
+                    ) {
+                        $logoSmall = asset('storage/' . $settings->logo_sidebar);
+                    } elseif (!file_exists(public_path('assets/images/logo-sm.png'))) {
+                        $logoSmall = asset('dummy-admin-logo.webp');
+                    }
+                @endphp
+
                 <span class="logo-light">
-                    <span class="logo-lg"><img src="assets/images/logo.png" alt="logo"></span>
-                    <span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo"></span>
+                    <span class="logo-lg"><img src="{{ $logoLightLarge }}"
+                            alt="{{ $settings->logo_light_alt_tag ?? 'Logo' }}"></span>
+                    <span class="logo-sm"><img src="{{ $logoSmall }}"
+                            alt="{{ $settings->logo_small_alt_tag ?? 'Logo' }}"></span>
                 </span>
 
                 <span class="logo-dark">
-                    <span class="logo-lg"><img src="assets/images/logo-dark.png" alt="dark logo"></span>
-                    <span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo"></span>
+                    <span class="logo-lg"><img src="{{ $logoDarkLarge }}"
+                            alt="{{ $settings->logo_dark_alt_tag ?? 'Logo' }}"></span>
+                    <span class="logo-sm"><img src="{{ $logoSmall }}"
+                            alt="{{ $settings->logo_small_alt_tag ?? 'Logo' }}"></span>
                 </span>
             </a>
 
@@ -492,10 +531,14 @@
                                 <span class="align-middle">Activity Logs</span>
                             </a>
                         @elseif(Auth::guard('vendor')->check())
-                            <a href="{{ route('vendor.complete-profile') }}" class="dropdown-item">
-                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
-                                <span class="align-middle">Vendor Profile</span>
-                            </a>
+                            @php $vendor = auth()->guard('vendor')->user(); @endphp
+                            @if ($vendor->can('view_profile'))
+                                <a href="{{ route('vendor.complete-profile') }}" class="dropdown-item">
+                                    <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">Vendor Profile</span>
+                                </a>
+                            @endif
+
                             <a href="{{ route('vendor.activity-logs') }}" class="dropdown-item">
                                 <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
                                 <span class="align-middle">Vendor Activity Logs</span>

@@ -3,8 +3,6 @@
 
 <head>
     @include('management.partials.head')
-
-    {{-- Page-specific CSS --}}
     @stack('styles')
 </head>
 
@@ -18,12 +16,13 @@
     </main>
 
     @include('management.partials.footer')
-
     @include('management.partials.scripts')
 
-    {{-- Page-specific JS --}}
-    @stack('scripts')
+    {{-- SweetAlert --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @include('management.partials.sweetalert')
 
+    @stack('scripts')
 </body>
 
 </html>
