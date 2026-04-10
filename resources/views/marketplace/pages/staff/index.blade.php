@@ -1,4 +1,4 @@
-{{-- resources/views/vendor/staff/index.blade.php --}}
+{{-- resources/views/marketplace/pages/staff/index.blade.php --}}
 
 @extends('management.layouts.app')
 
@@ -21,13 +21,13 @@
 
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="javascript: void(0);">Vendor</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active">Staff</li>
                     </ol>
                 </div>
             </div>
 
-            {{-- Statistics Cards --}}
+            {{-- Statistics Cards - 4 Boxes --}}
             <div class="row">
                 <div class="col-md-3">
                     <div class="card">
@@ -49,7 +49,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="text-muted fs-13 text-uppercase">Active</h5>
+                                    <h5 class="text-muted fs-13 text-uppercase">Active Staff</h5>
                                     <h3 class="mb-0 fw-bold text-success">{{ $stats['active'] ?? 0 }}</h3>
                                 </div>
                                 <div class="avatar-sm bg-success-subtle rounded-circle p-2">
@@ -64,7 +64,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="text-muted fs-13 text-uppercase">Inactive</h5>
+                                    <h5 class="text-muted fs-13 text-uppercase">Inactive Staff</h5>
                                     <h3 class="mb-0 fw-bold text-danger">{{ $stats['inactive'] ?? 0 }}</h3>
                                 </div>
                                 <div class="avatar-sm bg-danger-subtle rounded-circle p-2">
@@ -79,11 +79,11 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 class="text-muted fs-13 text-uppercase">Administrators</h5>
-                                    <h3 class="mb-0 fw-bold text-warning">{{ $stats['admins'] ?? 0 }}</h3>
+                                    <h5 class="text-muted fs-13 text-uppercase">Total Roles</h5>
+                                    <h3 class="mb-0 fw-bold text-warning">{{ $stats['roles'] ?? 0 }}</h3>
                                 </div>
                                 <div class="avatar-sm bg-warning-subtle rounded-circle p-2">
-                                    <i class="ti ti-shield fs-24 text-warning"></i>
+                                    <i class="ti ti-briefcase fs-24 text-warning"></i>
                                 </div>
                             </div>
                         </div>
@@ -96,21 +96,22 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Staff Management</h3>
-                            {{-- @can('create_staff', 'vendor') --}}
-                            <a href="{{ route('vendor.staff.create') }}" class="btn btn-primary">
-                                <i class="ti ti-plus me-1"></i> Add New Staff
-                            </a>
-                            {{-- @endcan --}}
+                            @php $vendor = Auth::guard('vendor')->user(); @endphp
+                            @if ($vendor->can('create_staff'))
+                                <a href="{{ route('vendor.staff.create') }}" class="btn btn-primary">
+                                    <i class="ti ti-plus me-1"></i> Add New Staff
+                                </a>
+                            @endif
                         </div>
                         <div class="card-body">
 
-                            {{-- Search and Advanced Filters --}}
+                            {{-- Search and Filter --}}
                             <div class="row mb-3">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <form action="{{ route('vendor.staff.index') }}" method="GET" class="d-flex gap-2"
                                         id="searchForm">
                                         <input type="text" name="search" class="form-control" id="searchInput"
-                                            placeholder="Search by name, email or phone..." value="{{ request('search') }}">
+                                            placeholder="Search by name or email..." value="{{ request('search') }}">
                                         <button type="submit" class="btn btn-primary" id="searchBtn">
                                             <i class="ti ti-search"></i>
                                         </button>
@@ -120,354 +121,386 @@
                                         @endif
                                     </form>
                                 </div>
-                                <div class="col-md-8 text-end">
-                                    <div class="btn-group me-2">
+                                <div class="col-md-6 text-end">
+                                    <div class="btn-group">
                                         <button type="button" class="btn btn-outline-secondary dropdown-toggle"
                                             data-bs-toggle="dropdown">
-                                            <i class="ti ti-role"></i> Role
+                                            Filter by Role
                                         </button>
                                         <ul class="dropdown-menu" id="roleFilter">
                                             <li><a class="dropdown-item {{ !request('role') ? 'active' : '' }}"
-                                                    href="#" data-role="">All Roles</a></li>
-                                            <li><a class="dropdown-item {{ request('role') == 'admin' ? 'active' : '' }}"
-                                                    href="#" data-role="admin">Administrator</a></li>
-                                            <li><a class="dropdown-item {{ request('role') == 'manager' ? 'active' : '' }}"
-                                                    href="#" data-role="manager">Store Manager</a></li>
-                                            <li><a class="dropdown-item {{ request('role') == 'inventory' ? 'active' : '' }}"
-                                                    href="#" data-role="inventory">Inventory Manager</a></li>
-                                            <li><a class="dropdown-item {{ request('role') == 'fulfillment' ? 'active' : '' }}"
-                                                    href="#" data-role="fulfillment">Fulfillment Executive</a></li>
-                                            <li><a class="dropdown-item {{ request('role') == 'support' ? 'active' : '' }}"
-                                                    href="#" data-role="support">Support Staff</a></li>
+                                                    href="#" data-role="">All Users</a></li>
+                                            @foreach ($roles ?? [] as $role)
+                                                <li><a class="dropdown-item {{ request('role') == $role->name ? 'active' : '' }}"
+                                                        href="#"
+                                                        data-role="{{ $role->name }}">{{ $role->name }}</a></li>
+                                            @endforeach
                                         </ul>
                                     </div>
-                                    <div class="btn-group me-2">
+                                    <div class="btn-group ms-2">
                                         <button type="button" class="btn btn-outline-secondary dropdown-toggle"
                                             data-bs-toggle="dropdown">
-                                            <i class="ti ti-status"></i> Status
+                                            Filter by Status
                                         </button>
                                         <ul class="dropdown-menu" id="statusFilter">
                                             <li><a class="dropdown-item {{ !request('status') ? 'active' : '' }}"
-                                                    href="#" data-status="">All Status</a></li>
+                                                    href="#" data-status="">All</a></li>
                                             <li><a class="dropdown-item {{ request('status') == 'active' ? 'active' : '' }}"
                                                     href="#" data-status="active">Active</a></li>
                                             <li><a class="dropdown-item {{ request('status') == 'inactive' ? 'active' : '' }}"
                                                     href="#" data-status="inactive">Inactive</a></li>
                                         </ul>
                                     </div>
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                            data-bs-toggle="dropdown">
-                                            <i class="ti ti-calendar"></i> Date Joined
-                                        </button>
-                                        <ul class="dropdown-menu p-3" id="dateFilter" style="min-width: 250px;">
-                                            <li>
-                                                <div class="mb-2">
-                                                    <label class="form-label">From Date</label>
-                                                    <input type="date" name="from_date" class="form-control"
-                                                        id="fromDate" value="{{ request('from_date') }}">
-                                                </div>
-                                                <div class="mb-2">
-                                                    <label class="form-label">To Date</label>
-                                                    <input type="date" name="to_date" class="form-control"
-                                                        id="toDate" value="{{ request('to_date') }}">
-                                                </div>
-                                                <div class="d-flex gap-2">
-                                                    <button type="button" class="btn btn-primary btn-sm w-100"
-                                                        id="applyDateFilter">Apply</button>
-                                                    <button type="button" class="btn btn-secondary btn-sm w-100"
-                                                        id="clearDateFilter">Clear</button>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
                                 </div>
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @canany(['edit_staff', 'delete_staff'], 'vendor')
+                            @if ($vendor->can('activate_staff') || $vendor->can('deactivate_staff') || $vendor->can('delete_staff'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-success btn-sm"
-                                                onclick="bulkAction('activate')">
-                                                <i class="ti ti-check"></i> Activate Selected
-                                            </button>
-                                            <button type="button" class="btn btn-outline-warning btn-sm"
-                                                onclick="bulkAction('deactivate')">
-                                                <i class="ti ti-x"></i> Deactivate Selected
-                                            </button>
-                                            <button type="button" class="btn btn-outline-danger btn-sm"
-                                                onclick="bulkAction('delete')">
-                                                <i class="ti ti-trash"></i> Delete Selected
-                                            </button>
+                                            @if ($vendor->can('activate_staff'))
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                    onclick="bulkAction('activate')">
+                                                    <i class="ti ti-check"></i> Activate Selected
+                                                </button>
+                                            @endif
+                                            @if ($vendor->can('deactivate_staff'))
+                                                <button type="button" class="btn btn-outline-warning btn-sm"
+                                                    onclick="bulkAction('deactivate')">
+                                                    <i class="ti ti-x"></i> Deactivate Selected
+                                                </button>
+                                            @endif
+                                            @if ($vendor->can('delete_staff'))
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="bulkAction('delete')">
+                                                    <i class="ti ti-trash"></i> Delete Selected
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
                             @endcanany
 
+                            {{-- Staff Table --}}
                             <div class="table-responsive" id="staffTableContainer">
                                 @include('marketplace.pages.staff.partials.staff-table', [
                                     'staffs' => $staffs,
                                 ])
                             </div>
 
-                            <div class="card-footer" id="paginationContainer">
+                            {{-- Pagination --}}
+                            <div class="mt-3" id="paginationContainer">
                                 <div class="d-flex justify-content-end">
                                     {{ $staffs->appends(request()->query())->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
-                        </div> <!-- end card-body -->
-                    </div> <!-- end card -->
-                </div> <!-- end col -->
-            </div> <!-- end row -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        </div> <!-- container -->
+    </div> <!-- container -->
+</div> <!-- page-content -->
 
-        <!-- ============================================================== -->
-        <!-- End Page content -->
-        <!-- ============================================================== -->
-    </div>
+{{-- Delete Form --}}
+<form id="deleteForm" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 
-    {{-- Delete Form --}}
-    <form id="deleteForm" method="POST" style="display: none;">
-        @csrf
-        @method('DELETE')
-    </form>
+{{-- Activate/Deactivate Form --}}
+<form id="statusForm" method="POST" style="display: none;">
+    @csrf
+</form>
 
-    {{-- Status Form --}}
-    <form id="statusForm" method="POST" style="display: none;">
-        @csrf
-    </form>
-
-    {{-- Bulk Action Form --}}
-    <form id="bulkActionForm" method="POST" action="{{ route('vendor.staff.bulk-action') }}" style="display: none;">
-        @csrf
-        <input type="hidden" name="action" id="bulkAction">
-        <input type="hidden" name="staff_ids" id="bulkStaffIds">
-    </form>
+{{-- Bulk Action Form --}}
+<form id="bulkActionForm" method="POST" action="{{ route('vendor.staff.bulk-action') }}" style="display: none;">
+    @csrf
+    <input type="hidden" name="action" id="bulkAction">
+    <input type="hidden" name="staff_ids" id="bulkStaffIds">
+</form>
 @endsection
 
 @push('scripts')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            let currentFilters = {
-                search: '{{ request('search') }}',
-                role: '{{ request('role') }}',
-                status: '{{ request('status') }}',
-                from_date: '{{ request('from_date') }}',
-                to_date: '{{ request('to_date') }}',
-                page: 1
-            };
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    $(document).ready(function() {
+        let currentFilters = {
+            search: '{{ request('search') }}',
+            role: '{{ request('role') }}',
+            status: '{{ request('status') }}',
+            page: {{ request('page', 1) }}
+        };
 
-            // Search with debounce
-            let searchTimer;
-            $('#searchInput').on('keyup', function(e) {
-                clearTimeout(searchTimer);
-                searchTimer = setTimeout(() => {
-                    currentFilters.search = $(this).val();
-                    currentFilters.page = 1;
-                    loadStaff();
-                }, 500);
-            });
-
-            // Prevent form submission
-            $('#searchForm').on('submit', function(e) {
-                e.preventDefault();
-                currentFilters.search = $('#searchInput').val();
+        // Search with debounce
+        let searchTimer;
+        $('#searchInput').on('keyup', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                currentFilters.search = $(this).val();
                 currentFilters.page = 1;
                 loadStaff();
-            });
-
-            // Clear search
-            $('#clearSearch').on('click', function(e) {
-                e.preventDefault();
-                $('#searchInput').val('');
-                currentFilters.search = '';
-                currentFilters.page = 1;
-                loadStaff();
-            });
-
-            // Role filter
-            $('#roleFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let role = $(this).data('role');
-
-                $('#roleFilter .dropdown-item').removeClass('active');
-                $(this).addClass('active');
-
-                let buttonText = $(this).text();
-                $('#roleFilter').closest('.btn-group').find('.dropdown-toggle').html(
-                    '<i class="ti ti-role"></i> ' + buttonText);
-
-                currentFilters.role = role;
-                currentFilters.page = 1;
-                loadStaff();
-            });
-
-            // Status filter
-            $('#statusFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let status = $(this).data('status');
-
-                $('#statusFilter .dropdown-item').removeClass('active');
-                $(this).addClass('active');
-
-                let buttonText = $(this).text();
-                $('#statusFilter').closest('.btn-group').find('.dropdown-toggle').html(
-                    '<i class="ti ti-status"></i> ' + buttonText);
-
-                currentFilters.status = status;
-                currentFilters.page = 1;
-                loadStaff();
-            });
-
-            // Date filter apply
-            $('#applyDateFilter').on('click', function() {
-                currentFilters.from_date = $('#fromDate').val();
-                currentFilters.to_date = $('#toDate').val();
-                currentFilters.page = 1;
-                loadStaff();
-            });
-
-            // Date filter clear
-            $('#clearDateFilter').on('click', function() {
-                $('#fromDate').val('');
-                $('#toDate').val('');
-                currentFilters.from_date = '';
-                currentFilters.to_date = '';
-                currentFilters.page = 1;
-                loadStaff();
-            });
-
-            // Pagination click handler
-            $(document).on('click', '.pagination a', function(e) {
-                e.preventDefault();
-                let page = $(this).attr('href').split('page=')[1];
-                currentFilters.page = page;
-                loadStaff();
-            });
-
-            // Load staff via AJAX
-            function loadStaff() {
-                $.ajax({
-                    url: '{{ route('vendor.staff.index') }}',
-                    type: 'GET',
-                    data: currentFilters,
-                    beforeSend: function() {
-                        $('#staffTableContainer').html(
-                            '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
-                        );
-                    },
-                    success: function(response) {
-                        $('#staffTableContainer').html(response.table);
-                        $('#paginationContainer').html(response.pagination);
-
-                        $('[data-bs-toggle="tooltip"]').tooltip();
-
-                        let url = new URL(window.location);
-                        url.searchParams.set('search', currentFilters.search || '');
-                        url.searchParams.set('role', currentFilters.role || '');
-                        url.searchParams.set('status', currentFilters.status || '');
-                        url.searchParams.set('from_date', currentFilters.from_date || '');
-                        url.searchParams.set('to_date', currentFilters.to_date || '');
-                        url.searchParams.set('page', currentFilters.page);
-                        window.history.pushState({}, '', url);
-                    },
-                    error: function(xhr) {
-                        console.error('Error loading staff:', xhr);
-                        $('#staffTableContainer').html(
-                            '<div class="alert alert-danger">Error loading staff. Please try again.</div>'
-                        );
-                    }
-                });
-            }
-
-            // Select All Checkbox
-            $(document).on('change', '#selectAll', function() {
-                $('.staff-checkbox').prop('checked', $(this).prop('checked'));
-            });
-
-            // Individual checkbox change
-            $(document).on('change', '.staff-checkbox', function() {
-                let allChecked = $('.staff-checkbox:checked').length === $('.staff-checkbox').length;
-                $('#selectAll').prop('checked', allChecked);
-            });
-
-            // Initialize tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
+            }, 500);
         });
 
-        // Confirm Delete
-        function confirmDelete(staffId) {
-            if (confirm('Are you sure you want to delete this staff member? This action cannot be undone.')) {
+        // Prevent form submission
+        $('#searchForm').on('submit', function(e) {
+            e.preventDefault();
+            currentFilters.search = $('#searchInput').val();
+            currentFilters.page = 1;
+            loadStaff();
+        });
+
+        // Clear search
+        $('#clearSearch').on('click', function(e) {
+            e.preventDefault();
+            $('#searchInput').val('');
+            currentFilters.search = '';
+            currentFilters.page = 1;
+            loadStaff();
+        });
+
+        // Role filter
+        $('#roleFilter .dropdown-item').on('click', function(e) {
+            e.preventDefault();
+            let role = $(this).data('role');
+
+            $('#roleFilter .dropdown-item').removeClass('active');
+            $(this).addClass('active');
+
+            let buttonText = $(this).text();
+            $('#roleFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                ' <i class="ti ti-chevron-down"></i>');
+
+            currentFilters.role = role;
+            currentFilters.page = 1;
+            loadStaff();
+        });
+
+        // Status filter
+        $('#statusFilter .dropdown-item').on('click', function(e) {
+            e.preventDefault();
+            let status = $(this).data('status');
+
+            $('#statusFilter .dropdown-item').removeClass('active');
+            $(this).addClass('active');
+
+            let buttonText = $(this).text();
+            $('#statusFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                ' <i class="ti ti-chevron-down"></i>');
+
+            currentFilters.status = status;
+            currentFilters.page = 1;
+            loadStaff();
+        });
+
+        // Load staff via AJAX
+        function loadStaff() {
+            $.ajax({
+                url: '{{ route('vendor.staff.index') }}',
+                type: 'GET',
+                data: currentFilters,
+                beforeSend: function() {
+                    $('#staffTableContainer').html(
+                        '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
+                    );
+                },
+                success: function(response) {
+                    $('#staffTableContainer').html(response.table);
+                    $('#paginationContainer').html(response.pagination);
+                    $('[data-bs-toggle="tooltip"]').tooltip();
+
+                    let url = new URL(window.location);
+                    url.searchParams.set('search', currentFilters.search || '');
+                    url.searchParams.set('role', currentFilters.role || '');
+                    url.searchParams.set('status', currentFilters.status || '');
+                    url.searchParams.set('page', currentFilters.page);
+                    window.history.pushState({}, '', url);
+                },
+                error: function(xhr) {
+                    console.error('Error loading staff:', xhr);
+                    $('#staffTableContainer').html(
+                        '<div class="alert alert-danger">Error loading staff. Please try again.</div>'
+                    );
+                }
+            });
+        }
+
+        // Select All Checkbox
+        $(document).on('change', '#selectAll', function() {
+            $('.staff-checkbox').prop('checked', $(this).prop('checked'));
+            updateBulkActionButtons();
+        });
+
+        // Individual checkbox change
+        $(document).on('change', '.staff-checkbox', function() {
+            let allChecked = $('.staff-checkbox:checked').length === $('.staff-checkbox').length;
+            $('#selectAll').prop('checked', allChecked);
+            updateBulkActionButtons();
+        });
+
+        // Update bulk action buttons state
+        function updateBulkActionButtons() {
+            let selectedCount = $('.staff-checkbox:checked').length;
+            if (selectedCount > 0) {
+                $('.btn-outline-success, .btn-outline-warning, .btn-outline-danger').prop('disabled', false);
+            } else {
+                $('.btn-outline-success, .btn-outline-warning, .btn-outline-danger').prop('disabled', true);
+            }
+        }
+
+        // Initialize
+        updateBulkActionButtons();
+        $('[data-bs-toggle="tooltip"]').tooltip();
+    });
+
+    // ========== STAFF ACTIONS ==========
+
+    // Delete Staff
+    function confirmDelete(staffId, staffName) {
+        Swal.fire({
+            title: 'Delete Staff',
+            text: `Are you sure you want to delete "${staffName}"? This action cannot be undone!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
                 let form = $('#deleteForm');
                 form.attr('action', '{{ url('vendor/staff') }}/' + staffId);
                 form.submit();
             }
+        });
+    }
+
+    // Activate Staff
+    function confirmActivate(staffId, staffName) {
+        Swal.fire({
+            title: 'Activate Staff',
+            text: `Are you sure you want to activate "${staffName}"? They will be able to login.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, activate!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let form = $('#statusForm');
+                form.attr('action', '{{ url('vendor/staff') }}/' + staffId + '/activate');
+                form.submit();
+            }
+        });
+    }
+
+    // Deactivate Staff
+    function confirmDeactivate(staffId, staffName) {
+        Swal.fire({
+            title: 'Deactivate Staff',
+            text: `Are you sure you want to deactivate "${staffName}"? They will not be able to login.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, deactivate!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let form = $('#statusForm');
+                form.attr('action', '{{ url('vendor/staff') }}/' + staffId + '/deactivate');
+                form.submit();
+            }
+        });
+    }
+
+    // Bulk Action
+    function bulkAction(action) {
+        let selectedStaff = [];
+        $('.staff-checkbox:checked').each(function() {
+            let staffId = $(this).val();
+            let staffName = $(this).closest('tr').find('.fw-semibold').first().text() || 'Staff';
+            selectedStaff.push({
+                id: staffId,
+                name: staffName
+            });
+        });
+
+        if (selectedStaff.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'No Selection',
+                text: 'Please select at least one staff member.',
+                timer: 2000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+            return;
         }
 
-        // Toggle Status
-        function toggleStatus(staffId, currentStatus) {
-            let action = currentStatus ? 'deactivate' : 'activate';
-            let confirmMessage = currentStatus ?
-                'Are you sure you want to deactivate this staff member?' :
-                'Are you sure you want to activate this staff member?';
+        let actionText = '';
+        let actionColor = '';
+        let icon = '';
+        let confirmText = '';
 
-            if (confirm(confirmMessage)) {
-                let form = $('#statusForm');
-                form.attr('action', '{{ url('vendor/staff') }}/' + staffId + '/toggle-status');
+        switch (action) {
+            case 'activate':
+                actionText = 'activate';
+                actionColor = '#198754';
+                icon = 'question';
+                confirmText = 'Yes, activate them!';
+                break;
+            case 'deactivate':
+                actionText = 'deactivate';
+                actionColor = '#ffc107';
+                icon = 'warning';
+                confirmText = 'Yes, deactivate them!';
+                break;
+            case 'delete':
+                actionText = 'delete';
+                actionColor = '#d33';
+                icon = 'error';
+                confirmText = 'Yes, delete them!';
+                break;
+        }
 
-                $.ajax({
-                    url: form.attr('action'),
-                    type: 'POST',
-                    data: form.serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            location.reload();
-                        } else {
-                            alert(response.message || 'Error updating status');
-                        }
-                    },
-                    error: function() {
-                        alert('Error updating status');
+        let staffNames = selectedStaff.map(s => s.name).join(', ');
+        let message = `Are you sure you want to ${actionText} ${selectedStaff.length} selected staff member(s)?`;
+        if (action === 'delete') {
+            message =
+                `Are you sure you want to ${actionText} ${selectedStaff.length} selected staff member(s)? This action cannot be undone!`;
+        }
+
+        Swal.fire({
+            title: `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Staff`,
+            html: `${message}<br><br><strong>Selected staff:</strong><br>${staffNames}`,
+            icon: icon,
+            showCancelButton: true,
+            confirmButtonColor: actionColor,
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: confirmText,
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing...',
+                    text: `Please wait while we ${actionText} ${selectedStaff.length} staff member(s)`,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
                 });
-            }
-        }
 
-        // Bulk Actions
-        function bulkAction(action) {
-            let selectedStaff = [];
-            $('.staff-checkbox:checked').each(function() {
-                selectedStaff.push($(this).val());
-            });
-
-            if (selectedStaff.length === 0) {
-                alert('Please select at least one staff member.');
-                return;
-            }
-
-            let confirmMessage = '';
-            switch (action) {
-                case 'activate':
-                    confirmMessage = 'Are you sure you want to activate ' + selectedStaff.length +
-                        ' selected staff members?';
-                    break;
-                case 'deactivate':
-                    confirmMessage = 'Are you sure you want to deactivate ' + selectedStaff.length +
-                        ' selected staff members?';
-                    break;
-                case 'delete':
-                    confirmMessage = 'Are you sure you want to delete ' + selectedStaff.length +
-                        ' selected staff members? This action cannot be undone.';
-                    break;
-            }
-
-            if (confirm(confirmMessage)) {
                 $('#bulkAction').val(action);
-                $('#bulkStaffIds').val(JSON.stringify(selectedStaff));
+                $('#bulkStaffIds').val(JSON.stringify(selectedStaff.map(s => s.id)));
 
                 $.ajax({
                     url: $('#bulkActionForm').attr('action'),
@@ -475,150 +508,145 @@
                     data: $('#bulkActionForm').serialize(),
                     success: function(response) {
                         if (response.success) {
-                            location.reload();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
                         } else {
-                            alert(response.message || 'Error processing bulk action');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message || 'Error processing bulk action'
+                            });
                         }
                     },
-                    error: function() {
-                        alert('Error processing bulk action');
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: xhr.responseJSON?.message ||
+                                'Something went wrong. Please try again.'
+                        });
                     }
                 });
             }
-        }
-
-        // Resend Invitation
-        function resendInvitation(staffId) {
-            if (confirm('Resend invitation email to this staff member?')) {
-                $.ajax({
-                    url: '{{ url('vendor/staff') }}/' + staffId + '/resend-invitation',
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            alert('Invitation sent successfully!');
-                        } else {
-                            alert('Error sending invitation');
-                        }
-                    },
-                    error: function() {
-                        alert('Error sending invitation');
-                    }
-                });
-            }
-        }
-    </script>
+        });
+    }
+</script>
 @endpush
 
 @push('styles')
-    <style>
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-        }
+<style>
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
 
-        .avatar-sm {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .avatar-md {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .avatar-sm i {
-            font-size: 24px;
-        }
+    .avatar-sm {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .bg-primary-subtle {
-            background-color: rgba(13, 110, 253, 0.1);
-        }
+    .avatar-sm i {
+        font-size: 24px;
+    }
 
-        .bg-success-subtle {
-            background-color: rgba(25, 135, 84, 0.1);
-        }
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
 
-        .bg-danger-subtle {
-            background-color: rgba(220, 53, 69, 0.1);
-        }
+    .bg-success-subtle {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
 
-        .bg-warning-subtle {
-            background-color: rgba(255, 193, 7, 0.1);
-        }
+    .bg-danger-subtle {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
 
-        .badge {
-            font-weight: 500;
-            letter-spacing: 0.3px;
-        }
+    .bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
 
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
 
-        .table> :not(caption)>*>* {
-            vertical-align: middle;
-        }
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        /* Role badges */
-        .badge.bg-primary-subtle {
-            background-color: rgba(13, 110, 253, 0.1);
-            border: 1px solid rgba(13, 110, 253, 0.2);
-            color: #0d6efd;
-        }
+    .table> :not(caption)>*>* {
+        vertical-align: middle;
+    }
 
-        .badge.bg-info-subtle {
-            background-color: rgba(13, 202, 240, 0.1);
-            border: 1px solid rgba(13, 202, 240, 0.2);
-            color: #0dcaf0;
-        }
+    .badge.bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1);
+        border: 1px solid rgba(13, 110, 253, 0.2);
+    }
 
-        .badge.bg-success-subtle {
-            background-color: rgba(25, 135, 84, 0.1);
-            border: 1px solid rgba(25, 135, 84, 0.2);
-            color: #198754;
-        }
+    .badge.bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.1);
+        border: 1px solid rgba(13, 202, 240, 0.2);
+    }
 
-        .badge.bg-warning-subtle {
-            background-color: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.2);
-            color: #ffc107;
-        }
+    .btn-soft-primary:hover {
+        background-color: #0d6efd;
+        color: white;
+    }
 
-        .badge.bg-danger-subtle {
-            background-color: rgba(220, 53, 69, 0.1);
-            border: 1px solid rgba(220, 53, 69, 0.2);
-            color: #dc3545;
-        }
+    .btn-soft-success:hover {
+        background-color: #198754;
+        color: white;
+    }
 
-        /* Pagination styles */
-        .pagination {
-            margin-bottom: 0;
-        }
+    .btn-soft-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
 
-        .page-link {
-            cursor: pointer;
-        }
+    .btn-soft-warning:hover {
+        background-color: #ffc107;
+        color: #000;
+    }
 
-        /* Staff avatar */
-        .staff-avatar {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-        }
+    .btn-soft-info:hover {
+        background-color: #0dcaf0;
+        color: #000;
+    }
 
-        .avatar-title {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-    </style>
+    .btn-soft-danger[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination {
+        margin-bottom: 0;
+    }
+
+    .page-link {
+        cursor: pointer;
+    }
+</style>
 @endpush

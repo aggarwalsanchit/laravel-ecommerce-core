@@ -1,5 +1,5 @@
-{{-- resources/views/admin/roles/show.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/vendor/roles/show.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Role Details')
 
@@ -12,8 +12,8 @@
                 </div>
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.roles.index') }}">Roles</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.roles.index') }}">Roles</a></li>
                         <li class="breadcrumb-item active">Role Details</li>
                     </ol>
                 </div>
@@ -27,7 +27,6 @@
                         </div>
                         <div class="card-body">
                             <table class="table table-borderless">
-                                32
                                 <td width="150"><strong>ID:</strong></td>
                                 <td>#{{ $role->id }}</td>
                                 </tr>
@@ -115,7 +114,7 @@
                                     <i class="ti ti-key-off" style="font-size: 48px; opacity: 0.5;"></i>
                                     <p class="text-muted mt-2">No permissions assigned to this role.</p>
                                     @can('assign permissions')
-                                        <a href="{{ route('admin.roles.assign-permissions', $role->id) }}"
+                                        <a href="{{ route('vendor.roles.assign-permissions', $role->id) }}"
                                             class="btn btn-primary mt-2">
                                             <i class="ti ti-key me-1"></i> Assign Permissions
                                         </a>
@@ -140,7 +139,6 @@
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
-                                            32
                                             <th>ID</th>
                                             <th>Name</th>
                                             <th>Email</th>
@@ -156,7 +154,7 @@
                                                     <td>
                                                         <div class="d-flex align-items-center gap-2">
                                                             @if ($user->avatar)
-                                                                <img src="{{ asset('storage/avatars/' . $user->avatar) }}"
+                                                                <img src="{{ Storage::url($user->avatar) }}"
                                                                     class="rounded-circle" width="30" height="30"
                                                                     style="object-fit: cover;">
                                                             @else
@@ -178,7 +176,7 @@
                                                     </td>
                                                     <td>{{ $user->created_at->format('d M Y') }}</td>
                                                     <td>
-                                                        <a href="{{ route('admin.users.show', $user->id) }}"
+                                                        <a href="{{ route('vendor.staff.show', $user->id) }}"
                                                             class="btn btn-sm btn-soft-primary">
                                                             <i class="ti ti-eye"></i>
                                                         </a>
@@ -206,19 +204,19 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-footer text-end">
-                            <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">
+                            <a href="{{ route('vendor.roles.index') }}" class="btn btn-secondary">
                                 <i class="ti ti-arrow-left me-1"></i> Back
                             </a>
                             @can('edit roles')
                                 @if ($role->name !== 'Super Admin')
-                                    <a href="{{ route('admin.roles.edit', $role->id) }}" class="btn btn-primary">
+                                    <a href="{{ route('vendor.roles.edit', $role->id) }}" class="btn btn-primary">
                                         <i class="ti ti-edit me-1"></i> Edit Role
                                     </a>
                                 @endif
                             @endcan
                             @can('assign permissions')
                                 @if ($role->name !== 'Super Admin')
-                                    <a href="{{ route('admin.roles.assign-permissions', $role->id) }}" class="btn btn-info">
+                                    <a href="{{ route('vendor.roles.assign-permissions', $role->id) }}" class="btn btn-info">
                                         <i class="ti ti-key me-1"></i> Assign Permissions
                                     </a>
                                 @endif

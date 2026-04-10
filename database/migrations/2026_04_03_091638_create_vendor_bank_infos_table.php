@@ -9,9 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('vendor_bank_infos', function (Blueprint $table) {
+        Schema::create('shop_bank_infos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
+            $table->foreignId('shop_id')->constrained('shops')->onDelete('cascade');
 
             // Bank Account Details
             $table->string('account_holder_name');
@@ -30,18 +30,12 @@ return new class extends Migration
             $table->string('stripe_account_id')->nullable();
             $table->string('razorpay_account_id')->nullable();
 
-            // Verification
-            $table->enum('verification_status', ['pending', 'verified', 'rejected'])->default('pending');
-            $table->timestamp('verified_at')->nullable();
-            $table->foreignId('verified_by')->nullable()->constrained('users');
-            $table->text('verification_notes')->nullable();
-
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('vendor_bank_infos');
+        Schema::dropIfExists('shop_bank_infos');
     }
 };

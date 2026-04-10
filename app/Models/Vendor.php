@@ -1,208 +1,176 @@
 <?php
-// app/Models/Vendor.php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Traits\VendorPermissionTrait;
-use App\Traits\LogsVendorActivity;
+use Illuminate\Support\Facades\Storage;
 
 class Vendor extends Authenticatable
 {
+    use HasFactory, Notifiable, HasRoles, CanResetPassword;
 
-    use HasFactory, Notifiable, HasRoles, VendorPermissionTrait, LogsVendorActivity;
+    protected $table = 'vendors';
 
-    protected $guard = 'vendor';
+    protected $guard_name = 'vendor';
 
     protected $fillable = [
+        'shop_id',
+        'user_id',
         'name',
         'email',
         'password',
+        'phone_code',
         'phone',
         'avatar',
-        'shop_name',
-        'shop_slug',
-        'shop_description',
-        'shop_logo',
-        'shop_banner',
-        'shop_email',
-        'shop_phone',
-        'shop_whatsapp',
-        'shop_website',
-        'shop_address',
-        'shop_city',
-        'shop_state',
-        'shop_country',
-        'shop_postal_code',
-        'vendor_type',
-        'business_type',
-        'account_status',
-        'profile_completed',
+        'address',
+        'city',
+        'state_id',
+        'country_id',
+        'postal_code',
+        'vendor_role',
+        'custom_permissions',
+        'is_active',
+        'email_verified_at',
         'last_login_at',
-        'verification_status',
-        'verification_notes',
-        'verified_by',
-        'verified_at',
-        'total_products',
-        'total_orders',
-        'total_revenue',
-        'total_commission',
-        'average_rating',
-        'total_reviews',
-        'accepts_cod',
-        'is_featured',
-        'commission_rate',
-        'user_id'
+        'last_login_ip',
+        'birth_date'
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [
-        'verified_at' => 'datetime',
-        'suspended_at' => 'datetime',
-        'accepts_cod' => 'boolean',
-        'is_featured' => 'boolean',
-        'total_revenue' => 'decimal:2',
-        'total_commission' => 'decimal:2',
-        'average_rating' => 'decimal:2',
-        'commission_rate' => 'integer',
+        'custom_permissions' => 'array',
+        'is_active' => 'boolean',
+        'email_verified_at' => 'datetime',
+        'last_login_at' => 'datetime',
+        'birth_date' => 'date',
     ];
 
-    protected static function boot()
+    /**
+     * Get the vendor that owns the staff
+     */
+    public function shop(): BelongsTo
     {
-        parent::boot();
-        static::creating(function ($vendor) {
-            $vendor->shop_slug = Str::slug($vendor->shop_name);
-        });
+        return $this->belongsTo(Vendor\Shop::class);
     }
 
-    // Relationships
-    public function user()
+    /**
+     * Get the main user account
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function taxInfo()
+    public function country()
     {
-        return $this->hasOne(VendorTaxInfo::class);
+        return $this->belongsTo(Country::class, 'country_id');
     }
 
-    public function bankInfo()
+    public function state()
     {
-        return $this->hasOne(VendorBankInfo::class);
+        return $this->belongsTo(State::class, 'state_id');
     }
 
-    public function staff()
+    public function getFullPhoneAttribute()
     {
-        return $this->hasMany(VendorStaff::class);
-    }
-
-    public function documents()
-    {
-        return $this->hasMany(VendorDocument::class);
-    }
-
-    public function categories()
-    {
-        return $this->belongsToMany(Category::class, 'vendor_categories');
-    }
-
-    public function products()
-    {
-        return $this->hasMany(Product::class);
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class);
-    }
-
-    public function commissionLogs()
-    {
-        return $this->hasMany(CommissionLog::class);
-    }
-
-    // Scopes
-    public function scopeActive($query)
-    {
-        return $query->where('account_status', 'active');
-    }
-
-    public function scopeVerified($query)
-    {
-        return $query->where('verification_status', 'verified');
-    }
-
-    public function scopeOwnStore($query)
-    {
-        return $query->where('vendor_type', 'own_store');
-    }
-
-    public function scopeThirdParty($query)
-    {
-        return $query->where('vendor_type', 'third_party');
-    }
-
-    // Helper Methods
-    public function isOwnStore()
-    {
-        return $this->vendor_type === 'own_store';
-    }
-
-    public function isThirdParty()
-    {
-        return $this->vendor_type === 'third_party';
-    }
-
-    public function isVerified()
-    {
-        return $this->verification_status === 'verified';
-    }
-
-    public function isActive()
-    {
-        return $this->account_status === 'active';
-    }
-
-    public function getCommissionRateAttribute()
-    {
-        if ($this->isOwnStore()) {
-            return 0; // Own store pays no commission
+        if ($this->phone_code && $this->phone) {
+            return $this->phone_code . $this->phone;
         }
-        return $this->attributes['commission_rate'] ?? 10;
+        return $this->phone;
     }
 
-    public function getLogoUrlAttribute()
+    // Accessor for avatar URL
+    public function getAvatarUrlAttribute()
     {
-        return $this->shop_logo ? Storage::url($this->shop_logo) : null;
+        if ($this->avatar && Storage::disk('public')->exists($this->avatar)) {
+            return Storage::url($this->avatar);
+        }
+        return asset('dummy-avatar.jpg');
     }
 
-    public function getBannerUrlAttribute()
+    /**
+     * Get permissions grouped by module.
+     */
+    public function getPermissionsByModule()
     {
-        return $this->shop_banner ? Storage::url($this->shop_banner) : null;
+        $permissions = $this->getAllPermissions()->pluck('name')->toArray();
+        $grouped = [];
+
+        foreach ($permissions as $permission) {
+            $parts = explode(' ', $permission);
+            $module = $parts[1] ?? 'general';
+            if (!isset($grouped[$module])) {
+                $grouped[$module] = [];
+            }
+            $grouped[$module][] = $permission;
+        }
+
+        return $grouped;
     }
 
-    public function isStoreOwner()
+    /**
+     * Get formatted join date.
+     */
+    public function getFormattedJoinDate()
     {
-        return $this->hasRole('store_owner');
+        return $this->created_at->format('F d, Y');
     }
 
-    // Helper method to check if vendor can manage staff
-    public function canManageStaff()
+    /**
+     * Get user status with badge HTML.
+     */
+    public function getStatusBadge()
     {
-        return $this->hasPermissionTo('manage_staff', 'vendor');
+        if ($this->is_active) {
+            return '<span class="badge bg-success-subtle text-success">
+                    <i class="ti ti-circle-check me-1"></i>Active
+                </span>';
+        }
+
+        return '<span class="badge bg-danger-subtle text-danger">
+                <i class="ti ti-circle-x me-1"></i>Inactive
+            </span>';
     }
 
-    public function activityLogs()
+    /**
+     * Check if user has any permissions.
+     */
+    public function hasAnyPermission()
     {
-        return $this->hasMany(VendorActivityLog::class)->latest();
+        return $this->getAllPermissions()->count() > 0;
     }
 
-    public function getRecentActivityLogs($limit = 50)
+    /**
+     * Get permission count.
+     */
+    public function getPermissionCount()
     {
-        return $this->activityLogs()->limit($limit)->get();
+        return $this->getAllPermissions()->count();
+    }
+
+    public function getFullAddressAttribute()
+    {
+        $parts = [];
+        if ($this->address) $parts[] = $this->address;
+        if ($this->city) $parts[] = $this->city;
+        if ($this->state) $parts[] = $this->state->name;
+        if ($this->country) $parts[] = $this->country->name;
+        if ($this->postal_code) $parts[] = $this->postal_code;
+
+        return implode(', ', $parts);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\VendorResetPasswordNotification($token));
     }
 }

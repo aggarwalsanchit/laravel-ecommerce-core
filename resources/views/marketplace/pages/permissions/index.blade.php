@@ -1,5 +1,5 @@
-{{-- resources/views/admin/permissions/index.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/marketplace/permissions/index.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Permissions')
 
@@ -12,7 +12,7 @@
                 </div>
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active">Permissions</li>
                     </ol>
                 </div>
@@ -23,11 +23,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Permission Management</h3>
-                            @can('create permissions')
-                                <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary">
+                            @php $vendor = Auth::guard('vendor')->user(); @endphp
+                            @if ($vendor->can('create_permissions'))
+                                <a href="{{ route('vendor.permissions.create') }}" class="btn btn-primary">
                                     <i class="ti ti-plus me-1"></i> Add New Permission
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         <div class="card-body">
 
@@ -64,7 +65,7 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @can('delete permissions')
+                            @if ($vendor->can('delete_permissions'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
@@ -75,10 +76,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endcan
+                            @endif
 
                             <div class="table-responsive" id="permissionsTableContainer">
-                                @include('admin.pages.permissions.partials.permissions-table', [
+                                @include('marketplace.pages.permissions.partials.permissions-table', [
                                     'permissions' => $permissions,
                                 ])
                             </div>
@@ -104,7 +105,7 @@
         </form>
 
         {{-- Bulk Action Form --}}
-        <form id="bulkActionForm" method="POST" action="{{ route('admin.permissions.bulk-action') }}"
+        <form id="bulkActionForm" method="POST" action="{{ route('vendor.permissions.bulk-action') }}"
             style="display: none;">
             @csrf
             <input type="hidden" name="action" id="bulkAction">
@@ -172,7 +173,7 @@
                 // Load permissions via AJAX
                 function loadPermissions() {
                     $.ajax({
-                        url: '{{ route('admin.permissions.index') }}',
+                        url: '{{ route('vendor.permissions.index') }}',
                         type: 'GET',
                         data: currentFilters,
                         beforeSend: function() {
@@ -243,11 +244,11 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         let form = $('#deleteForm');
-                        form.attr('action', '{{ url('admin/permissions') }}/' + permissionId);
+                        form.attr('action', '{{ url('/marketplace/permissions') }}/' + permissionId);
 
                         $.ajax({
                             url: form.attr('action'),
-                            type: 'POST',
+                            type: 'DELETE',
                             data: form.serialize(),
                             success: function(response) {
                                 if (response.success) {

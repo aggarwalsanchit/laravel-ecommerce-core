@@ -507,9 +507,53 @@
                     <a class="topbar-link btn btn-outline-primary dropdown-toggle drop-arrow-none"
                         data-bs-toggle="dropdown" data-bs-offset="0,22" type="button" aria-haspopup="false"
                         aria-expanded="false">
-                        <img src="assets/images/users/avatar-1.jpg" width="24"
-                            class="rounded-circle me-lg-2 d-flex" alt="user-image">
+
+                        @php
+                            // Check if Admin is logged in
+                            if (Auth::guard('admin')->check()) {
+                                $user = Auth::guard('admin')->user();
+                                $userType = 'admin';
+                                $userName = $user->name ?? 'Admin';
+                                $userEmail = $user->email ?? '';
+                                $userAvatar = $user->avatar ?? null;
+                            }
+                            // Check if Vendor is logged in
+                            elseif (Auth::guard('vendor')->check()) {
+                                $user = Auth::guard('vendor')->user();
+                                $userType = 'vendor';
+                                $userName = $user->name ?? 'Vendor';
+                                $userEmail = $user->email ?? '';
+                                $userAvatar = $user->avatar ?? null;
+                            }
+                            // Default if no one logged in
+                            else {
+                                $userType = 'guest';
+                                $userName = 'Guest';
+                                $userEmail = '';
+                                $userAvatar = null;
+                            }
+
+                            $firstLetter = strtoupper(substr($userName, 0, 1));
+                            // Generate consistent color based on name
+                            $avatarColor = '#' . dechex(hexdec(hash('crc32', $userName)) & 0xffffff);
+                        @endphp
+
+                        {{-- Show Avatar --}}
+                        @if ($userAvatar)
+                            <img src="{{ asset('storage/' . $userAvatar) }}" width="32" height="32"
+                                class="rounded-circle me-lg-2" style="object-fit: cover; width: 32px; height: 32px;"
+                                alt="{{ $userName }}">
+                        @else
+                            <div class="avatar-circle me-lg-2"
+                                style="width: 32px; height: 32px; background-color: {{ $avatarColor }}; 
+                        border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; 
+                        color: white; font-weight: 600; font-size: 14px; text-transform: uppercase;">
+                                {{ $firstLetter }}
+                            </div>
+                        @endif
+
                         <span class="d-lg-flex flex-column gap-1 d-none">
+                            <strong class="text-dark">{{ $userName }}</strong>
 
                         </span>
                         <i class="ti ti-chevron-down d-none d-lg-block align-middle ms-2"></i>
@@ -522,29 +566,34 @@
 
                         <!-- item-->
                         @if (Auth::guard('admin')->check())
-                            <a href="{{ route('admin.profile.index') }}" class="dropdown-item">
-                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
-                                <span class="align-middle">My Account</span>
-                            </a>
-                            <a href="{{ route('admin.activity-logs.index') }}" class="dropdown-item">
-                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
-                                <span class="align-middle">Activity Logs</span>
-                            </a>
+                            @php $admin = Auth::guard('admin')->user(); @endphp
+                            @if ($admin->can('view_profile'))
+                                <a href="{{ route('admin.profile.index') }}" class="dropdown-item">
+                                    <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">My Account</span>
+                                </a>
+                            @endif
+                            @if ($admin->can('view_logs'))
+                                <a href="{{ route('admin.activity-logs.index') }}" class="dropdown-item">
+                                    <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">Activity Logs</span>
+                                </a>
+                            @endif
                         @elseif(Auth::guard('vendor')->check())
-                            @php $vendor = auth()->guard('vendor')->user(); @endphp
+                            @php $vendor = Auth::guard('vendor')->user(); @endphp
                             @if ($vendor->can('view_profile'))
-                                <a href="{{ route('vendor.complete-profile') }}" class="dropdown-item">
+                                <a href="{{ route('vendor.profile.index') }}" class="dropdown-item">
                                     <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
                                     <span class="align-middle">Vendor Profile</span>
                                 </a>
                             @endif
-
-                            <a href="{{ route('vendor.activity-logs') }}" class="dropdown-item">
-                                <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
-                                <span class="align-middle">Vendor Activity Logs</span>
-                            </a>
+                            @if ($vendor->can('view_logs'))
+                                <a href="{{ route('vendor.activity-logs.index') }}" class="dropdown-item">
+                                    <i class="ti ti-user-hexagon me-1 fs-17 align-middle"></i>
+                                    <span class="align-middle">Activity Logs</span>
+                                </a>
+                            @endif
                         @endif
-
                         <!-- item-->
                         {{-- <a href="javascript:void(0);" class="dropdown-item">
                             <i class="ti ti-wallet me-1 fs-17 align-middle"></i>

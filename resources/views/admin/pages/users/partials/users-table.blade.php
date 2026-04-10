@@ -102,23 +102,22 @@
                     </td>
                     <td class="pe-3">
                         <div class="hstack gap-1 justify-content-end">
-                            @can('view_users')
+                            @php $admin = Auth::guard('admin')->user(); @endphp
+                            @if ($admin->can('view_users'))
                                 <a href="{{ route('admin.users.show', $user->id) }}"
                                     class="btn btn-soft-primary btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                     title="View Details">
                                     <i class="ti ti-eye"></i>
                                 </a>
-                            @endcan
-
-                            @can('edit_users')
+                            @endif
+                            @if ($admin->can('edit_users'))
                                 <a href="{{ route('admin.users.edit', $user->id) }}"
                                     class="btn btn-soft-success btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                     title="Edit User">
                                     <i class="ti ti-edit fs-16"></i>
                                 </a>
-                            @endcan
-
-                            @can('activate_users')
+                            @endif
+                            @if ($admin->can('activate_users'))
                                 @if ($user->is_active)
                                     <button type="button" class="btn btn-soft-warning btn-icon btn-sm rounded-circle"
                                         onclick="confirmDeactivate({{ $user->id }}, '{{ addslashes($user->name) }}')"
@@ -133,24 +132,22 @@
                                         <i class="ti ti-user-check"></i>
                                     </button>
                                 @endif
-                            @endcan
-
-                            @can('delete_users')
+                            @endif
+                            @if ($admin->can('delete_users'))
                                 <button type="button" class="btn btn-soft-danger btn-icon btn-sm rounded-circle"
                                     onclick="confirmDelete({{ $user->id }}, '{{ addslashes($user->name) }}')"
                                     data-bs-toggle="tooltip" title="Delete User"
                                     {{ $user->id === auth('admin')->id() ? 'disabled' : '' }}>
                                     <i class="ti ti-trash"></i>
                                 </button>
-                            @endcan
-
-                            @can('impersonate_users')
+                            @endif
+                            @if ($admin->can('impersonate_users'))
                                 <button type="button" class="btn btn-soft-info btn-icon btn-sm rounded-circle"
                                     onclick="impersonateUser({{ $user->id }}, '{{ addslashes($user->name) }}')"
                                     data-bs-toggle="tooltip" title="Login as this user">
                                     <i class="ti ti-user-check"></i>
                                 </button>
-                            @endcan
+                            @endif
                         </div>
                     </td>
                 </tr>
@@ -161,11 +158,11 @@
                             <i class="ti ti-users" style="font-size: 48px; opacity: 0.5;"></i>
                             <h5 class="mt-3">No Users Found</h5>
                             <p class="text-muted">Get started by creating a new user.</p>
-                            @can('create_users')
+                            @if ($admin->can('create_users'))
                                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary mt-2">
                                     <i class="ti ti-plus me-1"></i> Add New User
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                     </td>
                 </tr>

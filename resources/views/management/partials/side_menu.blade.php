@@ -161,17 +161,16 @@
                             </a>
                             <div class="collapse" id="sidebarEcommerce">
                                 <ul class="sub-menu">
-                                        <li class="side-nav-item">
-                                            <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
-                                                <span class="menu-text">Add Attributes</span>
-                                            </a>
-                                        </li>
-                                        <li class="side-nav-item">
-                                            <a href="{{ route('admin.attribute-groups.index') }}"
-                                                class="side-nav-link">
-                                                <span class="menu-text">Attributes Groups</span>
-                                            </a>
-                                        </li>
+                                    <li class="side-nav-item">
+                                        <a href="{{ route('admin.attributes.index') }}" class="side-nav-link">
+                                            <span class="menu-text">Add Attributes</span>
+                                        </a>
+                                    </li>
+                                    <li class="side-nav-item">
+                                        <a href="{{ route('admin.attribute-groups.index') }}" class="side-nav-link">
+                                            <span class="menu-text">Attributes Groups</span>
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>
@@ -205,7 +204,7 @@
                     @endif
                     <li class="side-nav-title mt-2">Apps & Pages</li>
                     {{-- Complete Profile Menu (Show for pending vendors OR if profile not complete) --}}
-                    @if ($vendor->account_status === 'pending' || $vendor->profile_completed < 80)
+                    @if ($vendor->shop->account_status === 'pending' || $vendor->shop->profile_completed < 70)
                         @if ($vendor->can('complete_profile'))
                             <li class="side-nav-item">
                                 <a href="{{ route('vendor.complete-profile') }}"

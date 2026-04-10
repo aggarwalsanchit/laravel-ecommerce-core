@@ -1,30 +1,66 @@
+{{-- resources/views/marketplace/auth/login.blade.php --}}
+
 @extends('management.layouts.auth')
 
-@section('title', 'Vendor Login')
+@section('title', 'Seller Login - ' . ($websiteSettings->website_name ?? 'Boron Marketplace'))
 
 @section('content')
+    @php
+        $logoLight = null;
+        $logoDark = null;
+
+        if (isset($websiteSettings)) {
+            if ($websiteSettings->logo_light && Storage::disk('public')->exists($websiteSettings->logo_light)) {
+                $logoLight = asset('storage/' . $websiteSettings->logo_light);
+            }
+            if ($websiteSettings->logo_dark && Storage::disk('public')->exists($websiteSettings->logo_dark)) {
+                $logoDark = asset('storage/' . $websiteSettings->logo_dark);
+            }
+        }
+
+        $websiteName = $websiteSettings->website_name ?? 'Boron Marketplace';
+        $footerCopyright = $websiteSettings->footer_copyright_text ?? '© ' . date('Y') . ' All rights reserved.';
+    @endphp
+
     <div class="auth-bg d-flex min-vh-100 justify-content-center align-items-center">
         <div class="row g-0 justify-content-center w-100 m-xxl-5 px-xxl-4 m-3">
             <div class="col-xl-4 col-lg-5 col-md-6">
                 <div class="card overflow-hidden text-center h-100 p-xxl-4 p-3 mb-0">
                     <a href="{{ route('vendor.login') }}" class="auth-brand mb-3">
-                        <img src="{{ asset('assets/images/logo-dark.png') }}" alt="dark logo" height="30" class="logo-dark">
-                        <img src="{{ asset('assets/images/logo.png') }}" alt="logo light" height="30" class="logo-light">
+                        {{-- Logo from website settings --}}
+                        @if ($logoDark || $logoLight)
+                            @if ($logoLight)
+                                <img src="{{ $logoLight }}" alt="{{ $websiteSettings->logo_light_alt_tag ?? 'Logo' }}"
+                                    height="35" class="logo-light">
+                            @endif
+                            @if ($logoDark)
+                                <img src="{{ $logoDark }}" alt="{{ $websiteSettings->logo_dark_alt_tag ?? 'Logo' }}"
+                                    height="35" class="logo-dark">
+                            @endif
+                        @else
+                            {{-- Dummy logo if no logo in settings --}}
+                            <img src="{{ asset('dummy-admin-logo.webp') }}" alt="Logo" height="40">
+                        @endif
                     </a>
 
-                    <h4 class="fw-semibold mb-2">Welcome Back!</h4>
+                    <h4 class="fw-semibold mb-2">Welcome Back Seller!</h4>
 
-                    <p class="text-muted mb-4">Login to your seller account</p>
+                    <p class="text-muted mb-4">Enter your email address and password to access seller panel.</p>
 
-                    <form method="POST" action="{{ route('vendor.login.submit') }}" class="text-start mb-3">
+                    <form method="POST" action="{{ route('vendor.login.submit') }}" class="text-start mb-3" id="loginForm">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label" for="email">Email Address</label>
-                            <input type="email" name="email" id="email"
-                                class="form-control @error('email') is-invalid @enderror" placeholder="Enter your email"
-                                value="{{ old('email') }}" required autofocus>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="ti ti-mail"></i>
+                                </span>
+                                <input type="email" name="email" id="email"
+                                    class="form-control @error('email') is-invalid @enderror" placeholder="Enter your email"
+                                    value="{{ old('email') }}" required autofocus>
+                            </div>
                             @error('email')
-                                <span class="invalid-feedback" role="alert">
+                                <span class="invalid-feedback d-block" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                             @enderror
@@ -32,11 +68,19 @@
 
                         <div class="mb-3">
                             <label class="form-label" for="password">Password</label>
-                            <input type="password" name="password" id="password"
-                                class="form-control @error('password') is-invalid @enderror"
-                                placeholder="Enter your password" required>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="ti ti-lock"></i>
+                                </span>
+                                <input type="password" name="password" id="password"
+                                    class="form-control @error('password') is-invalid @enderror"
+                                    placeholder="Enter your password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="ti ti-eye"></i>
+                                </button>
+                            </div>
                             @error('password')
-                                <span class="invalid-feedback" role="alert">
+                                <span class="invalid-feedback d-block" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>
                             @enderror
@@ -49,27 +93,28 @@
                             </div>
 
                             <a href="{{ route('vendor.password.request') }}"
-                                class="text-muted border-bottom border-dashed">Forgot Password?</a>
+                                class="text-muted border-bottom border-dashed">
+                                Forgot Password?
+                            </a>
                         </div>
 
                         <div class="d-grid">
-                            <button class="btn btn-primary" type="submit">Login</button>
+                            <button class="btn btn-primary" type="submit" id="loginBtn">
+                                <i class="ti ti-login me-1"></i> Login
+                            </button>
                         </div>
                     </form>
 
                     {{-- Become a Seller Section --}}
                     <div class="mt-4 pt-3 border-top">
-                        <p class="text-muted mb-2">Want to start selling on {{ config('app.name') }}?</p>
+                        <p class="text-muted mb-2">Don't have a seller account yet?</p>
                         <a href="{{ route('vendor.register') }}" class="btn btn-success w-100">
-                            🏪 Become a Seller
+                            <i class="ti ti-building-store me-1"></i> Become a Seller
                         </a>
                     </div>
                     <br>
                     <p class="mt-auto mb-0 mt-3">
-                        <script>
-                            document.write(new Date().getFullYear())
-                        </script> © Boron - By <span
-                            class="fw-bold text-decoration-underline text-uppercase text-reset fs-12">Coderthemes</span>
+                        {!! $footerCopyright !!}
                     </p>
                 </div>
             </div>
@@ -79,6 +124,114 @@
 
 @push('scripts')
     <script>
-        console.log('Vendor Login page loaded');
+        // Password show/hide toggle
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('ti-eye');
+                    icon.classList.toggle('ti-eye-off');
+                }
+            });
+        }
+
+        // ========== BUTTON DISABLE ON SUBMIT ==========
+        (function() {
+            const form = document.getElementById('loginForm');
+            const button = document.getElementById('loginBtn');
+
+            if (!form || !button) return;
+
+            let isSubmitting = false;
+
+            form.addEventListener('submit', function(e) {
+                // If already submitting, prevent the submission
+                if (isSubmitting) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Mark as submitting
+                isSubmitting = true;
+
+                // Disable the button
+                button.disabled = true;
+
+                // Save original content
+                const originalContent = button.innerHTML;
+                button.setAttribute('data-original', originalContent);
+
+                // Change button content to loading state
+                button.innerHTML =
+                    '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Logging in...';
+
+                // Allow the form to submit
+                return true;
+            });
+
+            // Re-enable button if there are errors (page loads with errors)
+            @if ($errors->any())
+                button.disabled = false;
+                isSubmitting = false;
+                const original = button.getAttribute('data-original');
+                if (original) {
+                    button.innerHTML = original;
+                } else {
+                    button.innerHTML = '<i class="ti ti-login me-1"></i> Login';
+                }
+            @endif
+        })();
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .btn-primary:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+        .btn-success:hover {
+            background-color: #157347;
+            border-color: #146c43;
+        }
+
+        .spinner-border {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            vertical-align: text-bottom;
+            border: 0.2em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .border-dashed {
+            border-bottom: 1px dashed;
+            text-decoration: none;
+        }
+
+        .border-dashed:hover {
+            border-bottom: 1px solid;
+        }
+    </style>
 @endpush

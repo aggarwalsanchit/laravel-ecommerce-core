@@ -98,11 +98,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">User Management</h3>
-                            @can('create_users')
+                            @php $admin = Auth::guard('admin')->user(); @endphp
+                            @if ($admin->can('create_users'))
                                 <a href="{{ route('admin.users.create') }}" class="btn btn-primary">
                                     <i class="ti ti-plus me-1"></i> Add New User
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         <div class="card-body">
 
@@ -156,32 +157,32 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @canany(['activate_users', 'deactivate_users', 'delete_users'])
+                            @if ($admin->can('activate_users') || $admin->can('deactivate_users') || $admin->can('delete_users'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
-                                            @can('activate_users')
+                                            @if ($admin->can('activate_users'))
                                                 <button type="button" class="btn btn-outline-success btn-sm"
                                                     onclick="bulkAction('activate')">
                                                     <i class="ti ti-check"></i> Activate Selected
                                                 </button>
-                                            @endcan
-                                            @can('deactivate_users')
+                                            @endif
+                                            @if ($admin->can('deactivate_users'))
                                                 <button type="button" class="btn btn-outline-warning btn-sm"
                                                     onclick="bulkAction('deactivate')">
                                                     <i class="ti ti-x"></i> Deactivate Selected
                                                 </button>
-                                            @endcan
-                                            @can('delete_users')
+                                            @endif
+                                            @if ($admin->can('delete_users'))
                                                 <button type="button" class="btn btn-outline-danger btn-sm"
                                                     onclick="bulkAction('delete')">
                                                     <i class="ti ti-trash"></i> Delete Selected
                                                 </button>
-                                            @endcan
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                            @endcanany
+                            @endif
 
                             {{-- Users Table --}}
                             <div class="table-responsive">
@@ -302,7 +303,7 @@
                     beforeSend: function() {
                         $('#usersTableContainer').html(
                             '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
-                            );
+                        );
                     },
                     success: function(response) {
                         $('#usersTableContainer').html(response.table);
@@ -320,7 +321,7 @@
                         console.error('Error loading users:', xhr);
                         $('#usersTableContainer').html(
                             '<div class="alert alert-danger">Error loading users. Please try again.</div>'
-                            );
+                        );
                     }
                 });
             }

@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\VendorActivityLog;
+use App\Models\Vendor\VendorActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 
@@ -33,6 +33,7 @@ trait LogsVendorActivity
         }
 
         VendorActivityLog::create([
+            'shop_id' => $vendor->shop_id,
             'vendor_id' => $vendor->id,
             'action' => $action,
             'entity_type' => $entityType,

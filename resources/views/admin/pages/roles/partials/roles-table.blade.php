@@ -1,7 +1,6 @@
 {{-- resources/views/admin/roles/partials/roles-table.blade.php --}}
 <table class="table table-hover text-nowrap mb-0">
     <thead class="bg-dark-subtle">
-        32
         <th class="ps-3" style="width: 50px;">
             <input type="checkbox" class="form-check-input" id="selectAll">
         </th>
@@ -63,15 +62,15 @@
                 </td>
                 <td class="pe-3">
                     <div class="hstack gap-1 justify-content-end">
-                        @can('view_roles')
+                        @php $admin = Auth::guard('admin')->user(); @endphp
+                        @if ($admin->can('view_roles'))
                             <a href="{{ route('admin.roles.show', $role->id) }}"
                                 class="btn btn-soft-primary btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                 title="View Details">
                                 <i class="ti ti-eye"></i>
                             </a>
-                        @endcan
-
-                        @can('edit_roles')
+                        @endif
+                        @if ($admin->can('edit_roles'))
                             @if ($role->name !== 'Super Admin')
                                 <a href="{{ route('admin.roles.edit', $role->id) }}"
                                     class="btn btn-soft-success btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
@@ -79,9 +78,8 @@
                                     <i class="ti ti-edit fs-16"></i>
                                 </a>
                             @endif
-                        @endcan
-
-                        @can('assign_permissions')
+                        @endif
+                        @if ($admin->can('assign_permissions'))
                             @if ($role->name !== 'Super Admin')
                                 <a href="{{ route('admin.roles.assign-permissions', $role->id) }}"
                                     class="btn btn-soft-info btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
@@ -89,9 +87,8 @@
                                     <i class="ti ti-key"></i>
                                 </a>
                             @endif
-                        @endcan
-
-                        @can('delete_roles')
+                        @endif
+                        @if ($admin->can('delete_roles'))
                             @if ($role->name !== 'Super Admin' && $userCount == 0)
                                 <button type="button" class="btn btn-soft-danger btn-icon btn-sm rounded-circle"
                                     onclick="confirmDelete({{ $role->id }}, '{{ $role->name }}')"
@@ -105,7 +102,7 @@
                                     <i class="ti ti-lock"></i>
                                 </button>
                             @endif
-                        @endcan
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -116,11 +113,11 @@
                         <i class="ti ti-shield-off" style="font-size: 48px; opacity: 0.5;"></i>
                         <h5 class="mt-3">No Roles Found</h5>
                         <p class="text-muted">Get started by creating a new role.</p>
-                        @can('create roles')
+                        @if ($admin->can('create_roles'))
                             <a href="{{ route('admin.roles.create') }}" class="btn btn-primary mt-2">
                                 <i class="ti ti-plus me-1"></i> Add New Role
                             </a>
-                        @endcan
+                        @endif
                     </div>
                 </td>
             </tr>

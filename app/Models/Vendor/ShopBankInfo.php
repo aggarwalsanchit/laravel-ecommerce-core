@@ -1,16 +1,16 @@
 <?php
-// app/Models/VendorBankInfo.php
+// app/Models/Vendor/VendorBankInfo.php
 
-namespace App\Models;
+namespace App\Models\Vendor;
 
 use Illuminate\Database\Eloquent\Model;
 
-class VendorBankInfo extends Model
+class ShopBankInfo extends Model
 {
-    protected $table = 'vendor_bank_infos';
+    protected $table = 'shop_bank_infos';
 
     protected $fillable = [
-        'vendor_id',
+        'shop_id',
         'account_holder_name',
         'account_number',
         'bank_name',
@@ -26,18 +26,12 @@ class VendorBankInfo extends Model
         'razorpay_account_id',
         'cancelled_cheque',
         'bank_statement',
-        'verification_status',
-        'verified_at',
-        'verified_by',
-        'verification_notes'
     ];
 
-    protected $casts = [
-        'verified_at' => 'datetime',
-    ];
+    protected $casts = [];
 
-    public function vendor()
+    public function shop()
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsTo(Shop::class);
     }
 }

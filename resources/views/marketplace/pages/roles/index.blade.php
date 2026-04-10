@@ -1,5 +1,5 @@
-{{-- resources/views/admin/roles/index.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/vendor/roles/index.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Roles')
 
@@ -12,7 +12,7 @@
                 </div>
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active">Roles</li>
                     </ol>
                 </div>
@@ -23,11 +23,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Role Management</h3>
-                            @can('create roles')
-                                <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
+                            @php $vendor = Auth::guard('vendor')->user(); @endphp
+                            @if ($vendor->can('create_roles'))
+                                <a href="{{ route('vendor.roles.create') }}" class="btn btn-primary">
                                     <i class="ti ti-plus me-1"></i> Add New Role
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         <div class="card-body">
 
@@ -46,23 +47,11 @@
                                         </button>
                                     </form>
                                 </div>
-                                <div class="col-md-6 text-end">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                            data-bs-toggle="dropdown">
-                                            Filter by Guard
-                                        </button>
-                                        <ul class="dropdown-menu" id="guardFilter">
-                                            <li><a class="dropdown-item" href="#" data-guard="">All Guards</a></li>
-                                            <li><a class="dropdown-item" href="#" data-guard="web">Web</a></li>
-                                            <li><a class="dropdown-item" href="#" data-guard="admin">Admin</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
+
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @can('delete roles')
+                            @if ($vendor->can('delete_roles'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
@@ -73,10 +62,12 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endcan
+                            @endif
 
                             <div class="table-responsive" id="rolesTableContainer">
-                                @include('admin.pages.roles.partials.roles-table', ['roles' => $roles])
+                                @include('marketplace.pages.roles.partials.roles-table', [
+                                    'roles' => $roles,
+                                ])
                             </div>
 
                             <div class="card-footer" id="paginationContainer">
@@ -99,7 +90,7 @@
         </form>
 
         {{-- Bulk Action Form --}}
-        <form id="bulkActionForm" method="POST" action="{{ route('admin.roles.bulk-action') }}" style="display: none;">
+        <form id="bulkActionForm" method="POST" action="{{ route('vendor.roles.bulk-action') }}" style="display: none;">
             @csrf
             <input type="hidden" name="action" id="bulkAction">
             <input type="hidden" name="role_ids" id="bulkRoleIds">
@@ -166,7 +157,7 @@
                 // Load roles via AJAX
                 function loadRoles() {
                     $.ajax({
-                        url: '{{ route('admin.roles.index') }}',
+                        url: '{{ route('vendor.roles.index') }}',
                         type: 'GET',
                         data: currentFilters,
                         beforeSend: function() {
@@ -246,7 +237,7 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         let form = $('#deleteForm');
-                        form.attr('action', '{{ url('admin/roles') }}/' + roleId);
+                        form.attr('action', '{{ url('marketplace/roles') }}/' + roleId);
 
                         $.ajax({
                             url: form.attr('action'),

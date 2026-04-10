@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+use App\Models\State;
+use App\Models\City;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
@@ -25,6 +28,8 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Vendor\VendorApprovedController;
 use App\Http\Controllers\Vendor\VendorManagementController;
 use App\Http\Controllers\Vendor\VendorAuthController;
+use App\Http\Controllers\Vendor\VendorForgotPasswordController;
+use App\Http\Controllers\Vendor\VendorResetPasswordController;
 use App\Http\Controllers\Vendor\VendorDashboardController;
 use App\Http\Controllers\Vendor\VendorProductController;
 use App\Http\Controllers\Vendor\VendorOrderController;
@@ -103,23 +108,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('vendors')->name('vendors.')->group(function () {
             Route::get('/', [AdminVendorController::class, 'index'])->name('index');
             Route::get('/{id}', [AdminVendorController::class, 'show'])->name('show');
-
-            // Approval routes
-            Route::get('/{id}/approve', [AdminVendorController::class, 'approveForm'])->name('approve.form');
+            Route::get('/{id}/staff', [AdminVendorController::class, 'staff'])->name('staff');
+            Route::post('/{id}/change-type', [AdminVendorController::class, 'changeType'])->name('change-type');
             Route::post('/{id}/approve', [AdminVendorController::class, 'approve'])->name('approve');
-
-            // Rejection routes
             Route::post('/{id}/reject', [AdminVendorController::class, 'reject'])->name('reject');
-
-            // Suspension routes
             Route::post('/{id}/suspend', [AdminVendorController::class, 'suspend'])->name('suspend');
-            Route::get('/{id}/activate', [AdminVendorController::class, 'activate'])->name('activate');
-
-            // Delete route
-            Route::delete('/{id}', [AdminVendorController::class, 'destroy'])->name('destroy');
-
-            // Bulk Action Route - ADD THIS LINE
-            Route::post('/bulk-action', [AdminVendorController::class, 'bulkAction'])->name('bulk-action');
+            Route::post('/{id}/send-message', [AdminVendorController::class, 'sendMessage'])->name('send-message');
+            // Staff routes
+            Route::get('/{id}/staff', [AdminVendorController::class, 'staff'])->name('staff');
+            Route::post('/{id}/staff/bulk-action', [AdminVendorController::class, 'staffBulkAction'])->name('staff.bulk-action');
+            Route::post('/staff/{id}/activate', [AdminVendorController::class, 'activateStaff'])->name('staff.activate');
+            Route::post('/staff/{id}/deactivate', [AdminVendorController::class, 'deactivateStaff'])->name('staff.deactivate');
+            Route::delete('/staff/{id}', [AdminVendorController::class, 'deleteStaff'])->name('staff.delete');
         });
 
 
@@ -232,12 +232,16 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
 
     // Guest Routes (Not logged in as vendor)
     Route::middleware('vendor.guest')->group(function () {
-        Route::get('/become-seller', [VendorAuthController::class, 'showRegistrationForm'])->name('register');
-        Route::post('/register', [VendorAuthController::class, 'register'])->name('register.submit');
+        Route::get('become-seller', [VendorAuthController::class, 'showRegisterForm'])->name('register');
+        Route::post('register', [VendorAuthController::class, 'register'])->name('register.submit');
         Route::get('/', [VendorAuthController::class, 'showLoginForm'])->name('login');
-        Route::post('/login', [VendorAuthController::class, 'login'])->name('login.submit');
-        Route::get('/forgot-password', [VendorAuthController::class, 'showForgotForm'])->name('password.request');
-        Route::post('/forgot-password', [VendorAuthController::class, 'sendResetLink'])->name('password.email');
+        Route::post('login', [VendorAuthController::class, 'login'])->name('login.submit');
+        Route::post('logout', [VendorAuthController::class, 'logout'])->name('logout');
+        // Password Reset Routes
+        Route::get('forgot-password', [VendorForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+        Route::post('forgot-password', [VendorForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+        Route::get('reset-password/{token}', [VendorResetPasswordController::class, 'showResetForm'])->name('password.reset');
+        Route::post('reset-password', [VendorResetPasswordController::class, 'reset'])->name('password.update');
     });
 
     // Authenticated Vendor Routes
@@ -247,16 +251,23 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
         Route::get('complete-profile', [VendorApprovedController::class, 'showCompleteForm'])->name('complete-profile');
         Route::post('complete-profile', [VendorApprovedController::class, 'saveTab'])->name('profile.save-tab');
 
-        Route::get('activity-logs', [VendorActivityLogController::class, 'index'])->name('activity-logs');
-        Route::get('activity-logs/{id}', [VendorActivityLogController::class, 'show'])->name('activity-logs.show');
-        Route::get('activity-logs/export/csv', [VendorActivityLogController::class, 'export'])->name('activity-logs.export');
+        Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
+            Route::get('/', [VendorActivityLogController::class, 'index'])->name('index');
+            Route::get('/{id}', [VendorActivityLogController::class, 'show'])->name('show');
+            Route::get('/export/csv', [VendorActivityLogController::class, 'export'])->name('export');
+        });
 
         Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [VendorProfileController::class, 'index'])->name('index');
             Route::get('/edit', [VendorProfileController::class, 'edit'])->name('edit');
             Route::put('update', [VendorProfileController::class, 'update'])->name('update');
             Route::get('/change-password', [VendorProfileController::class, 'changePassword'])->name('change-password');
             Route::post('/update-password', [VendorProfileController::class, 'updatePassword'])->name('update-password');
         });
+
+        Route::get('location/states/{countryId}', [VendorProfileController::class, 'getStates'])->name('location.states');
+        Route::get('location/cities/{stateId}', [VendorProfileController::class, 'getCities'])->name('location.cities');
+        Route::get('vendor/location/phone-code/{countryId}', [VendorProfileController::class, 'getPhoneCode'])->name('admin.location.phone-code');
 
         Route::prefix('staff')->name('staff.')->group(function () {
             Route::get('/', [VendorUserController::class, 'index'])->name('index');
@@ -287,6 +298,8 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
         // ==================== PERMISSIONS ====================
         Route::resource('permissions', VendorPermissionController::class);
         Route::post('/permissions/bulk-action', [VendorPermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
+
+
 
 
 
@@ -332,3 +345,16 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
         Route::get('/payouts', [VendorDashboardController::class, 'payouts'])->name('payouts');
     });
 });
+
+Route::get('get-states', function (Request $request) {
+    return response()->json(\App\Models\State::where('country_id', $request->country_id)->get());
+})->name('get.states');
+
+Route::get('get-cities', function (Request $request) {
+    return response()->json(\App\Models\City::where('state_id', $request->state_id)->get());
+})->name('get.cities');
+
+Route::get('get-subcategories', function (Request $request) {
+    $category = \App\Models\Category::with('children')->find($request->category_id);
+    return response()->json($category->children);
+})->name('get.subcategories');

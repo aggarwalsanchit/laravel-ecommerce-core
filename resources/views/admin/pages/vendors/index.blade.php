@@ -1,82 +1,99 @@
-{{-- resources/views/admin/vendors/index.blade.php --}}
+{{-- resources/views/admin/pages/vendors/index.blade.php --}}
 
 @extends('management.layouts.app')
 
-@section('title', 'Vendors')
+@section('title', ($websiteSettings->website_name ?? 'Boron') . ' - Vendors')
 
 @section('content')
     <div class="page-content">
         <div class="page-container">
+
             <div class="page-title-head d-flex align-items-sm-center flex-sm-row flex-column gap-2">
                 <div class="flex-grow-1">
                     <h4 class="fs-18 text-uppercase fw-bold mb-0">Vendors</h4>
-                    <p class="text-muted mb-0">Manage all marketplace vendors</p>
                 </div>
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a
+                                href="{{ route('admin.dashboard') }}">{{ $websiteSettings->website_name ?? 'Boron' }}</a>
+                        </li>
                         <li class="breadcrumb-item active">Vendors</li>
                     </ol>
                 </div>
             </div>
 
-            {{-- Stats Cards --}}
+            {{-- Statistics Cards --}}
             <div class="row">
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-3">
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <p class="text-muted mb-2">Total Vendors</p>
-                                    <h3 class="mb-0">{{ $stats['total'] ?? 0 }}</h3>
+                                    <h5 class="text-muted fs-13 text-uppercase">Total Shops</h5>
+                                    <h3 class="mb-0 fw-bold">{{ $stats['total'] ?? 0 }}</h3>
                                 </div>
-                                <div class="avatar-sm bg-primary-subtle rounded">
-                                    <i class="ti ti-users fs-24 text-primary"></i>
+                                <div class="avatar-sm bg-primary-subtle rounded-circle p-2">
+                                    <i class="ti ti-building-store fs-24 text-primary"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <p class="text-muted mb-2">Pending Approval</p>
-                                    <h3 class="mb-0 text-warning">{{ $stats['pending_approval'] ?? 0 }}</h3>
+                                    <h5 class="text-muted fs-13 text-uppercase">Pending</h5>
+                                    <h3 class="mb-0 fw-bold text-success">{{ $stats['pending'] ?? 0 }}</h3>
                                 </div>
-                                <div class="avatar-sm bg-warning-subtle rounded">
-                                    <i class="ti ti-hourglass-empty fs-24 text-warning"></i>
+                                <div class="avatar-sm bg-success-subtle rounded-circle p-2">
+                                    <i class="ti ti-circle-check fs-24 text-success"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <p class="text-muted mb-2">Active Vendors</p>
-                                    <h3 class="mb-0 text-success">{{ $stats['active'] ?? 0 }}</h3>
+                                    <h5 class="text-muted fs-13 text-uppercase">Verified</h5>
+                                    <h3 class="mb-0 fw-bold text-danger">{{ $stats['verified'] ?? 0 }}</h3>
                                 </div>
-                                <div class="avatar-sm bg-success-subtle rounded">
-                                    <i class="ti ti-check-circle fs-24 text-success"></i>
+                                <div class="avatar-sm bg-danger-subtle rounded-circle p-2">
+                                    <i class="ti ti-circle-x fs-24 text-danger"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-xl-3">
+                <div class="col-md-2">
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <p class="text-muted mb-2">Suspended</p>
-                                    <h3 class="mb-0 text-danger">{{ $stats['suspended'] ?? 0 }}</h3>
+                                    <h5 class="text-muted fs-13 text-uppercase">Rejected</h5>
+                                    <h3 class="mb-0 fw-bold text-info">{{ $stats['rejected'] ?? 0 }}</h3>
                                 </div>
-                                <div class="avatar-sm bg-danger-subtle rounded">
-                                    <i class="ti ti-ban fs-24 text-danger"></i>
+                                <div class="avatar-sm bg-info-subtle rounded-circle p-2">
+                                    <i class="ti ti-check fs-24 text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="text-muted fs-13 text-uppercase">Suspended</h5>
+                                    <h3 class="mb-0 fw-bold text-info">{{ $stats['suspended'] ?? 0 }}</h3>
+                                </div>
+                                <div class="avatar-sm bg-info-subtle rounded-circle p-2">
+                                    <i class="ti ti-check fs-24 text-info"></i>
                                 </div>
                             </div>
                         </div>
@@ -89,186 +106,115 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Vendor Management</h3>
-                            @can('manage_vendors')
-                                <a href="{{ route('admin.vendors.create') }}" class="btn btn-primary">
-                                    <i class="ti ti-plus me-1"></i> Add New Vendor
-                                </a>
-                            @endcan
                         </div>
                         <div class="card-body">
 
                             {{-- Search and Filter --}}
                             <div class="row mb-3">
                                 <div class="col-md-4">
-                                    <form id="searchForm" class="d-flex gap-2">
+                                    <form action="{{ route('admin.vendors.index') }}" method="GET" class="d-flex gap-2"
+                                        id="searchForm">
                                         <input type="text" name="search" class="form-control" id="searchInput"
-                                            placeholder="Search by shop name, email, owner..." value="{{ request('search') }}">
-                                        <button type="submit" class="btn btn-primary">
+                                            placeholder="Search by shop name, owner, email..."
+                                            value="{{ request('search') }}">
+                                        <button type="submit" class="btn btn-primary" id="searchBtn">
                                             <i class="ti ti-search"></i>
                                         </button>
-                                        <button type="button" class="btn btn-secondary" id="clearSearch"
-                                            style="display: none;">
-                                            Clear
-                                        </button>
+                                        @if (request('search'))
+                                            <a href="{{ route('admin.vendors.index') }}" class="btn btn-secondary"
+                                                id="clearSearch">Clear</a>
+                                        @endif
                                     </form>
                                 </div>
-                                <div class="col-md-8">
-                                    <div class="d-flex gap-2 justify-content-end">
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                Role Status
-                                            </button>
-                                            <ul class="dropdown-menu" id="roleFilter">
-                                                <li><a class="dropdown-item" href="#" data-role="">All Roles</a></li>
-                                                <li><a class="dropdown-item" href="#" data-role="pending">Pending (Vendor Role)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-role="approved">Approved (Store Owner)</a></li>
-                                            </ul>
-                                        </div>
+                                <div class="col-md-8 text-end">
+                                    <div class="btn-group me-2">
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                            data-bs-toggle="dropdown">
+                                            Verification
+                                        </button>
+                                        <ul class="dropdown-menu" id="verificationFilter">
+                                            <li><a class="dropdown-item {{ !request('verification') ? 'active' : '' }}"
+                                                    href="#" data-verification="">All</a></li>
+                                            <li><a class="dropdown-item {{ request('verification') == 'verified' ? 'active' : '' }}"
+                                                    href="#" data-verification="verified">Verified</a></li>
+                                            <li><a class="dropdown-item {{ request('verification') == 'pending' ? 'active' : '' }}"
+                                                    href="#" data-verification="pending">Pending</a></li>
+                                            <li><a class="dropdown-item {{ request('verification') == 'rejected' ? 'active' : '' }}"
+                                                    href="#" data-verification="rejected">Rejected</a></li>
+                                            <li><a class="dropdown-item {{ request('verification') == 'suspended' ? 'active' : '' }}"
+                                                    href="#" data-verification="rejected">Suspended</a></li>
+                                        </ul>
+                                    </div>
 
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                Account Status
-                                            </button>
-                                            <ul class="dropdown-menu" id="statusFilter">
-                                                <li><a class="dropdown-item" href="#" data-status="">All Status</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="pending">Pending</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="active">Active</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="suspended">Suspended</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="rejected">Rejected</a></li>
-                                            </ul>
-                                        </div>
-
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                Verification
-                                            </button>
-                                            <ul class="dropdown-menu" id="verificationFilter">
-                                                <li><a class="dropdown-item" href="#" data-verification="">All</a></li>
-                                                <li><a class="dropdown-item" href="#" data-verification="verified">Verified</a></li>
-                                                <li><a class="dropdown-item" href="#" data-verification="pending">Pending</a></li>
-                                                <li><a class="dropdown-item" href="#" data-verification="rejected">Rejected</a></li>
-                                            </ul>
-                                        </div>
-
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                Sort By
-                                            </button>
-                                            <ul class="dropdown-menu" id="sortFilter">
-                                                <li><a class="dropdown-item" href="#" data-sort="latest">Latest First</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="oldest">Oldest First</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="name_asc">Name (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="name_desc">Name (Z-A)</a></li>
-                                            </ul>
-                                        </div>
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                            data-bs-toggle="dropdown">
+                                            Ready For Approve
+                                        </button>
+                                        <ul class="dropdown-menu" id="readyForApproveFilter">
+                                            <li><a class="dropdown-item {{ !request('ready_for_approve') ? 'active' : '' }}"
+                                                    href="#" data-ready-for-approve="">All</a></li>
+                                            <li><a class="dropdown-item {{ request('ready_for_approve') == 'yes' ? 'active' : '' }}"
+                                                    href="#" data-ready-for-approve="yes">Yes (Ready)</a></li>
+                                            <li><a class="dropdown-item {{ request('ready_for_approve') == 'no' ? 'active' : '' }}"
+                                                    href="#" data-ready-for-approve="no">No (Not Ready)</a></li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Bulk Actions --}}
-                            @can('manage_vendors')
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-danger btn-sm"
-                                                onclick="bulkAction('delete')">
-                                                <i class="ti ti-trash"></i> Delete Selected
-                                            </button>
-                                            <button type="button" class="btn btn-outline-success btn-sm"
-                                                onclick="bulkAction('approve')">
-                                                <i class="ti ti-check"></i> Approve Selected
-                                            </button>
-                                            <button type="button" class="btn btn-outline-warning btn-sm"
-                                                onclick="bulkAction('suspend')">
-                                                <i class="ti ti-pause"></i> Suspend Selected
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endcan
-
+                            {{-- Shops Table --}}
                             <div class="table-responsive" id="vendorsTableContainer">
-                                @include('admin.pages.vendors.partials.vendors-table', [
-                                    'vendors' => $vendors,
-                                ])
+                                @include('admin.pages.vendors.partials.vendors-table', ['shops' => $shops])
                             </div>
 
-                            <div class="card-footer" id="paginationContainer">
+                            {{-- Pagination --}}
+                            <div class="mt-3" id="paginationContainer">
                                 <div class="d-flex justify-content-end">
-                                    {{ $vendors->appends(request()->query())->links('pagination::bootstrap-5') }}
+                                    {{ $shops->appends(request()->query())->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
+    </div>
 
-        {{-- Delete Form --}}
-        <form id="deleteForm" method="POST" style="display: none;">
-            @csrf
-            @method('DELETE')
-        </form>
+    {{-- Delete Form --}}
+    <form id="deleteForm" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
 
-        {{-- Bulk Action Form --}}
-        <form id="bulkActionForm" method="POST" action="{{ route('admin.vendors.bulk-action') }}" style="display: none;">
-            @csrf
-            <input type="hidden" name="action" id="bulkAction">
-            <input type="hidden" name="vendor_ids" id="bulkVendorIds">
-        </form>
-
-        {{-- Suspend Modal --}}
-        <div class="modal fade" id="suspendModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="suspendForm" method="POST">
-                        @csrf
-                        <div class="modal-header bg-warning">
-                            <h5 class="modal-title">Suspend Vendor</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Are you sure you want to suspend <strong id="suspendVendorName"></strong>?</p>
-                            <div class="mb-3">
-                                <label class="form-label">Suspension Reason <span class="text-danger">*</span></label>
-                                <textarea name="suspension_reason" class="form-control" rows="3" required placeholder="Enter reason for suspension..."></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-warning">Suspend Vendor</button>
-                        </div>
-                    </form>
+    {{-- Message Modal --}}
+    <div class="modal fade" id="messageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Message to Vendor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-            </div>
-        </div>
-
-        {{-- Reject Modal --}}
-        <div class="modal fade" id="rejectModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form id="rejectForm" method="POST">
-                        @csrf
-                        <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title">Reject Vendor Application</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Are you sure you want to reject <strong id="rejectVendorName"></strong>'s application?</p>
-                            <div class="mb-3">
-                                <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
-                                <textarea name="rejection_reason" class="form-control" rows="3" required placeholder="Enter reason for rejection..."></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-danger">Reject Application</button>
-                        </div>
-                    </form>
+                <div class="modal-body">
+                    <input type="hidden" id="messageShopId">
+                    <div class="mb-3">
+                        <label class="form-label">Message Type</label>
+                        <select id="messageType" class="form-select">
+                            <option value="general">General</option>
+                            <option value="approval">Approval</option>
+                            <option value="suspension">Suspension</option>
+                            <option value="verification">Verification</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea id="messageText" class="form-control" rows="4" placeholder="Enter your message..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="sendMessage()">Send Message</button>
                 </div>
             </div>
         </div>
@@ -282,297 +228,280 @@
         $(document).ready(function() {
             let currentFilters = {
                 search: '{{ request('search') }}',
-                role: '{{ request('role') }}',
                 status: '{{ request('status') }}',
                 verification: '{{ request('verification') }}',
-                sort: '{{ request('sort', 'latest') }}',
-                page: 1
+                vendor_type: '{{ request('vendor_type') }}',
+                ready_for_approve: '{{ request('ready_for_approve') }}',
+                page: {{ request('page', 1) }}
             };
 
             // Search with debounce
             let searchTimer;
-            $('#searchInput').on('keyup', function(e) {
+            $('#searchInput').on('keyup', function() {
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(() => {
                     currentFilters.search = $(this).val();
                     currentFilters.page = 1;
-                    loadVendors();
-                    $('#clearSearch').toggle($(this).val() !== '');
+                    loadShops();
                 }, 500);
             });
 
-            // Clear search
-            $('#clearSearch').on('click', function() {
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                currentFilters.search = $('#searchInput').val();
+                currentFilters.page = 1;
+                loadShops();
+            });
+
+            $('#clearSearch').on('click', function(e) {
+                e.preventDefault();
                 $('#searchInput').val('');
                 currentFilters.search = '';
                 currentFilters.page = 1;
-                loadVendors();
-                $(this).hide();
-            });
-
-            // Role filter
-            $('#roleFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let role = $(this).data('role');
-
-                $('#roleFilter .dropdown-item').removeClass('active');
-                $(this).addClass('active');
-
-                let buttonText = role ? (role === 'pending' ? 'Pending (Vendor)' : 'Approved (Store Owner)') : 'Role Status';
-                $(this).closest('.btn-group').find('.dropdown-toggle').html(buttonText + ' <i class="ti ti-chevron-down"></i>');
-
-                currentFilters.role = role;
-                currentFilters.page = 1;
-                loadVendors();
+                loadShops();
             });
 
             // Status filter
             $('#statusFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
                 let status = $(this).data('status');
-
                 $('#statusFilter .dropdown-item').removeClass('active');
                 $(this).addClass('active');
-
-                let buttonText = status ? status.toUpperCase() : 'Account Status';
-                $(this).closest('.btn-group').find('.dropdown-toggle').html(buttonText + ' <i class="ti ti-chevron-down"></i>');
-
+                let buttonText = $(this).text();
+                $('#statusFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                    ' <i class="ti ti-chevron-down"></i>');
                 currentFilters.status = status;
                 currentFilters.page = 1;
-                loadVendors();
+                loadShops();
             });
 
             // Verification filter
             $('#verificationFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
                 let verification = $(this).data('verification');
-
                 $('#verificationFilter .dropdown-item').removeClass('active');
                 $(this).addClass('active');
-
-                let buttonText = verification ? verification.toUpperCase() : 'Verification';
-                $(this).closest('.btn-group').find('.dropdown-toggle').html(buttonText + ' <i class="ti ti-chevron-down"></i>');
-
+                let buttonText = $(this).text();
+                $('#verificationFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                    ' <i class="ti ti-chevron-down"></i>');
                 currentFilters.verification = verification;
                 currentFilters.page = 1;
-                loadVendors();
+                loadShops();
             });
 
-            // Sort filter
-            $('#sortFilter .dropdown-item').on('click', function(e) {
+            // Vendor type filter
+            $('#vendorTypeFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
-                let sort = $(this).data('sort');
-
-                $('#sortFilter .dropdown-item').removeClass('active');
+                let vendorType = $(this).data('vendor-type');
+                $('#vendorTypeFilter .dropdown-item').removeClass('active');
                 $(this).addClass('active');
-
                 let buttonText = $(this).text();
-                $(this).closest('.btn-group').find('.dropdown-toggle').html(buttonText + ' <i class="ti ti-chevron-down"></i>');
-
-                currentFilters.sort = sort;
+                $('#vendorTypeFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                    ' <i class="ti ti-chevron-down"></i>');
+                currentFilters.vendor_type = vendorType;
                 currentFilters.page = 1;
-                loadVendors();
+                loadShops();
             });
 
-            // Pagination click handler
-            $(document).on('click', '.pagination a', function(e) {
+            // Ready For Approve filter
+            $('#readyForApproveFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
-                let page = $(this).attr('href').split('page=')[1];
-                currentFilters.page = page;
-                loadVendors();
+                let readyForApprove = $(this).data('ready-for-approve');
+                $('#readyForApproveFilter .dropdown-item').removeClass('active');
+                $(this).addClass('active');
+                let buttonText = $(this).text();
+                $('#readyForApproveFilter').closest('.btn-group').find('.dropdown-toggle').html(buttonText +
+                    ' <i class="ti ti-chevron-down"></i>');
+                currentFilters.ready_for_approve = readyForApprove;
+                currentFilters.page = 1;
+                loadShops();
             });
 
-            // Load vendors via AJAX
-            function loadVendors() {
+            function loadShops() {
                 $.ajax({
                     url: '{{ route('admin.vendors.index') }}',
                     type: 'GET',
                     data: currentFilters,
                     beforeSend: function() {
                         $('#vendorsTableContainer').html(
-                            '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>'
+                            '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
                         );
-                        $('#paginationContainer').html('');
                     },
                     success: function(response) {
                         $('#vendorsTableContainer').html(response.table);
                         $('#paginationContainer').html(response.pagination);
-
+                        $('[data-bs-toggle="tooltip"]').tooltip();
                         let url = new URL(window.location);
                         url.searchParams.set('search', currentFilters.search || '');
-                        url.searchParams.set('role', currentFilters.role || '');
                         url.searchParams.set('status', currentFilters.status || '');
                         url.searchParams.set('verification', currentFilters.verification || '');
-                        url.searchParams.set('sort', currentFilters.sort || '');
+                        url.searchParams.set('vendor_type', currentFilters.vendor_type || '');
+                        url.searchParams.set('ready_for_approve', currentFilters.ready_for_approve ||
+                            '');
                         url.searchParams.set('page', currentFilters.page);
                         window.history.pushState({}, '', url);
-
-                        $('[data-bs-toggle="tooltip"]').tooltip();
-
-                        $('#selectAll').off('change').on('change', function() {
-                            $('.vendor-checkbox').prop('checked', $(this).prop('checked'));
-                        });
-
-                        $('.vendor-checkbox').off('change').on('change', function() {
-                            let allChecked = $('.vendor-checkbox:checked').length === $('.vendor-checkbox').length;
-                            $('#selectAll').prop('checked', allChecked);
-                        });
                     },
-                    error: function() {
+                    error: function(xhr) {
+                        console.error('Error loading shops:', xhr);
                         $('#vendorsTableContainer').html(
-                            '<div class="alert alert-danger">Error loading vendors</div>');
+                            '<div class="alert alert-danger">Error loading shops. Please try again.</div>'
+                        );
                     }
                 });
             }
 
-            // Select All functionality
+            // Select All Checkbox
             $(document).on('change', '#selectAll', function() {
-                $('.vendor-checkbox').prop('checked', $(this).prop('checked'));
+                $('.shop-checkbox').prop('checked', $(this).prop('checked'));
             });
 
-            $(document).on('change', '.vendor-checkbox', function() {
-                let allChecked = $('.vendor-checkbox:checked').length === $('.vendor-checkbox').length;
-                $('#selectAll').prop('checked', allChecked);
-            });
-
-            if ($('#searchInput').val()) {
-                $('#clearSearch').show();
-            }
+            $('[data-bs-toggle="tooltip"]').tooltip();
         });
 
-        // Confirm Delete
-        function confirmDelete(vendorId) {
-            Swal.fire({
-                title: 'Delete Vendor?',
-                text: "Are you sure you want to delete this vendor? This action cannot be undone.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let form = $('#deleteForm');
-                    form.attr('action', '{{ url("admin/vendors") }}/' + vendorId);
-
-                    $.ajax({
-                        url: form.attr('action'),
-                        type: 'POST',
-                        data: form.serialize(),
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            }
-                        },
-                        error: function(xhr) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error!',
-                                text: xhr.responseJSON?.message || 'Failed to delete vendor.',
-                                confirmButtonColor: '#d33'
-                            });
-                        }
-                    });
-                }
-            });
+        // Send Message
+        function showMessageModal(shopId, shopName) {
+            $('#messageShopId').val(shopId);
+            $('#messageModal').modal('show');
         }
 
-        // Show Suspend Modal
-        function showSuspendModal(vendorId, vendorName) {
-            $('#suspendVendorName').text(vendorName);
-            $('#suspendForm').attr('action', '{{ url("admin/vendors") }}/' + vendorId + '/suspend');
-            $('#suspendModal').modal('show');
-        }
+        function sendMessage() {
+            let shopId = $('#messageShopId').val();
+            let type = $('#messageType').val();
+            let message = $('#messageText').val();
 
-        // Show Reject Modal
-        function showRejectModal(vendorId, vendorName) {
-            $('#rejectVendorName').text(vendorName);
-            $('#rejectForm').attr('action', '{{ url("admin/vendors") }}/' + vendorId + '/reject');
-            $('#rejectModal').modal('show');
-        }
-
-        // Bulk Action
-        function bulkAction(action) {
-            let selectedVendors = [];
-            $('.vendor-checkbox:checked').each(function() {
-                selectedVendors.push($(this).val());
-            });
-
-            if (selectedVendors.length === 0) {
+            if (!message) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'No Selection',
-                    text: 'Please select at least one vendor.',
-                    confirmButtonColor: '#6c757d'
+                    title: 'Missing Message',
+                    text: 'Please enter a message.'
                 });
                 return;
             }
 
-            let title, text, confirmButtonColor;
-            
-            if (action === 'delete') {
-                title = 'Delete Vendors?';
-                text = `Are you sure you want to delete ${selectedVendors.length} selected vendor(s)? This action cannot be undone.`;
-                confirmButtonColor = '#d33';
-            } else if (action === 'approve') {
-                title = 'Approve Vendors?';
-                text = `Are you sure you want to approve ${selectedVendors.length} selected vendor(s)?`;
-                confirmButtonColor = '#28a745';
-            } else if (action === 'suspend') {
-                title = 'Suspend Vendors?';
-                text = `Are you sure you want to suspend ${selectedVendors.length} selected vendor(s)?`;
-                confirmButtonColor = '#ffc107';
-            }
-
             Swal.fire({
-                title: title,
-                text: text,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: confirmButtonColor,
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, proceed!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#bulkAction').val(action);
-                    $('#bulkVendorIds').val(JSON.stringify(selectedVendors));
+                title: 'Sending...',
+                text: 'Please wait',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
 
-                    $.ajax({
-                        url: $('#bulkActionForm').attr('action'),
-                        type: 'POST',
-                        data: $('#bulkActionForm').serialize(),
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            }
-                        },
-                        error: function(xhr) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error!',
-                                text: xhr.responseJSON?.message || 'Failed to perform action.',
-                                confirmButtonColor: '#d33'
-                            });
-                        }
+            $.ajax({
+                url: '{{ url('admin/vendors') }}/' + shopId + '/send-message',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    type: type,
+                    message: message
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#messageModal').modal('hide');
+                        $('#messageText').val('');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sent!',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Something went wrong.'
                     });
                 }
             });
         }
+
+        // Delete Shop
+        function confirmDelete(shopId, shopName) {
+            Swal.fire({
+                title: 'Delete Shop',
+                text: `Are you sure you want to delete "${shopName}"? This action cannot be undone!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let form = $('#deleteForm');
+                    form.attr('action', '{{ url('admin/vendors') }}/' + shopId);
+                    form.submit();
+                }
+            });
+        }
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .avatar-sm {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-sm i {
+            font-size: 24px;
+        }
+
+        .bg-primary-subtle {
+            background-color: rgba(13, 110, 253, 0.1);
+        }
+
+        .bg-success-subtle {
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+
+        .bg-danger-subtle {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .bg-warning-subtle {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+        .bg-info-subtle {
+            background-color: rgba(13, 202, 240, 0.1);
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .table> :not(caption)>*>* {
+            vertical-align: middle;
+        }
+
+        .profile-completion {
+            width: 80px;
+        }
+
+        .profile-completion .progress {
+            height: 6px;
+        }
+
+        .page-link {
+            cursor: pointer;
+        }
+    </style>
 @endpush

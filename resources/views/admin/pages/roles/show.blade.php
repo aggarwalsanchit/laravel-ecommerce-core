@@ -27,7 +27,6 @@
                         </div>
                         <div class="card-body">
                             <table class="table table-borderless">
-                                32
                                 <td width="150"><strong>ID:</strong></td>
                                 <td>#{{ $role->id }}</td>
                                 </tr>
@@ -140,7 +139,6 @@
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
-                                            32
                                             <th>ID</th>
                                             <th>Name</th>
                                             <th>Email</th>

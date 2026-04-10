@@ -1,16 +1,16 @@
 <?php
-// app/Models/VendorTaxInfo.php
+// app/Models/Vendor/VendorTaxInfo.php
 
-namespace App\Models;
+namespace App\Models\Vendor;
 
 use Illuminate\Database\Eloquent\Model;
 
-class VendorTaxInfo extends Model
+class ShopTaxInfo extends Model
 {
-    protected $table = 'vendor_tax_infos';
+    protected $table = 'shop_tax_infos';
 
     protected $fillable = [
-        'vendor_id',
+        'shop_id',
         'gst_number',
         'gst_type',
         'gst_registration_date',
@@ -25,20 +25,15 @@ class VendorTaxInfo extends Model
         'business_license_number',
         'business_registration_date',
         'business_registration_certificate',
-        'verification_status',
-        'verified_at',
-        'verified_by',
-        'verification_notes'
     ];
 
     protected $casts = [
         'gst_registration_date' => 'date',
         'business_registration_date' => 'date',
-        'verified_at' => 'datetime',
     ];
 
-    public function vendor()
+    public function shop()
     {
-        return $this->belongsTo(Vendor::class);
+        return $this->belongsTo(Shop::class);
     }
 }

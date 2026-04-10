@@ -1,4 +1,5 @@
 {{-- resources/views/admin/roles/create.blade.php --}}
+
 @extends('management.layouts.app')
 
 @section('title', 'Create Role')
@@ -74,34 +75,56 @@
                                     <p class="text-muted small mb-3">Select the permissions this role should have.</p>
 
                                     <div class="row">
-                                        @forelse($permissions as $module => $modulePermissions)
+                                        @php
+                                            // Group permissions by the second part (after first underscore)
+                                            $groupedPermissions = [];
+                                            foreach ($permissions as $permission) {
+                                                $parts = explode('_', $permission->name, 2);
+                                                $group = isset($parts[1]) ? $parts[1] : $parts[0];
+                                                $group = ucfirst(str_replace('_', ' ', $group));
+
+                                                if (!isset($groupedPermissions[$group])) {
+                                                    $groupedPermissions[$group] = [];
+                                                }
+                                                $groupedPermissions[$group][] = $permission;
+                                            }
+
+                                            // Sort groups alphabetically
+                                            ksort($groupedPermissions);
+                                        @endphp
+
+                                        @forelse($groupedPermissions as $groupName => $groupPermissions)
                                             <div class="col-md-6 col-lg-4 mb-3">
                                                 <div class="card border h-100">
                                                     <div class="card-header bg-light">
                                                         <div class="form-check">
                                                             <input type="checkbox" class="form-check-input module-checkbox"
-                                                                id="module_{{ Str::slug($module) }}"
-                                                                data-module="{{ $module }}">
+                                                                id="module_{{ Str::slug($groupName) }}"
+                                                                data-module="{{ $groupName }}">
                                                             <label class="form-check-label fw-semibold"
-                                                                for="module_{{ Str::slug($module) }}">
-                                                                {{ ucfirst($module) }}
+                                                                for="module_{{ Str::slug($groupName) }}">
+                                                                {{ ucfirst($groupName) }}
                                                             </label>
                                                             <span
-                                                                class="badge bg-secondary float-end">{{ count($modulePermissions) }}</span>
+                                                                class="badge bg-secondary float-end">{{ count($groupPermissions) }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="card-body" style="max-height: 250px; overflow-y: auto;">
-                                                        @foreach ($modulePermissions as $permission)
+                                                        @foreach ($groupPermissions as $permission)
+                                                            @php
+                                                                $action = explode('_', $permission->name, 2)[0];
+                                                                $actionLabel = ucfirst(str_replace('_', ' ', $action));
+                                                            @endphp
                                                             <div class="form-check mb-2">
                                                                 <input type="checkbox"
                                                                     class="form-check-input permission-checkbox"
                                                                     name="permissions[]" value="{{ $permission->id }}"
                                                                     id="perm_{{ $permission->id }}"
-                                                                    data-module="{{ $module }}">
+                                                                    data-module="{{ $groupName }}">
                                                                 <label class="form-check-label small"
                                                                     for="perm_{{ $permission->id }}">
                                                                     <i class="ti ti-lock me-1 text-muted"></i>
-                                                                    {{ $permission->name }}
+                                                                    {{ $actionLabel }}
                                                                 </label>
                                                             </div>
                                                         @endforeach
@@ -148,6 +171,7 @@
                 $('.permission-checkbox').prop('checked', true);
                 $('.module-checkbox').prop('checked', true);
                 $('.module-checkbox').prop('indeterminate', false);
+                updateSelectAllState();
             });
 
             // Deselect All Permissions
@@ -155,6 +179,7 @@
                 $('.permission-checkbox').prop('checked', false);
                 $('.module-checkbox').prop('checked', false);
                 $('.module-checkbox').prop('indeterminate', false);
+                updateSelectAllState();
             });
 
             // Module checkbox - select/deselect all permissions in module
@@ -163,8 +188,6 @@
                 let isChecked = $(this).prop('checked');
                 $(`.permission-checkbox[data-module="${module}"]`).prop('checked', isChecked);
                 $(this).prop('indeterminate', false);
-
-                // Update select/deselect all state
                 updateSelectAllState();
             });
 
@@ -186,7 +209,6 @@
                     moduleCheckbox.prop('indeterminate', true);
                 }
 
-                // Update select/deselect all state
                 updateSelectAllState();
             });
 
@@ -236,12 +258,6 @@
                 let originalText = btn.html();
                 btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Creating...');
                 btn.prop('disabled', true);
-
-                // Get selected permission IDs
-                let selectedPermissions = [];
-                $('.permission-checkbox:checked').each(function() {
-                    selectedPermissions.push($(this).val());
-                });
 
                 let formData = $(this).serialize();
 
@@ -293,4 +309,33 @@
             });
         });
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .card-header.bg-light {
+            background-color: #f8f9fa;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+        }
+
+        .form-check-label:hover {
+            color: #0d6efd;
+        }
+
+        .badge.bg-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-outline-primary,
+        .btn-outline-secondary {
+            transition: all 0.2s ease;
+        }
+    </style>
 @endpush
