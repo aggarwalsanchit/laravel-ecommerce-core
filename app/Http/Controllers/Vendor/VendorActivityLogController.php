@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Models\VendorActivityLog;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class VendorActivityLogController extends Controller
+class VendorActivityLogController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
         return [
-            'auth:vendor',
-            new PermissionMiddleware('view_activity_logs', only: ['index', 'show']),
+            'auth:admin',
+            new Middleware('permission:view_logs|vendor', only: ['index', 'show', 'export']),
         ];
     }
 

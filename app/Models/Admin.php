@@ -20,7 +20,7 @@ class Admin extends Authenticatable
         'phone_code',
         'phone',
         'address',
-        'city_id',
+        'city',
         'state_id',
         'country_id',
         'postal_code',
@@ -45,15 +45,10 @@ class Admin extends Authenticatable
     {
         return $this->belongsTo(Country::class, 'country_id');
     }
-    
+
     public function state()
     {
         return $this->belongsTo(State::class, 'state_id');
-    }
-    
-    public function city()
-    {
-        return $this->belongsTo(City::class, 'city_id');
     }
 
     public function getFullPhoneAttribute()
@@ -137,11 +132,11 @@ class Admin extends Authenticatable
     {
         $parts = [];
         if ($this->address) $parts[] = $this->address;
-        if ($this->city) $parts[] = $this->city->name;
+        if ($this->city) $parts[] = $this->city;
         if ($this->state) $parts[] = $this->state->name;
         if ($this->country) $parts[] = $this->country->name;
         if ($this->postal_code) $parts[] = $this->postal_code;
-        
+
         return implode(', ', $parts);
     }
 }

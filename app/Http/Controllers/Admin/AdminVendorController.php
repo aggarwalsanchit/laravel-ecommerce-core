@@ -3,462 +3,430 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Vendor\Shop;
 use App\Models\Vendor;
-use App\Models\VendorTaxInfo;
-use App\Models\VendorBankInfo;
-use App\Models\VendorDocument;
-use App\Traits\NotifiesVendor;
+use App\Models\Country;
+use App\Models\State;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Permission;
 
 class AdminVendorController extends Controller
 {
-    // use NotifiesVendor;
-
-    public static function middleware(): array
-    {
-        return [
-            'auth:admin',
-            new Middleware('permission:view vendors'),
-        ];
-    }
-
-    /**
-     * Display list of all vendors
-     */
     public function index(Request $request)
     {
-        $query = Vendor::with(['taxInfo', 'bankInfo', 'documents', 'roles']);
-        
-        // Filter by role
-        if ($request->filled('role')) {
-            if ($request->role == 'pending') {
-                $query->role('vendor');
-            } elseif ($request->role == 'approved') {
-                $query->role('store_owner');
-            }
-        }
-        
-        // Filter by account status
-        if ($request->filled('status')) {
-            $query->where('account_status', $request->status);
-        }
-        
-        // Filter by verification status
-        if ($request->filled('verification')) {
-            $query->where('verification_status', $request->verification);
-        }
-        
+        // Get all shops with their owner (vendor)
+        $query = Shop::with(['owner', 'taxInfo', 'bankInfo', 'documents', 'categories']);
+
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('shop_name', 'like', "%{$search}%")
-                  ->orWhere('shop_email', 'like', "%{$search}%")
-                  ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('shop_email', 'like', "%{$search}%")
+                    ->orWhere('shop_phone', 'like', "%{$search}%")
+                    ->orWhereHas('owner', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
             });
         }
-        
-        // Sort
-        switch ($request->get('sort', 'latest')) {
-            case 'oldest':
-                $query->orderBy('created_at', 'asc');
-                break;
-            case 'name_asc':
-                $query->orderBy('shop_name', 'asc');
-                break;
-            case 'name_desc':
-                $query->orderBy('shop_name', 'desc');
-                break;
-            default:
-                $query->orderBy('created_at', 'desc');
+
+        // Filter by verification status
+        if ($request->filled('verification')) {
+            $query->where('account_status', $request->verification);
         }
-        
-        $vendors = $query->paginate(20);
-        
-        // Stats for dashboard
+
+        // Filter by ready_for_approve
+        if ($request->filled('ready_for_approve')) {
+            if ($request->ready_for_approve === 'yes') {
+                $query->where('ready_for_approve', true);
+            } elseif ($request->ready_for_approve === 'no') {
+                $query->where('ready_for_approve', false);
+            }
+        }
+
+        $shops = $query->latest()->paginate(20);
+
+        // Statistics
         $stats = [
-            'total' => Vendor::count(),
-            'pending_approval' => Vendor::role('vendor')->where('profile_completed', '>=', 80)->count(),
-            'pending_profile' => Vendor::role('vendor')->where('profile_completed', '<', 80)->count(),
-            'active' => Vendor::role('store_owner')->where('account_status', 'active')->count(),
-            'suspended' => Vendor::where('account_status', 'suspended')->count(),
+            'total' => Shop::count(),
+            'suspended' => Shop::where('account_status', 'suspended')->count(),
+            'pending' => Shop::where('account_status', 'pending')->count(),
+            'verified' => Shop::where('account_status', 'verified')->count(),
+            'rejected' => Shop::where('account_status', 'rejected')->count(),
         ];
-        
-        // For AJAX request
+
+        // Get unique vendor types for filter
+        $vendorTypes = Shop::distinct()->pluck('vendor_type');
+
         if ($request->ajax()) {
-            $table = view('admin.pages.vendors.partials.vendors-table', compact('vendors'))->render();
-            $pagination = $vendors->appends(request()->query())->links('pagination::bootstrap-5')->render();
-            
+            $table = view('admin.pages.vendors.partials.vendors-table', compact('shops'))->render();
+            $pagination = $shops->links('pagination::bootstrap-5')->render();
+
             return response()->json([
                 'table' => $table,
                 'pagination' => $pagination
             ]);
         }
-        
-        return view('admin.pages.vendors.index', compact('vendors', 'stats'));
+
+        return view('admin.pages.vendors.index', compact('shops', 'stats', 'vendorTypes'));
     }
 
-    /**
-     * Show vendor details
-     */
     public function show($id)
     {
-        $vendor = Vendor::with([
-            'taxInfo', 
-            'bankInfo', 
-            'documents', 
-            'categories',
-            'products' => function($q) {
-                $q->latest()->limit(5);
-            }
+        // Get shop with all related data
+        $shop = Shop::with([
+            'owner',
+            'taxInfo',
+            'bankInfo',
+            'documents',
+            'categories'
         ])->findOrFail($id);
-        
-        $profileCompletion = $this->calculateCompletion($vendor);
-        
-        return view('admin.pages.vendors.show', compact('vendor', 'profileCompletion'));
+
+        // Get all staff members for this shop
+        $staffMembers = Vendor::where('shop_id', $shop->id)
+            ->where('id', '!=', $shop->owner->id ?? 0)
+            ->whereNotIn('vendor_role', ['vendor', 'store_owner'])
+            ->get();
+
+        $countries = Country::all();
+        $states = State::where('country_id', $shop->country_id ?? 0)->get();
+        $allCategories = Category::where('status', true)->orderBy('name')->get();
+
+        return view('admin.pages.vendors.show', compact('shop', 'countries', 'states', 'allCategories', 'staffMembers'));
     }
 
-    /**
-     * Show vendor approval form
-     */
-    public function approveForm($id)
+    public function staff(Request $request, $id)
     {
-        $vendor = Vendor::with(['taxInfo', 'bankInfo', 'documents'])->findOrFail($id);
-        
-        return view('admin.pages.vendors.approve', compact('vendor'));
+        $shop = Shop::findOrFail($id);
+
+        $query = Vendor::where('shop_id', $shop->id);
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by role
+        if ($request->filled('role')) {
+            $query->where('vendor_role', $request->role);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $staffMembers = $query->paginate(20);
+
+        // Statistics
+        $stats = [
+            'total' => Vendor::where('shop_id', $shop->id)->count(),
+            'active' => Vendor::where('shop_id', $shop->id)->where('is_active', true)->count(),
+            'inactive' => Vendor::where('shop_id', $shop->id)->where('is_active', false)->count(),
+            'roles' => Vendor::where('shop_id', $shop->id)->distinct('vendor_role')->count('vendor_role'),
+        ];
+
+        if ($request->ajax()) {
+            $table = view('admin.pages.vendors.partials.staff-table', compact('staffMembers', 'shop'))->render();
+            $pagination = $staffMembers->links('pagination::bootstrap-5')->render();
+
+            return response()->json([
+                'table' => $table,
+                'pagination' => $pagination
+            ]);
+        }
+
+        return view('admin.pages.vendors.staff', compact('shop', 'staffMembers', 'stats'));
     }
 
-    /**
-     * Approve vendor - Change role from 'vendor' to 'store_owner'
-     */
-    public function approve(Request $request, $id)
+    public function staffBulkAction(Request $request, $shopId)
     {
         $request->validate([
-            'verification_notes' => 'nullable|string',
-            'commission_rate' => 'nullable|integer|min:0|max:100',
+            'action' => 'required|in:activate,deactivate,delete',
+            'staff_ids' => 'required|string',
         ]);
-        
-        $vendor = Vendor::findOrFail($id);
-        
+
+        $action = $request->action;
+        $staffIds = json_decode($request->staff_ids);
+
+        $count = 0;
+
         DB::beginTransaction();
-        
+
         try {
-            // Remove the 'vendor' role
-            $vendor->removeRole('vendor');
-            
-            // Assign 'store_owner' role
-            $vendor->assignRole('store_owner');
-            
-            // Grant all permissions
-            $allPermissions = Permission::where('guard_name', 'vendor')->get();
-            $vendor->syncPermissions($allPermissions);
-            
-            // Update vendor status
-            $vendor->update([
-                'account_status' => 'active',
-                'verification_status' => 'verified',
-                'verified_at' => now(),
-                'verified_by' => auth()->guard('admin')->id(),
-                'verification_notes' => $request->verification_notes,
-                'commission_rate' => $request->commission_rate ?? $vendor->commission_rate,
-                'approved_at' => now(),
-                'approved_by' => auth()->guard('admin')->id(),
-            ]);
-            
-            // Also verify tax info and bank info
-            if ($vendor->taxInfo) {
-                $vendor->taxInfo->update([
-                    'verification_status' => 'verified',
-                    'verified_at' => now(),
-                    'verified_by' => auth()->guard('admin')->id(),
-                ]);
+            foreach ($staffIds as $id) {
+                $staff = Vendor::find($id);
+                if (!$staff) continue;
+
+                switch ($action) {
+                    case 'activate':
+                        $staff->update(['is_active' => true]);
+                        $count++;
+                        break;
+                    case 'deactivate':
+                        $staff->update(['is_active' => false]);
+                        $count++;
+                        break;
+                    case 'delete':
+                        if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+                            Storage::disk('public')->delete($staff->avatar);
+                        }
+                        $staff->delete();
+                        $count++;
+                        break;
+                }
             }
-            
-            if ($vendor->bankInfo) {
-                $vendor->bankInfo->update([
-                    'verification_status' => 'verified',
-                    'verified_at' => now(),
-                    'verified_by' => auth()->guard('admin')->id(),
-                ]);
-            }
-            
-            // Send approval notification
-            $this->sendApprovalNotification($vendor);
-            
+
             DB::commit();
-            
+
+            return response()->json([
+                'success' => true,
+                'message' => "{$count} staff member(s) {$action}d successfully!"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function activateStaff($id)
+    {
+        $staff = Vendor::findOrFail($id);
+
+        $staff->update(['is_active' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff activated successfully!'
+        ]);
+    }
+
+    public function deactivateStaff($id)
+    {
+        $staff = Vendor::findOrFail($id);
+
+        $staff->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff deactivated successfully!'
+        ]);
+    }
+
+    public function deleteStaff($id)
+    {
+        $staff = Vendor::findOrFail($id);
+
+        if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+            Storage::disk('public')->delete($staff->avatar);
+        }
+
+        $staff->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff deleted successfully!'
+        ]);
+    }
+
+    public function approve(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $request->validate([
+            'verification_notes' => 'required|string|max:500'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // Update shop verification status
+            $shop->update([
+                'account_status' => 'verified',
+                'verified_at' => now(),
+                'verified_by' => auth('admin')->id(),
+                'verification_notes' => $request->verification_notes,
+            ]);
+
+            if ($shop->owner) {
+                // Update owner's role in vendors table
+                $shop->owner->update([
+                    'vendor_role' => 'store_owner',
+                    'is_owner' => true,
+                ]);
+
+                // Remove 'vendor' role using Spatie permission
+                $shop->owner->removeRole('vendor');
+
+                // Assign 'store_owner' role using Spatie permission
+                $shop->owner->assignRole('store_owner');
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shop approved successfully! Vendor role changed to Store Owner.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $request->validate([
+            'verification_notes' => 'required|string|max:500'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $shop->update([
+                'account_status' => 'rejected',
+                'verified_at' => now(),
+                'verified_by' => auth('admin')->id(),
+                'verification_notes' => $request->verification_notes,
+            ]);
+
+            if ($shop->owner) {
+                // Update owner's role in vendors table
+                $shop->owner->update([
+                    'vendor_role' => 'vendor',
+                    'is_owner' => false,
+                ]);
+
+                // Remove 'store_owner' role using Spatie permission
+                $shop->owner->removeRole('store_owner');
+
+                // Assign 'vendor' role using Spatie permission
+                $shop->owner->assignRole('vendor');
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shop rejected successfully!'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function changeType(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $request->validate([
+            'vendor_type' => 'required|in:own_store,third_party'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $shop->update([
+                'vendor_type' => $request->vendor_type,
+                'commission_rate' => 0
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vendor type changed to ' . ucfirst(str_replace('_', ' ', $request->vendor_type)) . ' successfully!'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function suspend(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            if ($shop->owner) {
+                $shop->update([
+                    'account_status' => 'suspended',
+                    'suspension_reason' => $request->reason,
+                    'suspended_at' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shop suspended successfully!'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            // Delete shop logo and banner if exist
+            if ($shop->shop_logo && Storage::disk('public')->exists($shop->shop_logo)) {
+                Storage::disk('public')->delete($shop->shop_logo);
+            }
+            if ($shop->shop_banner && Storage::disk('public')->exists($shop->shop_banner)) {
+                Storage::disk('public')->delete($shop->shop_banner);
+            }
+
+            $shop->delete();
+
+            DB::commit();
+
             return redirect()->route('admin.vendors.index')
-                ->with('success', 'Vendor approved and upgraded to Store Owner successfully!');
-                
+                ->with('success', 'Shop deleted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Reject vendor application
-     */
-    public function reject(Request $request, $id)
-    {
-        $request->validate([
-            'rejection_reason' => 'required|string',
-        ]);
-        
-        $vendor = Vendor::findOrFail($id);
-        
-        $vendor->update([
-            'account_status' => 'rejected',
-            'verification_status' => 'rejected',
-            'verification_notes' => $request->rejection_reason,
-            'verified_by' => auth()->guard('admin')->id(),
-            'verified_at' => now(),
-        ]);
-        
-        // Send rejection notification
-        $this->sendRejectionNotification($vendor, $request->rejection_reason);
-        
-        return redirect()->route('admin.vendors.index')
-            ->with('error', 'Vendor application rejected!');
-    }
-
-    /**
-     * Suspend vendor
-     */
-    public function suspend(Request $request, $id)
-    {
-        $request->validate([
-            'suspension_reason' => 'required|string',
-        ]);
-        
-        $vendor = Vendor::findOrFail($id);
-        
-        $vendor->update([
-            'account_status' => 'suspended',
-            'suspension_reason' => $request->suspension_reason,
-            'suspended_at' => now(),
-        ]);
-        
-        // Send suspension notification
-        $this->sendSuspensionNotification($vendor, $request->suspension_reason);
-        
-        return redirect()->route('admin.vendors.show', $vendor->id)
-            ->with('warning', 'Vendor suspended successfully!');
-    }
-
-    /**
-     * Activate suspended vendor
-     */
-    public function activate($id)
-    {
-        $vendor = Vendor::findOrFail($id);
-        
-        $vendor->update([
-            'account_status' => 'active',
-            'suspension_reason' => null,
-            'suspended_at' => null,
-        ]);
-        
-        // Send activation notification
-        $this->sendActivationNotification($vendor);
-        
-        return redirect()->route('admin.vendors.show', $vendor->id)
-            ->with('success', 'Vendor activated successfully!');
-    }
-
-    /**
-     * Delete vendor
-     */
-    public function destroy($id)
-    {
-        $vendor = Vendor::findOrFail($id);
-        
-        DB::beginTransaction();
-        
-        try {
-            // Delete associated files
-            if ($vendor->avatar && Storage::disk('public')->exists($vendor->avatar)) {
-                Storage::disk('public')->delete($vendor->avatar);
-            }
-            if ($vendor->shop_logo && Storage::disk('public')->exists($vendor->shop_logo)) {
-                Storage::disk('public')->delete($vendor->shop_logo);
-            }
-            if ($vendor->shop_banner && Storage::disk('public')->exists($vendor->shop_banner)) {
-                Storage::disk('public')->delete($vendor->shop_banner);
-            }
-            
-            // Delete documents
-            foreach ($vendor->documents as $document) {
-                if (Storage::disk('public')->exists($document->document_path)) {
-                    Storage::disk('public')->delete($document->document_path);
-                }
-            }
-            
-            $vendor->delete();
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Vendor deleted successfully!'
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Bulk action for vendors
-     */
-    public function bulkAction(Request $request)
-    {
-        $request->validate([
-            'action' => 'required|in:delete,approve,suspend',
-            'vendor_ids' => 'required|json',
-        ]);
-        
-        $vendorIds = json_decode($request->vendor_ids, true);
-        
-        if (empty($vendorIds)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No vendors selected.'
-            ], 400);
-        }
-        
-        DB::beginTransaction();
-        
-        try {
-            switch ($request->action) {
-                case 'delete':
-                    foreach ($vendorIds as $id) {
-                        $vendor = Vendor::find($id);
-                        if ($vendor) {
-                            // Delete files
-                            if ($vendor->avatar && Storage::disk('public')->exists($vendor->avatar)) {
-                                Storage::disk('public')->delete($vendor->avatar);
-                            }
-                            if ($vendor->shop_logo && Storage::disk('public')->exists($vendor->shop_logo)) {
-                                Storage::disk('public')->delete($vendor->shop_logo);
-                            }
-                            foreach ($vendor->documents as $document) {
-                                if (Storage::disk('public')->exists($document->document_path)) {
-                                    Storage::disk('public')->delete($document->document_path);
-                                }
-                            }
-                            $vendor->delete();
-                        }
-                    }
-                    $message = count($vendorIds) . ' vendor(s) deleted successfully.';
-                    break;
-                    
-                case 'approve':
-                    foreach ($vendorIds as $id) {
-                        $vendor = Vendor::find($id);
-                        if ($vendor && $vendor->hasRole('vendor') && $vendor->profile_completed >= 80) {
-                            $vendor->removeRole('vendor');
-                            $vendor->assignRole('store_owner');
-                            $allPermissions = Permission::where('guard_name', 'vendor')->get();
-                            $vendor->syncPermissions($allPermissions);
-                            $vendor->update([
-                                'account_status' => 'active',
-                                'verification_status' => 'verified',
-                                'verified_at' => now(),
-                                'verified_by' => auth()->guard('admin')->id(),
-                                'approved_at' => now(),
-                                'approved_by' => auth()->guard('admin')->id(),
-                            ]);
-                            $this->sendApprovalNotification($vendor);
-                        }
-                    }
-                    $message = count($vendorIds) . ' vendor(s) approved successfully.';
-                    break;
-                    
-                case 'suspend':
-                    foreach ($vendorIds as $id) {
-                        $vendor = Vendor::find($id);
-                        if ($vendor && $vendor->account_status == 'active') {
-                            $vendor->update([
-                                'account_status' => 'suspended',
-                                'suspension_reason' => 'Bulk suspension action',
-                                'suspended_at' => now(),
-                            ]);
-                            $this->sendSuspensionNotification($vendor, 'Bulk suspension action');
-                        }
-                    }
-                    $message = count($vendorIds) . ' vendor(s) suspended successfully.';
-                    break;
-            }
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => $message
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Calculate profile completion percentage
-     */
-    protected function calculateCompletion($vendor)
-    {
-        $completed = 0;
-        $totalRequired = 22;
-        
-        // Personal Info (3 fields)
-        if ($vendor->name) $completed++;
-        if ($vendor->email) $completed++;
-        if ($vendor->phone) $completed++;
-        
-        // Shop Info (10 fields)
-        if ($vendor->shop_name) $completed++;
-        if ($vendor->shop_description) $completed++;
-        if ($vendor->shop_phone) $completed++;
-        if ($vendor->shop_address) $completed++;
-        if ($vendor->shop_city) $completed++;
-        if ($vendor->shop_state) $completed++;
-        if ($vendor->shop_country) $completed++;
-        if ($vendor->shop_postal_code) $completed++;
-        if ($vendor->shop_logo) $completed++;
-        if ($vendor->shop_email) $completed++;
-        
-        // Tax Info (4 fields)
-        if ($vendor->taxInfo) {
-            if ($vendor->taxInfo->gst_number) $completed++;
-            if ($vendor->taxInfo->pan_number) $completed++;
-            if ($vendor->taxInfo->pan_holder_name) $completed++;
-            if ($vendor->taxInfo->business_registration_number) $completed++;
-        }
-        
-        // Bank Info (5 fields)
-        if ($vendor->bankInfo) {
-            if ($vendor->bankInfo->account_holder_name) $completed++;
-            if ($vendor->bankInfo->account_number) $completed++;
-            if ($vendor->bankInfo->bank_name) $completed++;
-            if ($vendor->bankInfo->bank_branch) $completed++;
-            if ($vendor->bankInfo->ifsc_code) $completed++;
-        }
-        
-        return round(($completed / $totalRequired) * 100);
     }
 }

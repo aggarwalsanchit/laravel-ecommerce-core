@@ -1,186 +1,151 @@
 <?php
-// app/Http/Controllers/Vendor/VendorAuthController.php
 
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Vendor;
-use App\Models\VendorTaxInfo;
-use App\Models\VendorBankInfo;
-use App\Models\VendorDocument;
+use App\Models\Vendor\Shop;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Traits\LogsVendorActivity;
-
 
 class VendorAuthController extends Controller
 {
-
     use LogsVendorActivity;
-    /**
-     * Show vendor registration form
-     */
-    public function showRegistrationForm()
-    {
-        // If already logged in as vendor, redirect to dashboard
-        if (Auth::guard('vendor')->check()) {
-            return redirect()->route('marketplace.dashboard');
-        }
-
-        return view('marketplace.auth.register');
-    }
 
     public function showLoginForm()
     {
-        if (Auth::guard('vendor')->check()) {
-            return redirect()->route('marketplace.dashboard');
-        }
-
         return view('marketplace.auth.login');
-    }
-
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:vendors,email',
-            'phone' => 'required|string|max:20',
-            'password' => 'required|min:8|confirmed',
-            'shop_name' => 'required|string|max:255|unique:vendors,shop_name',
-            'shop_slug' => 'nullable|string|unique:vendors,shop_slug',
-            'shop_description' => 'required|string',
-            'shop_email' => 'required|email|unique:vendors,shop_email',
-            'shop_phone' => 'required|string|max:20',
-            'business_type' => 'required|string',
-            'shop_address' => 'required|string',
-            'shop_city' => 'required|string',
-            'shop_state' => 'required|string',
-            'shop_country' => 'required|string',
-            'shop_postal_code' => 'required|string',
-            'terms' => 'accepted',
-        ]);
-
-        DB::beginTransaction();
-
-        // try {
-        $vendor = Vendor::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'phone' => $validated['phone'],
-            'shop_name' => $validated['shop_name'],
-            'shop_slug' => $validated['shop_slug'] ?? Str::slug($validated['shop_name']),
-            'shop_description' => $validated['shop_description'],
-            'shop_email' => $validated['shop_email'],
-            'shop_phone' => $validated['shop_phone'],
-            'business_type' => $validated['business_type'],
-            'shop_address' => $validated['shop_address'],
-            'shop_city' => $validated['shop_city'],
-            'shop_state' => $validated['shop_state'],
-            'shop_country' => $validated['shop_country'],
-            'shop_postal_code' => $validated['shop_postal_code'],
-            'vendor_type' => 'third_party',
-            'account_status' => 'pending',
-            'verification_status' => 'pending',
-            'commission_rate' => 10,
-            'last_login_at' => now()
-        ]);
-
-        DB::commit();
-
-        // Assign vendor role to the vendor
-        $vendor->assignRole('vendor');
-
-        // Auto login after registration
-        Auth::guard('vendor')->login($vendor);
-
-        // Redirect to login page with success message
-        return redirect()->route('vendor.dashboard')
-            ->with('success', 'Registration successful! Please login after admin approval.');
-        // } catch (\Exception $e) {
-        //     DB::rollBack();
-        //     return back()->with('error', 'Registration failed: ' . $e->getMessage())->withInput();
-        // }
     }
 
     public function login(Request $request)
     {
-        $request->validate([
+        $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required|string',
+            'password' => 'required',
         ]);
-
-        $credentials = [
-            'email' => $request->email,
-            'password' => $request->password,
-        ];
 
         if (Auth::guard('vendor')->attempt($credentials, $request->remember)) {
             $vendor = Auth::guard('vendor')->user();
 
             // Log login activity
-            // $vendor->logLogin('Logged into vendor dashboard');
+            $this->logLogin('Vendor logged into dashboard');
 
-            // Check if suspended
-            if ($vendor->account_status === 'suspended') {
+            if ($vendor->account_status === 'suspended' || $vendor->account_status === 'banned') {
                 Auth::guard('vendor')->logout();
-                return back()->withErrors(['email' => 'Your account has been suspended. Contact support.']);
+                return back()->withErrors(['email' => 'Your account has been ' . $vendor->account_status . '. Please contact support.']);
             }
 
-            // Update last login
-            $vendor->update(['last_login_at' => now()]);
+            if ($vendor->account_status === 'pending') {
+                Auth::guard('vendor')->logout();
+                return back()->withErrors(['email' => 'Your account is pending approval. Please wait for admin approval.']);
+            }
 
-            // Redirect based on profile completion and verification
-            return $this->redirectBasedOnStatus($vendor);
+            return redirect()->intended(route('vendor.dashboard'));
         }
 
-        return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
     }
 
-    protected function redirectBasedOnStatus($vendor)
+    public function showRegisterForm()
     {
-        // Case 1: Profile not completed
-        if ($vendor->profile_completed < 100) {
-            return redirect()->route('vendor.complete-profile');
-        }
-
-        // Case 2: Pending verification
-        if ($vendor->verification_status === 'pending') {
-            return redirect()->route('vendor.pending');
-        }
-
-        // Case 3: Rejected
-        if ($vendor->verification_status === 'rejected') {
-            Auth::guard('vendor')->logout();
-            return back()->withErrors(['email' => 'Your application was rejected: ' . $vendor->verification_notes]);
-        }
-
-        // Case 4: Verified and active
-        if ($vendor->verification_status === 'verified' && $vendor->account_status === 'active') {
-            return redirect()->route('vendor.dashboard');
-        }
-
-        return redirect()->route('vendor.pending');
+        return view('marketplace.auth.register');
     }
 
-    public function logout(Request $request)
+    public function register(Request $request)
     {
-        $vendor = Auth::guard('vendor')->user();
+        $validator = Validator::make($request->all(), [
+            // Personal Information
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:vendors,email',
+            'password' => 'required|min:8|confirmed',
 
-        if ($vendor) {
-            $vendor->logLogout('Logged out from vendor panel');
+            // Shop Information
+            'shop_name' => 'required|string|max:255',
+            'shop_slug' => 'nullable|string|unique:shops,shop_slug',
+
+            'terms' => 'required|accepted',
+        ], [
+            'name.required' => 'Please enter your full name',
+            'email.required' => 'Please enter your email address',
+            'email.unique' => 'This email is already registered',
+            'password.required' => 'Please create a password',
+            'password.min' => 'Password must be at least 8 characters',
+            'password.confirmed' => 'Password confirmation does not match',
+            'shop_name.required' => 'Please enter your shop name',
+            'terms.required' => 'You must agree to the terms and conditions',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
         }
 
+        $validated = $validator->validated();
+
+        DB::beginTransaction();
+
+        try {
+
+
+            // Generate unique slug
+            $slug = $validated['shop_slug'] ?? Str::slug($validated['shop_name']);
+            $originalSlug = $slug;
+            $count = 1;
+            while (Shop::where('shop_slug', $slug)->exists()) {
+                $slug = $originalSlug . '-' . $count++;
+            }
+
+            // Create Shop
+            $shop = Shop::create([
+                'shop_name' => $validated['shop_name'],
+                'shop_slug' => $slug,
+                'account_status' => 'pending',
+                'verification_status' => 'pending',
+                'vendor_type' => 'third_party',
+                'profile_completed' => '10',
+            ]);
+
+            // Create Vendor
+            $vendor = Vendor::create([
+                'shop_id' => $shop->id,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'account_status' => 'pending',
+                'verification_status' => 'pending',
+                'role' => 'vendor',
+                'is_owner' => 1
+            ]);
+
+            $vendor->assignRole('vendor');
+
+            DB::commit();
+
+            // Login the vendor
+            Auth::guard('vendor')->login($vendor);
+
+            return redirect()->route('vendor.dashboard')->with('success', 'Registration successful! Welcome to ' . $shop->shop_name);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Vendor Registration Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'Something went wrong! Please try again.')->withInput();
+        }
+    }
+
+    public function logout()
+    {
         Auth::guard('vendor')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
+        $this->logLogout('Vendor logged out');
         return redirect()->route('vendor.login');
     }
 }

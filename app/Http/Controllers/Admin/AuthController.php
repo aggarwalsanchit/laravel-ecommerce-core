@@ -37,13 +37,13 @@ class AuthController extends Controller
         if (Auth::guard('admin')->attempt($credentials, $remember)) {
 
             $admin = Auth::guard('admin')->user();
-            
+
             // Log login activity
-            $admin->logLogin('Admin logged into dashboard');
+            $this->logLogin('Admin logged into dashboard');
 
             // Regenerate session to prevent session fixation
             $request->session()->regenerate();
-            
+
             return redirect()->intended(route('admin.dashboard'));
         }
 
@@ -59,16 +59,16 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $admin = Auth::guard('admin')->user();
-        
+
         if ($admin) {
-            $admin->logLogout('Admin logged out');
+            $this->logLogout('Admin logged out');
         }
-        
+
         Auth::guard('admin')->logout();
-        
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect()->route('admin.login');
     }
 }

@@ -1,5 +1,5 @@
-{{-- resources/views/admin/permissions/edit.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/marketplace/permissions/edit.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Edit Permission')
 
@@ -12,8 +12,8 @@
                 </div>
                 <div class="text-end">
                     <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.permissions.index') }}">Permissions</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('vendor.permissions.index') }}">Permissions</a></li>
                         <li class="breadcrumb-item active">Edit Permission</li>
                     </ol>
                 </div>
@@ -55,7 +55,7 @@
                                 </div>
 
                                 <div class="d-flex justify-content-end gap-2 mt-4">
-                                    <a href="{{ route('admin.permissions.index') }}" class="btn btn-danger">
+                                    <a href="{{ route('vendor.permissions.index') }}" class="btn btn-danger">
                                         <i class="ti ti-x me-1"></i> Cancel
                                     </a>
                                     <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -105,7 +105,7 @@
                 btn.prop('disabled', true);
 
                 $.ajax({
-                    url: '{{ route('admin.permissions.update', $permission->id) }}',
+                    url: '{{ route('vendor.permissions.update', $permission->id) }}',
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
@@ -118,7 +118,7 @@
                                 showConfirmButton: false
                             }).then(() => {
                                 window.location.href =
-                                    '{{ route('admin.permissions.index') }}';
+                                    '{{ route('vendor.permissions.index') }}';
                             });
                         }
                     },

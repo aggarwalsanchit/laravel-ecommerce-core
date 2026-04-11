@@ -4,17 +4,31 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
+use App\Models\Vendor;
+use App\Models\Country;
+use App\Models\State;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use App\Services\ImageCompressionService;
+use App\Traits\LogsVendorActivity;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class VendorUserController extends Controller implements HasMiddleware
 {
+    use LogsVendorActivity;
+
+    protected $imageCompressor;
+
+    public function __construct(ImageCompressionService $imageCompressor)
+    {
+        $this->imageCompressor = $imageCompressor;
+    }
+
     /**
      * Define middleware for this controller.
      */
@@ -22,22 +36,21 @@ class VendorUserController extends Controller implements HasMiddleware
     {
         return [
             'auth:vendor',
-
-            new Middleware('permission:view users', only: ['index', 'show']),
-            new Middleware('permission:create users', only: ['create', 'store']),
-            new Middleware('permission:edit users', only: ['edit', 'update']),
-            new Middleware('permission:delete users', only: ['destroy']),
-            new Middleware('permission:activate users', only: ['activate']),
-            new Middleware('permission:deactivate users', only: ['deactivate']),
+            new Middleware('permission:view_staff', only: ['index', 'show']),
+            new Middleware('permission:create_staff', only: ['create', 'store']),
+            new Middleware('permission:edit_staff', only: ['edit', 'update']),
+            new Middleware('permission:delete_staff', only: ['destroy']),
         ];
     }
 
     /**
-     * Display a listing of users.
+     * Display a listing of staff members.
      */
     public function index(Request $request)
     {
-        $query = Admin::with('roles', 'permissions');
+        $vendor = Auth::guard('vendor')->user();
+
+        $query = Vendor::where('shop_id', $vendor->shop_id);
 
         // Search
         if ($request->filled('search')) {
@@ -51,7 +64,7 @@ class VendorUserController extends Controller implements HasMiddleware
 
         // Filter by role
         if ($request->filled('role')) {
-            $query->role($request->role);
+            $query->where('role', $request->role);
         }
 
         // Filter by status
@@ -63,117 +76,204 @@ class VendorUserController extends Controller implements HasMiddleware
             }
         }
 
-        $users = $query->paginate(10);
-        $roles = Role::all();
+        $staffs = $query->paginate(10);
+        $roles = Role::where('guard_name', 'vendor')->get();
 
-        // If AJAX request, return JSON with table and pagination
+        // Statistics
+        $stats = [
+            'total' => Vendor::where('shop_id', $vendor->shop_id)->count(),
+            'active' => Vendor::where('shop_id', $vendor->shop_id)->where('is_active', true)->count(),
+            'inactive' => Vendor::where('shop_id', $vendor->shop_id)->where('is_active', false)->count(),
+            'roles' => Role::where('guard_name', 'vendor')->count(),
+        ];
+
+        // Filtered stats
+        $filteredStats = [
+            'filtered_total' => $query->count(),
+            'filtered_active' => (clone $query)->where('is_active', true)->count(),
+            'filtered_inactive' => (clone $query)->where('is_active', false)->count(),
+        ];
+
+        // Log activity
+        $this->logActivity('view', 'staff', null, null, null, null, null, 'Viewed staff list');
+
         if ($request->ajax()) {
-            $table = view('marketplace.pages.users.partials.users-table', compact('users'))->render();
-
-            // Use Laravel's default pagination view
-            $pagination = $users->links('pagination::bootstrap-5')->render();
+            $table = view('marketplace.pages.staff.partials.staff-table', compact('staffs'))->render();
+            $pagination = $staffs->links('pagination::bootstrap-5')->render();
 
             return response()->json([
                 'table' => $table,
-                'pagination' => $pagination
+                'pagination' => $pagination,
+                'stats' => $stats,
+                'filteredStats' => $filteredStats
             ]);
         }
 
-        return view('marketplace.pages.users.index', compact('users', 'roles'));
+        return view('marketplace.pages.staff.index', compact('staffs', 'stats', 'roles', 'filteredStats'));
     }
 
     /**
-     * Show form for creating new user.
+     * Show form for creating new staff.
      */
     public function create()
     {
-        $roles = Role::all();
-        $permissions = Permission::all();
+        $roles = Role::where('guard_name', 'vendor')->get();
+        $permissions = Permission::where('guard_name', 'vendor')->get();
+        $countries = Country::all();
 
-        return view('marketplace.pages.users.create', compact('roles', 'permissions'));
+        return view('marketplace.pages.staff.create', compact('roles', 'permissions', 'countries'));
     }
 
     /**
-     * Store newly created user.
+     * Store newly created staff.
      */
     public function store(Request $request)
     {
+        $vendor = Auth::guard('vendor')->user();
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8',
+            'email' => 'required|email|unique:vendors,email',
+            'password' => 'required|min:8|confirmed',
+            'phone_code' => 'nullable|string|max:10',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
+            'country_id' => 'nullable|exists:countries,id',
+            'state_id' => 'nullable|exists:states,id',
             'postal_code' => 'nullable|string|max:20',
-            'birth_date' => 'nullable|date',
+            'birth_date' => 'nullable|date|before:today',
             'is_active' => 'boolean',
-            'role' => 'required|exists:roles,name',
+            'role' => 'required',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->except(['password', 'role', 'avatar']);
         $data['password'] = Hash::make($request->password);
         $data['is_active'] = $request->is_active ?? true;
+        $data['shop_id'] = $vendor->shop_id;
+        $data['is_owner'] = false;
+        $data['vendor_role'] =  $request->role;
 
-        // Handle avatar upload
+        // Handle avatar upload with compression
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $data['avatar'] = basename($avatarPath);
+            $compressed = $this->imageCompressor->compress(
+                $request->file('avatar'),
+                'vendor/avatars',
+                200,
+                85
+            );
+
+            if ($compressed['success']) {
+                $data['avatar'] = 'vendor/avatars/' . $compressed['filename'];
+            } else {
+                $avatarPath = $request->file('avatar')->store('vendor/avatars', 'public');
+                $data['avatar'] = $avatarPath;
+            }
         }
 
-        $user = Admin::create($data);
+        $staff = Vendor::create($data);
+        $staff->assignRole($request->role);
 
-        // Assign the selected role
-        $user->assignRole($request->role);
+        // Log activity
+        $this->logActivity(
+            'create',
+            'staff',
+            $staff->id,
+            $staff->name,
+            null,
+            $staff->toArray(),
+            "Created new staff member: {$staff->name} with role: {$request->role}"
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'User created successfully with ' . $request->role . ' role.',
-            'user' => $user
+            'message' => 'Staff member created successfully!'
         ]);
     }
 
     /**
-     * Display user details.
+     * Display staff details.
      */
-    public function show(Admin $user)
+    public function show($id)
     {
-        // Load relationships
-        $user->load('roles', 'permissions');
+        $vendor = Auth::guard('vendor')->user();
 
-        return view('marketplace.pages.users.show', compact('user'));
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->with(['roles', 'permissions', 'shop', 'state', 'country'])
+            ->firstOrFail();
+
+        // Log activity
+        $this->logActivity(
+            'view',
+            'staff',
+            $staff->id,
+            $staff->name,
+            null,
+            null,
+            "Viewed staff details: {$staff->name}"
+        );
+
+        return view('marketplace.pages.staff.show', compact('staff'));
     }
 
     /**
-     * Show form for editing user.
+     * Show form for editing staff.
      */
-    public function edit(Admin $user)
+    public function edit($id)
     {
-        $roles = Role::all();
-        $userRole = $user->roles->first() ? $user->roles->first()->name : '';
+        $vendor = Auth::guard('vendor')->user();
 
-        return view('marketplace.pages.users.edit', compact('user', 'roles', 'userRole'));
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $countries = Country::all();
+        $states = State::where('country_id', $staff->country_id)->get();
+        $roles = Role::where('guard_name', 'vendor')->get();
+        $staffRole = $staff->roles->first()->name ?? '';
+
+        // Log activity
+        $this->logActivity(
+            'edit',
+            'staff',
+            $staff->id,
+            $staff->name,
+            null,
+            null,
+            "Opened edit form for staff: {$staff->name}"
+        );
+
+        return view('marketplace.pages.staff.edit', compact('staff', 'roles', 'staffRole', 'countries', 'states'));
     }
 
     /**
-     * Update user.
+     * Update staff.
      */
-    public function update(Request $request, Admin $user)
+    public function update(Request $request, $id)
     {
+        $vendor = Auth::guard('vendor')->user();
+
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        // Store old values for logging
+        $oldValues = $staff->toArray();
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:8|confirmed',
+            'phone_code' => 'nullable|string|max:10',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
+            'country_id' => 'nullable|exists:countries,id',
+            'state_id' => 'nullable|exists:states,id',
             'postal_code' => 'nullable|string|max:20',
-            'birth_date' => 'nullable|date',
+            'birth_date' => 'nullable|date|before:today',
             'is_active' => 'boolean',
-            'role' => 'required|exists:roles,name',
+            'role' => 'required',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'remove_avatar' => 'nullable|boolean',
         ]);
@@ -187,225 +287,243 @@ class VendorUserController extends Controller implements HasMiddleware
 
         $data['is_active'] = $request->is_active ?? true;
 
-        // Handle avatar
+        // Handle avatar removal
         if ($request->has('remove_avatar') && $request->remove_avatar) {
-            if ($user->avatar) {
-                Storage::disk('public')->delete('avatars/' . $user->avatar);
+            if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+                Storage::disk('public')->delete($staff->avatar);
                 $data['avatar'] = null;
             }
         }
 
+        // Handle avatar upload with compression
         if ($request->hasFile('avatar')) {
             // Delete old avatar
-            if ($user->avatar) {
-                Storage::disk('public')->delete('avatars/' . $user->avatar);
+            if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+                Storage::disk('public')->delete($staff->avatar);
             }
 
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $data['avatar'] = basename($avatarPath);
+            // Compress and upload avatar
+            $compressed = $this->imageCompressor->compress(
+                $request->file('avatar'),
+                'vendor/avatars',
+                200,
+                85
+            );
+
+            if ($compressed['success']) {
+                $data['avatar'] = 'vendor/avatars/' . $compressed['filename'];
+            } else {
+                $avatarPath = $request->file('avatar')->store('vendor/avatars', 'public');
+                $data['avatar'] = $avatarPath;
+            }
         }
 
-        $user->update($data);
+        $staff->update($data);
 
-        // Sync role (remove old roles and assign new one)
-        $user->syncRoles([$request->role]);
+        // Log activity with changes
+        $changes = [];
+        foreach ($oldValues as $key => $value) {
+            if (isset($data[$key]) && $oldValues[$key] != $data[$key]) {
+                $changes[$key] = [
+                    'old' => $oldValues[$key],
+                    'new' => $data[$key]
+                ];
+            }
+        }
+
+        $description = "Updated staff member: {$staff->name}";
+        if (!empty($changes)) {
+            $fields = array_keys($changes);
+            $description .= " - Changed: " . implode(', ', $fields);
+        }
+
+        $this->logActivity(
+            'update',
+            'staff',
+            $staff->id,
+            $staff->name,
+            $oldValues,
+            $staff->toArray(),
+            $description
+        );
 
         return response()->json([
             'success' => true,
-            'message' => 'User updated successfully with ' . $request->role . ' role.'
+            'message' => 'Staff member updated successfully!'
         ]);
     }
 
     /**
-     * Delete user.
+     * Activate staff.
      */
-    public function destroy(Admin $user)
+    public function activate($id)
     {
-        // Check permission
-        if (!auth()->user()->can('delete users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to delete users.');
-        }
+        $vendor = Auth::guard('vendor')->user();
 
-        // Prevent deleting yourself
-        if ($user->id === auth()->id()) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You cannot delete your own account.'], 403);
-            }
-            return back()->with('error', 'You cannot delete your own account.');
-        }
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->where('id', $id)
+            ->firstOrFail();
 
-        // Optional: Prevent deleting Super Admin users
-        if ($user->hasRole('Super Admin')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Super Admin users cannot be deleted.'], 403);
-            }
-            return back()->with('error', 'Super Admin users cannot be deleted.');
-        }
+        $oldStatus = $staff->is_active;
+        $staff->update(['is_active' => true]);
+
+        $this->logActivity(
+            'activate',
+            'staff',
+            $staff->id,
+            $staff->name,
+            ['is_active' => $oldStatus],
+            ['is_active' => true],
+            "Activated staff member: {$staff->name}"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff member activated successfully!'
+        ]);
+    }
+
+    /**
+     * Deactivate staff.
+     */
+    public function deactivate($id)
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $oldStatus = $staff->is_active;
+        $staff->update(['is_active' => false]);
+
+        $this->logActivity(
+            'deactivate',
+            'staff',
+            $staff->id,
+            $staff->name,
+            ['is_active' => $oldStatus],
+            ['is_active' => false],
+            "Deactivated staff member: {$staff->name}"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff member deactivated successfully!'
+        ]);
+    }
+
+    /**
+     * Delete staff.
+     */
+    public function destroy($id)
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        $staff = Vendor::where('shop_id', $vendor->shop_id)
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $staffName = $staff->name;
+        $staffId = $staff->id;
 
         // Delete avatar if exists
-        if ($user->avatar) {
-            Storage::disk('public')->delete('avatars/' . $user->avatar);
+        if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+            Storage::disk('public')->delete($staff->avatar);
         }
 
-        // Delete user
-        $user->delete();
+        $staff->delete();
 
-        // Return response based on request type
+        // Log activity
+        $this->logActivity(
+            'delete',
+            'staff',
+            $staffId,
+            $staffName,
+            null,
+            null,
+            "Deleted staff member: {$staffName}"
+        );
+
         if (request()->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'User deleted successfully.'
+                'message' => 'Staff member deleted successfully!'
             ]);
         }
 
-        return redirect()->route('vendor.users.index')
-            ->with('success', 'User deleted successfully.');
+        return redirect()->route('vendor.staff.index')
+            ->with('success', 'Staff member deleted successfully.');
     }
 
     /**
-     * Activate user.
-     */
-    public function activate(Admin $user)
-    {
-        // Check permission
-        if (!auth('vendor')->user()->can('activate users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to activate users.');
-        }
-
-        // Activate user
-        $user->update(['is_active' => true]);
-
-        // Return response based on request type
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'User activated successfully.'
-            ]);
-        }
-
-        return back()->with('success', 'User activated successfully.');
-    }
-
-    /**
-     * Deactivate user.
-     */
-    public function deactivate(Admin $user)
-    {
-        // Check permission
-        if (!auth('vendor')->user()->can('deactivate users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to deactivate users.');
-        }
-
-        // Prevent deactivating yourself
-        if ($user->id === auth('vendor')->id()) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You cannot deactivate your own account.'], 403);
-            }
-            return back()->with('error', 'You cannot deactivate your own account.');
-        }
-
-        // Prevent deactivating Super Admin
-        if ($user->hasRole('Super Admin')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Super Admin users cannot be deactivated.'], 403);
-            }
-            return back()->with('error', 'Super Admin users cannot be deactivated.');
-        }
-
-        // Deactivate user
-        $user->update(['is_active' => false]);
-
-        // Return response based on request type
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'User deactivated successfully.'
-            ]);
-        }
-
-        return back()->with('success', 'User deactivated successfully.');
-    }
-
-    /**
-     * Bulk action on users.
+     * Bulk action on staff.
      */
     public function bulkAction(Request $request)
     {
+        $vendor = Auth::guard('vendor')->user();
+
         $request->validate([
             'action' => 'required|in:activate,deactivate,delete',
-            'user_ids' => 'required|string', // Comes as JSON string
+            'staff_ids' => 'required|string',
         ]);
 
         $action = $request->action;
-        $userIds = json_decode($request->user_ids); // Decode JSON string to array
+        $staffIds = json_decode($request->staff_ids);
 
         // Check permission based on action
-        if ($action === 'activate' && !auth('vendor')->user()->can('activate users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to activate users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to activate users.');
+        if ($action === 'activate' && !$vendor->can('edit_staff')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to activate staff.'], 403);
         }
 
-        if ($action === 'deactivate' && !auth('vendor')->user()->can('deactivate users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to deactivate users.');
+        if ($action === 'deactivate' && !$vendor->can('edit_staff')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to deactivate staff.'], 403);
         }
 
-        if ($action === 'delete' && !auth('vendor')->user()->can('delete users')) {
-            if (request()->ajax()) {
-                return response()->json(['success' => false, 'message' => 'You do not have permission to delete users.'], 403);
-            }
-            return back()->with('error', 'You do not have permission to delete users.');
+        if ($action === 'delete' && !$vendor->can('delete_staff')) {
+            return response()->json(['success' => false, 'message' => 'You do not have permission to delete staff.'], 403);
         }
 
-        // Get users, excluding current vendor and Super Admin
-        $users = Admin::whereIn('id', $userIds)
-            ->where('id', '!=', auth('vendor')->id()) // Exclude current user
+        // Get staff members
+        $staffs = Vendor::where('shop_id', $vendor->shop_id)
+            ->whereIn('id', $staffIds)
             ->get();
 
         $count = 0;
-        foreach ($users as $user) {
-            // Skip Super Admin users for deactivate and delete actions
-            if ($user->hasRole('Super Admin') && ($action === 'deactivate' || $action === 'delete')) {
-                continue; // Skip Super Admin
-            }
+        $affectedStaff = [];
+
+        foreach ($staffs as $staff) {
+            $affectedStaff[] = $staff->name;
 
             if ($action === 'activate') {
-                $user->update(['is_active' => true]);
+                $staff->update(['is_active' => true]);
                 $count++;
             } elseif ($action === 'deactivate') {
-                $user->update(['is_active' => false]);
+                $staff->update(['is_active' => false]);
                 $count++;
             } elseif ($action === 'delete') {
-                // Delete avatar if exists
-                if ($user->avatar) {
-                    Storage::disk('public')->delete('avatars/' . $user->avatar);
+                if ($staff->avatar && Storage::disk('public')->exists($staff->avatar)) {
+                    Storage::disk('public')->delete($staff->avatar);
                 }
-                $user->delete();
+                $staff->delete();
                 $count++;
             }
         }
 
-        // Return response based on request type
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => "{$count} users {$action}d successfully."
-            ]);
-        }
+        // Log bulk action
+        $this->logActivity(
+            $action,
+            'staff_bulk',
+            null,
+            null,
+            null,
+            null,
+            "Bulk {$action} on staff: " . implode(', ', $affectedStaff)
+        );
 
-        return back()->with('success', "{$count} users {$action}d successfully.");
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} staff member(s) {$action}d successfully."
+        ]);
     }
 }

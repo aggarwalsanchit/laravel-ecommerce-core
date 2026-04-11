@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('vendor_activity_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('shop_id')->constrained('shops')->onDelete('cascade');
             $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
 
             // Activity details

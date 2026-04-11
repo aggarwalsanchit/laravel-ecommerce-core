@@ -9,9 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('vendor_tax_infos', function (Blueprint $table) {
+        Schema::create('shop_tax_infos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
+            $table->foreignId('shop_id')->constrained('shops')->onDelete('cascade');
 
             // GST Information (India)
             $table->string('gst_number')->nullable()->unique();
@@ -33,12 +33,6 @@ return new class extends Migration
             $table->date('business_registration_date')->nullable();
             $table->string('business_registration_certificate')->nullable();
 
-            // Verification Status
-            $table->enum('verification_status', ['pending', 'verified', 'rejected'])->default('pending');
-            $table->timestamp('verified_at')->nullable();
-            $table->foreignId('verified_by')->nullable()->constrained('users');
-            $table->text('verification_notes')->nullable();
-
             $table->timestamps();
 
             $table->index('gst_number');
@@ -48,6 +42,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('vendor_tax_infos');
+        Schema::dropIfExists('shop_tax_infos');
     }
 };

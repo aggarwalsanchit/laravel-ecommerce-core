@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Vendor;
+use App\Models\Vendor\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

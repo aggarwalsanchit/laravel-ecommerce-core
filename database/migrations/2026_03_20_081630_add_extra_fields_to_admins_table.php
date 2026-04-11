@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::table('admins', function (Blueprint $table) {
             $table->text('address')->nullable()->after('phone');
-            $table->integer('city_id')->nullable()->after('address');
+            $table->string('city')->nullable()->after('address');
             $table->integer('state_id')->nullable()->after('city_id');
             $table->integer('country_id')->nullable()->after('state_id');
             $table->string('postal_code')->nullable()->after('country_id');
             $table->date('birth_date')->nullable()->after('postal_code');
+            $table->date('last_login_at')->nullable()->after('birth_date');
         });
     }
 

@@ -23,11 +23,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Permission Management</h3>
-                            @can('create permissions')
+                            @php $admin = Auth::guard('admin')->user(); @endphp
+                            @if ($admin->can('create_permissions'))
                                 <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary">
                                     <i class="ti ti-plus me-1"></i> Add New Permission
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         <div class="card-body">
 
@@ -64,7 +65,7 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @can('delete permissions')
+                            @if ($admin->can('delete_permissions'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
@@ -75,7 +76,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endcan
+                            @endif
 
                             <div class="table-responsive" id="permissionsTableContainer">
                                 @include('admin.pages.permissions.partials.permissions-table', [

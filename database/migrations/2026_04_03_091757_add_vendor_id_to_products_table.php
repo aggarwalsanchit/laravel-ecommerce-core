@@ -10,8 +10,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
+            $table->foreignId('shop_id')->constrained('shops')->onDelete('cascade');
             $table->foreignId('vendor_id')->nullable()->constrained()->onDelete('cascade');
             $table->index('vendor_id');
+            $table->index('shop_id');
         });
     }
 

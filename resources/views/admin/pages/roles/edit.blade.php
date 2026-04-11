@@ -61,62 +61,103 @@
                                 </div>
 
                                 <div class="mt-4">
-                                    <h5 class="mb-3">Assign Permissions</h5>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">Assign Permissions</h5>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                id="selectAllPermissions">
+                                                <i class="ti ti-check-all"></i> Select All
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                                                id="deselectAllPermissions">
+                                                <i class="ti ti-check"></i> Deselect All
+                                            </button>
+                                        </div>
+                                    </div>
                                     <p class="text-muted small mb-3">Select the permissions this role should have.</p>
 
                                     <div class="row">
-                                        @foreach ($permissions as $module => $modulePermissions)
+                                        @php
+                                            // Group permissions by the second part (after first underscore)
+                                            $groupedPermissions = [];
+                                            foreach ($permissions as $permission) {
+                                                $parts = explode('_', $permission->name, 2);
+                                                $group = isset($parts[1]) ? $parts[1] : $parts[0];
+                                                $group = ucfirst(str_replace('_', ' ', $group));
+
+                                                if (!isset($groupedPermissions[$group])) {
+                                                    $groupedPermissions[$group] = [];
+                                                }
+                                                $groupedPermissions[$group][] = $permission;
+                                            }
+
+                                            // Sort groups alphabetically
+                                            ksort($groupedPermissions);
+                                        @endphp
+
+                                        @forelse($groupedPermissions as $groupName => $groupPermissions)
                                             @php
-                                                // Check if all permissions in this module are assigned
-                                                $moduleChecked = true;
-                                                $moduleCount = 0;
+                                                // Check if all permissions in this group are assigned
+                                                $groupChecked = true;
+                                                $groupCount = count($groupPermissions);
                                                 $checkedCount = 0;
 
-                                                foreach ($modulePermissions as $perm) {
-                                                    $moduleCount++;
+                                                foreach ($groupPermissions as $perm) {
                                                     if (in_array($perm->id, $rolePermissions)) {
                                                         $checkedCount++;
                                                     }
                                                 }
 
-                                                $moduleChecked = $checkedCount === $moduleCount && $moduleCount > 0;
-                                                $moduleIndeterminate =
-                                                    $checkedCount > 0 && $checkedCount < $moduleCount;
+                                                $groupChecked = $checkedCount === $groupCount && $groupCount > 0;
+                                                $groupIndeterminate = $checkedCount > 0 && $checkedCount < $groupCount;
                                             @endphp
                                             <div class="col-md-6 col-lg-4 mb-3">
-                                                <div class="card border">
+                                                <div class="card border h-100">
                                                     <div class="card-header bg-light">
                                                         <div class="form-check">
                                                             <input type="checkbox" class="form-check-input module-checkbox"
-                                                                id="module_{{ Str::slug($module) }}"
-                                                                data-module="{{ $module }}"
-                                                                {{ $moduleChecked ? 'checked' : '' }}>
+                                                                id="module_{{ Str::slug($groupName) }}"
+                                                                data-module="{{ $groupName }}"
+                                                                {{ $groupChecked ? 'checked' : '' }}>
                                                             <label class="form-check-label fw-semibold"
-                                                                for="module_{{ Str::slug($module) }}">
-                                                                {{ ucfirst($module) }}
+                                                                for="module_{{ Str::slug($groupName) }}">
+                                                                {{ ucfirst($groupName) }}
                                                             </label>
+                                                            <span
+                                                                class="badge bg-secondary float-end">{{ count($groupPermissions) }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="card-body" style="max-height: 250px; overflow-y: auto;">
-                                                        @foreach ($modulePermissions as $permission)
+                                                        @foreach ($groupPermissions as $permission)
+                                                            @php
+                                                                $action = explode('_', $permission->name, 2)[0];
+                                                                $actionLabel = ucfirst(str_replace('_', ' ', $action));
+                                                            @endphp
                                                             <div class="form-check mb-2">
                                                                 <input type="checkbox"
                                                                     class="form-check-input permission-checkbox"
                                                                     name="permissions[]" value="{{ $permission->id }}"
                                                                     id="perm_{{ $permission->id }}"
-                                                                    data-module="{{ $module }}"
+                                                                    data-module="{{ $groupName }}"
                                                                     {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}>
                                                                 <label class="form-check-label small"
                                                                     for="perm_{{ $permission->id }}">
                                                                     <i class="ti ti-lock me-1 text-muted"></i>
-                                                                    {{ $permission->name }}
+                                                                    {{ $actionLabel }}
                                                                 </label>
                                                             </div>
                                                         @endforeach
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endforeach
+                                        @empty
+                                            <div class="col-12">
+                                                <div class="alert alert-warning">
+                                                    <i class="ti ti-alert-circle me-2"></i>
+                                                    No permissions found. Please create permissions first.
+                                                </div>
+                                            </div>
+                                        @endforelse
                                     </div>
                                 </div>
 
@@ -161,12 +202,43 @@
                 }
             });
 
+            // Update select all/deselect all button state
+            function updateSelectAllState() {
+                let totalPermissions = $('.permission-checkbox').length;
+                let checkedPermissions = $('.permission-checkbox:checked').length;
+
+                if (checkedPermissions === totalPermissions) {
+                    $('#selectAllPermissions').html('<i class="ti ti-check-all"></i> All Selected');
+                    $('#selectAllPermissions').removeClass('btn-outline-primary').addClass('btn-success');
+                } else {
+                    $('#selectAllPermissions').html('<i class="ti ti-check-all"></i> Select All');
+                    $('#selectAllPermissions').removeClass('btn-success').addClass('btn-outline-primary');
+                }
+            }
+
+            // Select All Permissions
+            $('#selectAllPermissions').on('click', function() {
+                $('.permission-checkbox').prop('checked', true);
+                $('.module-checkbox').prop('checked', true);
+                $('.module-checkbox').prop('indeterminate', false);
+                updateSelectAllState();
+            });
+
+            // Deselect All Permissions
+            $('#deselectAllPermissions').on('click', function() {
+                $('.permission-checkbox').prop('checked', false);
+                $('.module-checkbox').prop('checked', false);
+                $('.module-checkbox').prop('indeterminate', false);
+                updateSelectAllState();
+            });
+
             // Module checkbox - select/deselect all permissions in module
             $('.module-checkbox').on('change', function() {
                 let module = $(this).data('module');
                 let isChecked = $(this).prop('checked');
                 $(`.permission-checkbox[data-module="${module}"]`).prop('checked', isChecked);
                 $(this).prop('indeterminate', false);
+                updateSelectAllState();
             });
 
             // Individual permission checkbox - update module checkbox
@@ -186,6 +258,8 @@
                     moduleCheckbox.prop('checked', false);
                     moduleCheckbox.prop('indeterminate', true);
                 }
+
+                updateSelectAllState();
             });
 
             // Remove error on input
@@ -208,7 +282,12 @@
                     isValid = false;
                 }
 
-                if (!isValid) return false;
+                if (!isValid) {
+                    $('html, body').animate({
+                        scrollTop: $('.is-invalid:first').offset().top - 100
+                    }, 500);
+                    return false;
+                }
 
                 formSubmitting = true;
                 let btn = $('#submitBtn');
@@ -241,6 +320,10 @@
                                 $('#' + field).addClass('is-invalid');
                                 $('#' + field + '-error').text(messages[0]);
                             });
+
+                            $('html, body').animate({
+                                scrollTop: $('.is-invalid:first').offset().top - 100
+                            }, 500);
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -260,4 +343,33 @@
             });
         });
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .card-header.bg-light {
+            background-color: #f8f9fa;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+        }
+
+        .form-check-label:hover {
+            color: #0d6efd;
+        }
+
+        .badge.bg-secondary {
+            background-color: #6c757d;
+        }
+
+        .btn-outline-primary,
+        .btn-outline-secondary {
+            transition: all 0.2s ease;
+        }
+    </style>
 @endpush

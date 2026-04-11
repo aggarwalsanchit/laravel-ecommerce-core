@@ -1,12 +1,12 @@
 {{-- resources/views/admin/permissions/partials/permissions-table.blade.php --}}
 <table class="table table-hover text-nowrap mb-0">
     <thead class="bg-dark-subtle">
-        32
         <th class="ps-3" style="width: 50px;">
             <input type="checkbox" class="form-check-input" id="selectAll">
         </th>
         <th>ID</th>
         <th>Permission Name</th>
+        <th>Guard</th>
         <th>Module</th>
         <th>Assigned Roles</th>
         <th>Created</th>
@@ -33,6 +33,11 @@
                 </td>
                 <td>
                     <span class="badge bg-primary-subtle text-primary p-2">
+                        <i class="ti ti-package me-1"></i> {{ $permission->guard_name }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-primary-subtle text-primary p-2">
                         <i class="ti ti-package me-1"></i> {{ ucfirst($module) }}
                     </span>
                 </td>
@@ -53,23 +58,22 @@
                 </td>
                 <td class="pe-3">
                     <div class="hstack gap-1 justify-content-end">
-                        @can('view permissions')
+                        @php $admin = Auth::guard('admin')->user(); @endphp
+                        @if ($admin->can('view_permissions'))
                             <a href="{{ route('admin.permissions.show', $permission->id) }}"
                                 class="btn btn-soft-primary btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                 title="View Details">
                                 <i class="ti ti-eye"></i>
                             </a>
-                        @endcan
-
-                        @can('edit permissions')
+                        @endif
+                        @if ($admin->can('edit_permissions'))
                             <a href="{{ route('admin.permissions.edit', $permission->id) }}"
                                 class="btn btn-soft-success btn-icon btn-sm rounded-circle" data-bs-toggle="tooltip"
                                 title="Edit Permission">
                                 <i class="ti ti-edit fs-16"></i>
                             </a>
-                        @endcan
-
-                        @can('delete permissions')
+                        @endif
+                        @if ($admin->can('delete_permissions'))
                             @if ($roleCount == 0)
                                 <button type="button" class="btn btn-soft-danger btn-icon btn-sm rounded-circle"
                                     onclick="confirmDelete({{ $permission->id }})" data-bs-toggle="tooltip"
@@ -82,7 +86,7 @@
                                     <i class="ti ti-lock"></i>
                                 </button>
                             @endif
-                        @endcan
+                        @endif
                     </div>
                 </td>
             </tr>
@@ -93,11 +97,11 @@
                         <i class="ti ti-lock-off" style="font-size: 48px; opacity: 0.5;"></i>
                         <h5 class="mt-3">No Permissions Found</h5>
                         <p class="text-muted">Get started by creating a new permission.</p>
-                        @can('create permissions')
+                        @if ($admin->can('create_permissions'))
                             <a href="{{ route('admin.permissions.create') }}" class="btn btn-primary mt-2">
                                 <i class="ti ti-plus me-1"></i> Add New Permission
                             </a>
-                        @endcan
+                        @endif
                     </div>
                 </td>
             </tr>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Vendor;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +10,7 @@ class VendorActivityLog extends Model
     protected $table = 'vendor_activity_logs';
 
     protected $fillable = [
+        'shop_id',
         'vendor_id',
         'action',
         'entity_type',

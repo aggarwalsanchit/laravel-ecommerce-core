@@ -23,11 +23,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">Role Management</h3>
-                            @can('create roles')
+                            @php $admin = Auth::guard('admin')->user(); @endphp
+                            @if ($admin->can('create_roles'))
                                 <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
                                     <i class="ti ti-plus me-1"></i> Add New Role
                                 </a>
-                            @endcan
+                            @endif
                         </div>
                         <div class="card-body">
 
@@ -62,7 +63,7 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @can('delete roles')
+                            @if ($admin->can('delete_roles'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group">
@@ -73,7 +74,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endcan
+                            @endif
 
                             <div class="table-responsive" id="rolesTableContainer">
                                 @include('admin.pages.roles.partials.roles-table', ['roles' => $roles])

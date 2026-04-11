@@ -12,6 +12,7 @@ return new class extends Migration
         Schema::create('commission_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
+            $table->foreignId('shop_id')->constrained('shops')->onDelete('cascade');
             $table->foreignId('vendor_id')->constrained()->onDelete('cascade');
             $table->decimal('order_amount', 10, 2);
             $table->decimal('commission_percentage', 5, 2);
