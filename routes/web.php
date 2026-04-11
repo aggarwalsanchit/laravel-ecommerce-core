@@ -56,18 +56,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['admin.auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'showDashboard'])->name('dashboard');
 
-        // ==================== CATEGORIES ====================
-        Route::get('/categories/analytics', [CategoryController::class, 'analytics'])->name('categories.analytics');
-        Route::resource('categories', CategoryController::class);
-        Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
-        Route::post('/categories/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('categories.toggle-featured');
-        Route::post('/categories/{category}/toggle-popular', [CategoryController::class, 'togglePopular'])->name('categories.toggle-popular');
-        Route::post('/categories/{category}/toggle-menu', [CategoryController::class, 'toggleMenu'])->name('categories.toggle-menu');
-        Route::post('/categories/reorder', [CategoryController::class, 'reorder'])->name('categories.reorder');
-        Route::post('/categories/bulk-action', [CategoryController::class, 'bulkAction'])->name('categories.bulk-action');
-        Route::get('/categories/subcategories', [CategoryController::class, 'getSubcategories'])->name('categories.subcategories');
-        Route::get('/categories/{category}/subcategories', [CategoryController::class, 'getSubcategories'])
-            ->name('admin.categories.subcategories');
+
 
         // ==================== USERS ====================
         Route::resource('users', UserController::class);
@@ -121,6 +110,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/staff/{id}/deactivate', [AdminVendorController::class, 'deactivateStaff'])->name('staff.deactivate');
             Route::delete('/staff/{id}', [AdminVendorController::class, 'deleteStaff'])->name('staff.delete');
         });
+
+        // ==================== CATEGORIES ====================
+
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/analytics', [CategoryController::class, 'analytics'])->name('analytics');
+            Route::post('/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
+            Route::post('/{category}/toggle-popular', [CategoryController::class, 'togglePopular'])->name('toggle-popular');
+            Route::post('/{category}/toggle-menu', [CategoryController::class, 'toggleMenu'])->name('toggle-menu');
+            Route::post('/reorder', [CategoryController::class, 'reorder'])->name('reorder');
+            Route::post('/bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
+            Route::get('/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories');
+            Route::get('/{category}/subcategories', [CategoryController::class, 'getSubcategories'])
+                ->name('subcategories');
+        });
+        Route::resource('categories', CategoryController::class);
 
 
         Route::get('/sizes/analytics', [SizeController::class, 'analytics'])->name('sizes.analytics');

@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CategoryAnalytic;
 use App\Services\ImageCompressionService;
+use App\Traits\LogsAdminActivity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -14,6 +17,8 @@ use Illuminate\Support\Str;
 
 class CategoryController extends Controller implements HasMiddleware
 {
+    use LogsAdminActivity;
+
     protected $imageCompressor;
 
     public function __construct(ImageCompressionService $imageCompressor)
@@ -27,7 +32,7 @@ class CategoryController extends Controller implements HasMiddleware
             'auth:admin',
             new Middleware('permission:view_categories', only: ['index', 'show', 'analytics']),
             new Middleware('permission:create_categories', only: ['create', 'store']),
-            new Middleware('permission:edit_categories', only: ['edit', 'update', 'toggleStatus', 'toggleMenu', 'bulkAction']),
+            new Middleware('permission:edit_categories', only: ['edit', 'update', 'toggleStatus', 'toggleMenu', 'toggleFeatured', 'togglePopular', 'bulkAction', 'approveCategory', 'rejectCategory']),
             new Middleware('permission:delete_categories', only: ['destroy']),
         ];
     }
@@ -57,6 +62,11 @@ class CategoryController extends Controller implements HasMiddleware
             }
         }
 
+        // Filter by approval status
+        if ($request->filled('approval_status')) {
+            $query->where('approval_status', $request->approval_status);
+        }
+
         // Filter by type (main or sub)
         if ($request->filled('type')) {
             if ($request->type === 'main') {
@@ -64,6 +74,14 @@ class CategoryController extends Controller implements HasMiddleware
             } elseif ($request->type === 'sub') {
                 $query->whereNotNull('parent_id');
             }
+        }
+
+        // Filter by featured/popular
+        if ($request->filled('featured')) {
+            $query->where('is_featured', $request->featured === 'true');
+        }
+        if ($request->filled('popular')) {
+            $query->where('is_popular', $request->popular === 'true');
         }
 
         // Sort
@@ -74,14 +92,8 @@ class CategoryController extends Controller implements HasMiddleware
             case 'name':
                 $query->orderBy('name', $sortOrder);
                 break;
-            case 'view_count':
-                $query->orderBy('view_count', 'desc');
-                break;
-            case 'product_count':
-                $query->orderBy('product_count', 'desc');
-                break;
-            case 'total_revenue':
-                $query->orderBy('total_revenue', 'desc');
+            case 'created_at':
+                $query->orderBy('created_at', 'desc');
                 break;
             default:
                 $query->orderBy('order', 'asc');
@@ -89,12 +101,29 @@ class CategoryController extends Controller implements HasMiddleware
 
         $categories = $query->paginate(15);
 
-        // Statistics
+        // Add depth to each category for indentation
+        foreach ($categories as $category) {
+            $category->depth = $this->getCategoryDepth($category);
+
+            // Get analytics from separate table
+            $analytics = CategoryAnalytic::where('category_id', $category->id)
+                ->where('date', today()->toDateString())
+                ->first();
+
+            $category->view_count = $analytics->view_count ?? 0;
+            $category->product_count = $analytics->product_count ?? 0;
+            $category->order_count = $analytics->order_count ?? 0;
+            $category->total_revenue = $analytics->total_revenue ?? 0;
+        }
+
+        // Statistics from categories table (not analytics)
         $statistics = [
             'total' => Category::count(),
             'active' => Category::where('status', true)->count(),
             'featured' => Category::where('is_featured', true)->count(),
-            'total_views' => Category::sum('view_count'),
+            'pending' => Category::where('approval_status', 'pending')->count(),
+            'rejected' => Category::where('approval_status', 'rejected')->count(),
+            'total_views' => CategoryAnalytic::sum('view_count'),
         ];
 
         if ($request->ajax()) {
@@ -112,33 +141,64 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
+     * Get category depth for indentation
+     */
+    private function getCategoryDepth($category, $depth = 0)
+    {
+        if (!$category->parent) {
+            return $depth;
+        }
+        return $this->getCategoryDepth($category->parent, $depth + 1);
+    }
+
+    /**
      * Category Analytics Dashboard
      */
     public function analytics()
     {
-        // Top categories by views
-        $topViewsCategories = Category::where('status', true)
-            ->orderBy('view_count', 'desc')
+        // Get top categories by views from analytics table (last 30 days aggregate)
+        $topViewsCategories = Category::select('categories.id', 'categories.name', 'categories.slug')
+            ->join('category_analytics', 'categories.id', '=', 'category_analytics.category_id')
+            ->selectRaw('SUM(category_analytics.view_count) as total_views')
+            ->where('categories.status', true)
+            ->groupBy('categories.id', 'categories.name', 'categories.slug')
+            ->orderBy('total_views', 'desc')
             ->take(10)
             ->get();
 
-        // Top categories by revenue
-        $topRevenueCategories = Category::where('status', true)
-            ->where('total_revenue', '>', 0)
+        // Top categories by revenue from analytics table
+        $topRevenueCategories = Category::select('categories.id', 'categories.name', 'categories.slug')
+            ->join('category_analytics', 'categories.id', '=', 'category_analytics.category_id')
+            ->selectRaw('SUM(category_analytics.total_revenue) as total_revenue')
+            ->where('categories.status', true)
+            ->where('category_analytics.total_revenue', '>', 0)
+            ->groupBy('categories.id', 'categories.name', 'categories.slug')
             ->orderBy('total_revenue', 'desc')
             ->take(10)
             ->get();
 
-        // Categories with most products
-        $topProductCategories = Category::where('status', true)
-            ->where('product_count', '>', 0)
-            ->orderBy('product_count', 'desc')
+        // Categories with most products from analytics table
+        $topProductCategories = Category::select('categories.id', 'categories.name', 'categories.slug')
+            ->join('category_analytics', 'categories.id', '=', 'category_analytics.category_id')
+            ->selectRaw('AVG(category_analytics.product_count) as avg_products')
+            ->where('categories.status', true)
+            ->where('category_analytics.product_count', '>', 0)
+            ->groupBy('categories.id', 'categories.name', 'categories.slug')
+            ->orderBy('avg_products', 'desc')
             ->take(10)
             ->get();
 
-        // SEO Performance
-        $seoPerformance = Category::where('status', true)
-            ->take(20)
+        // Pending approval categories
+        $pendingCategories = Category::where('approval_status', 'pending')
+            ->with('requestedBy')
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        // Rejected categories
+        $rejectedCategories = Category::where('approval_status', 'rejected')
+            ->orderBy('updated_at', 'desc')
+            ->take(10)
             ->get();
 
         // Statistics
@@ -147,17 +207,23 @@ class CategoryController extends Controller implements HasMiddleware
         $inactiveCategories = $totalCategories - $activeCategories;
         $featuredCategories = Category::where('is_featured', true)->count();
         $popularCategories = Category::where('is_popular', true)->count();
-        $totalViews = Category::sum('view_count');
-        $totalProducts = Category::sum('product_count');
-        $totalRevenue = Category::sum('total_revenue');
+        $pendingCount = Category::where('approval_status', 'pending')->count();
+        $approvedCount = Category::where('approval_status', 'approved')->count();
+        $rejectedCount = Category::where('approval_status', 'rejected')->count();
 
-        // Growth data for last 30 days
+        // Analytics totals from analytics table
+        $totalViews = CategoryAnalytic::sum('view_count');
+        $totalProducts = CategoryAnalytic::sum('product_count');
+        $totalRevenue = CategoryAnalytic::sum('total_revenue');
+
+        // Growth data for last 30 days from analytics table
         $growthData = [];
         $growthLabels = [];
 
         for ($i = 29; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
             $growthLabels[] = now()->subDays($i)->format('M d');
-            $count = Category::whereDate('created_at', now()->subDays($i))->count();
+            $count = CategoryAnalytic::whereDate('date', $date)->sum('product_count');
             $growthData[] = $count;
         }
 
@@ -173,7 +239,8 @@ class CategoryController extends Controller implements HasMiddleware
             'topViewsCategories',
             'topRevenueCategories',
             'topProductCategories',
-            'seoPerformance',
+            'pendingCategories',
+            'rejectedCategories',
             'totalCategories',
             'activeCategories',
             'inactiveCategories',
@@ -187,7 +254,10 @@ class CategoryController extends Controller implements HasMiddleware
             'parentCategories',
             'childCategories',
             'avgProductsPerCategory',
-            'avgViewsPerCategory'
+            'avgViewsPerCategory',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount'
         ));
     }
 
@@ -232,6 +302,7 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('image'), 'categories', 800, 85);
             if ($compressed['success']) {
                 $data['image'] = $compressed['filename'];
+                $data['image_alt'] = $request->image_alt ?? $request->name;
             }
         }
 
@@ -240,6 +311,7 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('thumbnail_image'), 'categories/thumbnails', 150, 80);
             if ($compressed['success']) {
                 $data['thumbnail_image'] = $compressed['filename'];
+                $data['thumbnail_alt'] = $request->thumbnail_alt ?? $request->name;
             }
         }
 
@@ -248,11 +320,26 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('banner_image'), 'categories/banners', 1920, 90);
             if ($compressed['success']) {
                 $data['banner_image'] = $compressed['filename'];
+                $data['banner_alt'] = $request->banner_alt ?? $request->name;
             }
         }
 
         $data['slug'] = Str::slug($request->name);
+        $data['approval_status'] = 'approved';
+
         $category = Category::create($data);
+
+        // Log activity
+        $this->logActivity(
+            'create',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            null,
+            $category->toArray(),
+            "Created new category: {$category->name}" . ($category->parent ? " under {$category->parent->name}" : " as main category")
+        );
 
         if ($request->ajax()) {
             return response()->json([
@@ -270,8 +357,15 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function show(Category $category)
     {
-        $category->load('parent', 'children');
-        return view('admin.pages.categories.show', compact('category'));
+        $category->load('parent', 'children', 'requestedBy', 'approvedBy');
+
+        // Get recent analytics
+        $recentAnalytics = CategoryAnalytic::where('category_id', $category->id)
+            ->orderBy('date', 'desc')
+            ->take(30)
+            ->get();
+
+        return view('admin.pages.categories.show', compact('category', 'recentAnalytics'));
     }
 
     /**
@@ -279,7 +373,12 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function edit(Category $category)
     {
-        $categories = Category::where('id', '!=', $category->id)->orderBy('order')->get();
+        // $category is already the model you want to edit
+        // Get ALL OTHER categories for parent selection (excluding current category)
+        $categories = Category::where('id', '!=', $category->id)
+            ->orderBy('order')
+            ->get();
+
         return view('admin.pages.categories.edit', compact('category', 'categories'));
     }
 
@@ -288,6 +387,8 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function update(Request $request, Category $category)
     {
+        $oldData = $category->toArray();
+
         $request->validate([
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
             'description' => 'nullable|string',
@@ -316,10 +417,12 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('image'), 'categories', 800, 85);
             if ($compressed['success']) {
                 $data['image'] = $compressed['filename'];
+                $data['image_alt'] = $request->image_alt ?? $request->name;
             }
         } elseif ($request->has('remove_image') && $request->remove_image) {
             $this->deleteImageIfExists('categories/' . $category->image);
             $data['image'] = null;
+            $data['image_alt'] = null;
         }
 
         // Handle thumbnail
@@ -328,10 +431,12 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('thumbnail_image'), 'categories/thumbnails', 150, 80);
             if ($compressed['success']) {
                 $data['thumbnail_image'] = $compressed['filename'];
+                $data['thumbnail_alt'] = $request->thumbnail_alt ?? $request->name;
             }
         } elseif ($request->has('remove_thumbnail') && $request->remove_thumbnail) {
             $this->deleteImageIfExists('categories/thumbnails/' . $category->thumbnail_image);
             $data['thumbnail_image'] = null;
+            $data['thumbnail_alt'] = null;
         }
 
         // Handle banner
@@ -340,13 +445,28 @@ class CategoryController extends Controller implements HasMiddleware
             $compressed = $this->imageCompressor->compress($request->file('banner_image'), 'categories/banners', 1920, 90);
             if ($compressed['success']) {
                 $data['banner_image'] = $compressed['filename'];
+                $data['banner_alt'] = $request->banner_alt ?? $request->name;
             }
         } elseif ($request->has('remove_banner') && $request->remove_banner) {
             $this->deleteImageIfExists('categories/banners/' . $category->banner_image);
             $data['banner_image'] = null;
+            $data['banner_alt'] = null;
         }
 
         $category->update($data);
+
+        // Log activity
+        $changes = $this->getChanges($oldData, $category->toArray());
+        $this->logActivity(
+            'update',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            $oldData,
+            $category->toArray(),
+            "Updated category: {$category->name}" . (!empty($changes) ? " - Changes: " . implode(', ', $changes) : "")
+        );
 
         if ($request->ajax()) {
             return response()->json([
@@ -356,6 +476,87 @@ class CategoryController extends Controller implements HasMiddleware
         }
 
         return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully.');
+    }
+
+    /**
+     * Approve pending category (for vendor requests)
+     */
+    public function approveCategory(Category $category)
+    {
+        if ($category->approval_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This category is not pending approval.'
+            ], 422);
+        }
+
+        $oldStatus = $category->approval_status;
+        $category->update([
+            'approval_status' => 'approved',
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'status' => true
+        ]);
+
+        // Log activity
+        $this->logActivity(
+            'approve',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['approval_status' => $oldStatus],
+            ['approval_status' => 'approved'],
+            "Approved category: {$category->name} (Previously requested by vendor)"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category approved successfully.'
+        ]);
+    }
+
+    /**
+     * Reject pending category (for vendor requests)
+     */
+    public function rejectCategory(Request $request, Category $category)
+    {
+        if ($category->approval_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This category is not pending approval.'
+            ], 422);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        $oldStatus = $category->approval_status;
+        $category->update([
+            'approval_status' => 'rejected',
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+            'status' => false
+        ]);
+
+        // Log activity
+        $this->logActivity(
+            'reject',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['approval_status' => $oldStatus],
+            ['approval_status' => 'rejected', 'rejection_reason' => $request->rejection_reason],
+            "Rejected category: {$category->name} - Reason: {$request->rejection_reason}"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category rejected successfully.'
+        ]);
     }
 
     /**
@@ -377,12 +578,30 @@ class CategoryController extends Controller implements HasMiddleware
             ], 422);
         }
 
+        $categoryData = $category->toArray();
+        $categoryName = $category->name;
+
         // Delete images
         $this->deleteImageIfExists('categories/' . $category->image);
         $this->deleteImageIfExists('categories/thumbnails/' . $category->thumbnail_image);
         $this->deleteImageIfExists('categories/banners/' . $category->banner_image);
 
+        // Delete analytics records
+        CategoryAnalytic::where('category_id', $category->id)->delete();
+
         $category->delete();
+
+        // Log activity
+        $this->logActivity(
+            'delete',
+            'category',
+            'admin',
+            $category->id,
+            $categoryName,
+            $categoryData,
+            null,
+            "Deleted category: {$categoryName}"
+        );
 
         return response()->json([
             'success' => true,
@@ -390,6 +609,9 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
+    /**
+     * Get subcategories for a category
+     */
     public function getSubcategories($categoryId)
     {
         $subcategories = Category::where('parent_id', $categoryId)
@@ -407,7 +629,20 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function toggleStatus(Category $category)
     {
+        $oldStatus = $category->status;
         $category->update(['status' => !$category->status]);
+
+        $this->logActivity(
+            'toggle_status',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['status' => $oldStatus],
+            ['status' => $category->status],
+            "Toggled category status for '{$category->name}' from " . ($oldStatus ? 'Active' : 'Inactive') . " to " . ($category->status ? 'Active' : 'Inactive')
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Category status updated.',
@@ -420,7 +655,20 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function toggleMenu(Category $category)
     {
+        $oldValue = $category->show_in_menu;
         $category->update(['show_in_menu' => !$category->show_in_menu]);
+
+        $this->logActivity(
+            'toggle_menu',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['show_in_menu' => $oldValue],
+            ['show_in_menu' => $category->show_in_menu],
+            "Toggled menu visibility for '{$category->name}' to " . ($category->show_in_menu ? 'Show' : 'Hide')
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Menu visibility updated.',
@@ -433,7 +681,20 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function toggleFeatured(Category $category)
     {
+        $oldValue = $category->is_featured;
         $category->update(['is_featured' => !$category->is_featured]);
+
+        $this->logActivity(
+            'toggle_featured',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['is_featured' => $oldValue],
+            ['is_featured' => $category->is_featured],
+            ($category->is_featured ? 'Marked' : 'Unmarked') . " category '{$category->name}' as featured"
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Featured status updated.',
@@ -446,7 +707,20 @@ class CategoryController extends Controller implements HasMiddleware
      */
     public function togglePopular(Category $category)
     {
+        $oldValue = $category->is_popular;
         $category->update(['is_popular' => !$category->is_popular]);
+
+        $this->logActivity(
+            'toggle_popular',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            ['is_popular' => $oldValue],
+            ['is_popular' => $category->is_popular],
+            ($category->is_popular ? 'Marked' : 'Unmarked') . " category '{$category->name}' as popular"
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Popular status updated.',
@@ -455,12 +729,12 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Bulk action on categories - Supports all 7 actions
+     * Bulk action on categories
      */
     public function bulkAction(Request $request)
     {
         $request->validate([
-            'action' => 'required|in:activate,deactivate,delete,feature,unfeature,popular,unpopular',
+            'action' => 'required|in:activate,deactivate,delete,feature,unfeature,popular,unpopular,approve,reject',
             'category_ids' => 'required|string',
         ]);
 
@@ -468,14 +742,14 @@ class CategoryController extends Controller implements HasMiddleware
         $categoryIds = json_decode($request->category_ids);
 
         // Check permissions based on action
-        if (in_array($action, ['activate', 'deactivate', 'feature', 'unfeature', 'popular', 'unpopular'])) {
-            if (!auth('admin')->user()->can('edit categories')) {
+        if (in_array($action, ['activate', 'deactivate', 'feature', 'unfeature', 'popular', 'unpopular', 'approve', 'reject'])) {
+            if (!auth('admin')->user()->can('edit_categories')) {
                 return response()->json(['success' => false, 'message' => 'Permission denied.'], 403);
             }
         }
 
         if ($action === 'delete') {
-            if (!auth('admin')->user()->can('delete categories')) {
+            if (!auth('admin')->user()->can('delete_categories')) {
                 return response()->json(['success' => false, 'message' => 'Permission denied.'], 403);
             }
         }
@@ -483,42 +757,76 @@ class CategoryController extends Controller implements HasMiddleware
         $categories = Category::whereIn('id', $categoryIds)->get();
         $count = 0;
         $errors = [];
+        $processedCategories = [];
 
         foreach ($categories as $category) {
             try {
+                $oldData = $category->toArray();
+
                 switch ($action) {
                     case 'activate':
                         $category->update(['status' => true]);
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
 
                     case 'deactivate':
                         $category->update(['status' => false]);
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
 
                     case 'feature':
                         $category->update(['is_featured' => true]);
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
 
                     case 'unfeature':
                         $category->update(['is_featured' => false]);
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
 
                     case 'popular':
                         $category->update(['is_popular' => true]);
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
 
                     case 'unpopular':
                         $category->update(['is_popular' => false]);
                         $count++;
+                        $processedCategories[] = $category->name;
+                        break;
+
+                    case 'approve':
+                        if ($category->approval_status === 'pending') {
+                            $category->update([
+                                'approval_status' => 'approved',
+                                'approved_by' => auth('admin')->id(),
+                                'approved_at' => now(),
+                                'status' => true
+                            ]);
+                            $count++;
+                            $processedCategories[] = $category->name;
+                        }
+                        break;
+
+                    case 'reject':
+                        if ($category->approval_status === 'pending') {
+                            $category->update([
+                                'approval_status' => 'rejected',
+                                'approved_by' => auth('admin')->id(),
+                                'approved_at' => now(),
+                                'status' => false
+                            ]);
+                            $count++;
+                            $processedCategories[] = $category->name;
+                        }
                         break;
 
                     case 'delete':
-                        // Check if category has children or products
                         if ($category->children()->count() > 0) {
                             $errors[] = "Cannot delete '{$category->name}' because it has subcategories.";
                             continue 2;
@@ -533,13 +841,36 @@ class CategoryController extends Controller implements HasMiddleware
                         $this->deleteImageIfExists('categories/thumbnails/' . $category->thumbnail_image);
                         $this->deleteImageIfExists('categories/banners/' . $category->banner_image);
 
+                        // Delete analytics records
+                        CategoryAnalytic::where('category_id', $category->id)->delete();
+
                         $category->delete();
                         $count++;
+                        $processedCategories[] = $category->name;
                         break;
                 }
             } catch (\Exception $e) {
                 $errors[] = "Error processing '{$category->name}': " . $e->getMessage();
             }
+        }
+
+        // Log bulk action
+        if ($count > 0) {
+            $this->logActivity(
+                'bulk_' . $action,
+                'category',
+                'admin',
+                null,
+                'Bulk Action',
+                null,
+                [
+                    'action' => $action,
+                    'affected_categories' => $processedCategories,
+                    'count' => $count,
+                    'errors' => $errors
+                ],
+                "Bulk {$action} performed on {$count} categories: " . implode(', ', $processedCategories)
+            );
         }
 
         $message = "{$count} categories processed successfully.";
@@ -556,15 +887,8 @@ class CategoryController extends Controller implements HasMiddleware
     }
 
     /**
-     * Delete image if exists.
+     * Quick store for AJAX category creation
      */
-    private function deleteImageIfExists($path)
-    {
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
-        }
-    }
-
     public function quickStore(Request $request)
     {
         $request->validate([
@@ -577,7 +901,20 @@ class CategoryController extends Controller implements HasMiddleware
             'parent_id' => $request->parent_id,
             'slug' => Str::slug($request->name),
             'status' => $request->status ?? true,
+            'approval_status' => 'approved'
         ]);
+
+        // Log activity
+        $this->logActivity(
+            'quick_create',
+            'category',
+            'admin',
+            $category->id,
+            $category->name,
+            null,
+            $category->toArray(),
+            "Quick created category: {$category->name}"
+        );
 
         // Get the updated list of categories for dropdown
         $allCategories = Category::where('status', true)
@@ -602,6 +939,9 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
+    /**
+     * Build category dropdown for select inputs
+     */
     private function buildCategoryDropdown($categories, $parentId = null, $depth = 0)
     {
         $options = [];
@@ -618,5 +958,32 @@ class CategoryController extends Controller implements HasMiddleware
             }
         }
         return $options;
+    }
+
+    /**
+     * Delete image if exists
+     */
+    private function deleteImageIfExists($path)
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+
+    /**
+     * Get changes between old and new data
+     */
+    private function getChanges($oldData, $newData)
+    {
+        $changes = [];
+        $fields = ['name', 'parent_id', 'status', 'is_featured', 'is_popular', 'show_in_menu', 'order'];
+
+        foreach ($fields as $field) {
+            if (isset($oldData[$field]) && isset($newData[$field]) && $oldData[$field] != $newData[$field]) {
+                $changes[] = $field . " changed from '{$oldData[$field]}' to '{$newData[$field]}'";
+            }
+        }
+
+        return $changes;
     }
 }

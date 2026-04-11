@@ -1,4 +1,4 @@
-{{-- resources/views/admin/categories/create.blade.php --}}
+{{-- resources/views/admin/pages/categories/create.blade.php --}}
 @extends('management.layouts.app')
 
 @section('title', 'Add New Category')
@@ -24,127 +24,168 @@
                     <div class="card">
                         <div class="card-header border-bottom border-dashed">
                             <h4 class="card-title">Category Information</h4>
-                            <p class="text-muted mb-0">Create a new category for your products with optimized images</p>
+                            <p class="text-muted mb-0">Create a new category for your products with optimized images and SEO
+                            </p>
                         </div>
                         <div class="card-body">
                             <form id="categoryForm" enctype="multipart/form-data">
                                 @csrf
 
-                                <div class="row">
-                                    {{-- Basic Information --}}
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Category Name <span
-                                                    class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-light">
-                                                    <i class="ti ti-folder"></i>
-                                                </span>
-                                                <input type="text" class="form-control" id="name" name="name"
-                                                    placeholder="Enter category name" autofocus>
-                                            </div>
-                                            <div class="invalid-feedback" id="name-error"></div>
-                                            <small class="text-muted">
-                                                <i class="ti ti-link"></i> URL slug: <span id="slug-preview"
-                                                    class="text-primary"></span>
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="parent_id" class="form-label">Parent Category</label>
-                                            <select class="form-select" id="parent_id" name="parent_id">
-                                                <option value="">-- No Parent (Top Level) --</option>
-                                                @foreach ($categories as $cat)
-                                                    <option value="{{ $cat->id }}"
-                                                        style="padding-left: {{ $cat->depth * 20 }}px">
-                                                        {{ str_repeat('— ', $cat->depth) }}{{ $cat->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <div class="invalid-feedback" id="parent_id-error"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="order" class="form-label">Display Order</label>
-                                            <input type="number" class="form-control" id="order" name="order"
-                                                value="0">
-                                            <div class="invalid-feedback" id="order-error"></div>
-                                            <small class="text-muted">Lower numbers appear first in menus</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Display Settings</label>
-                                            <div class="d-flex flex-wrap gap-3">
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="status"
-                                                        name="status" value="1" checked>
-                                                    <label class="form-check-label" for="status">Active</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="show_in_menu"
-                                                        name="show_in_menu" value="1" checked>
-                                                    <label class="form-check-label" for="show_in_menu">Show in Menu</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="is_featured"
-                                                        name="is_featured" value="1">
-                                                    <label class="form-check-label" for="is_featured">Featured</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="is_popular"
-                                                        name="is_popular" value="1">
-                                                    <label class="form-check-label" for="is_popular">Popular</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label for="short_description" class="form-label">Short Description</label>
-                                            <textarea class="form-control" id="short_description" name="short_description" rows="2"
-                                                placeholder="Brief description for category cards and meta description"></textarea>
-                                            <div class="invalid-feedback" id="short_description-error"></div>
-                                            <small class="text-muted" id="shortDescCount">0/500 characters</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Full Description</label>
-                                            <textarea class="form-control" id="description" name="description" rows="5"
-                                                placeholder="Detailed description of the category for SEO and category page"></textarea>
-                                            <div class="invalid-feedback" id="description-error"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Tabs for Images and SEO --}}
-                                <ul class="nav nav-tabs mt-4" id="categoryTabs" role="tablist">
+                                {{-- Basic Information Tabs --}}
+                                <ul class="nav nav-tabs" id="categoryTabs" role="tablist">
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="images-tab" data-bs-toggle="tab"
+                                        <button class="nav-link active" id="basic-tab" data-bs-toggle="tab"
+                                            data-bs-target="#basic" type="button" role="tab">
+                                            <i class="ti ti-info-circle"></i> Basic Info
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="images-tab" data-bs-toggle="tab"
                                             data-bs-target="#images" type="button" role="tab">
                                             <i class="ti ti-photo"></i> Images
                                             <span class="badge bg-primary ms-1">Optimized</span>
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab"
-                                            data-bs-target="#seo" type="button" role="tab">
-                                            <i class="ti ti-chart-line"></i> SEO Settings
+                                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo"
+                                            type="button" role="tab">
+                                            <i class="ti ti-meta-tag"></i> SEO & Social
                                         </button>
                                     </li>
                                 </ul>
 
                                 <div class="tab-content mt-3">
+                                    {{-- Basic Information Tab --}}
+                                    <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="name" class="form-label">Category Name <span
+                                                            class="text-danger">*</span></label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-light">
+                                                            <i class="ti ti-folder"></i>
+                                                        </span>
+                                                        <input type="text" class="form-control" id="name"
+                                                            name="name" placeholder="Enter category name" autofocus>
+                                                    </div>
+                                                    <div class="invalid-feedback" id="name-error"></div>
+                                                    <small class="text-muted">
+                                                        <i class="ti ti-link"></i> URL slug: <span id="slug-preview"
+                                                            class="text-primary"></span>
+                                                    </small>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="parent_id" class="form-label">Parent Category</label>
+                                                    <select class="form-select" id="parent_id" name="parent_id">
+                                                        <option value="">-- No Parent (Top Level) --</option>
+                                                        @foreach ($categories as $cat)
+                                                            <option value="{{ $cat->id }}">
+                                                                {{ str_repeat('— ', $cat->depth ?? 0) }}{{ $cat->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    <div class="invalid-feedback" id="parent_id-error"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="order" class="form-label">Display Order</label>
+                                                    <input type="number" class="form-control" id="order" name="order"
+                                                        value="0">
+                                                    <div class="invalid-feedback" id="order-error"></div>
+                                                    <small class="text-muted">Lower numbers appear first in menus</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="icon" class="form-label">Icon Class</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text bg-light">
+                                                            <i class="ti ti-icon"></i>
+                                                        </span>
+                                                        <input type="text" class="form-control" id="icon"
+                                                            name="icon" placeholder="ti ti-folder">
+                                                    </div>
+                                                    <div class="invalid-feedback" id="icon-error"></div>
+                                                    <small class="text-muted">Enter icon class (e.g., ti ti-folder, ti
+                                                        ti-devices)</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Display Settings</label>
+                                                    <div class="d-flex flex-wrap gap-3">
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input"
+                                                                id="status" name="status" value="1" checked>
+                                                            <label class="form-check-label" for="status">
+                                                                <i class="ti ti-circle-check"></i> Active
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input"
+                                                                id="show_in_menu" name="show_in_menu" value="1"
+                                                                checked>
+                                                            <label class="form-check-label" for="show_in_menu">
+                                                                <i class="ti ti-eye"></i> Show in Menu
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input"
+                                                                id="is_featured" name="is_featured" value="1">
+                                                            <label class="form-check-label" for="is_featured">
+                                                                <i class="ti ti-star"></i> Featured
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input"
+                                                                id="is_popular" name="is_popular" value="1">
+                                                            <label class="form-check-label" for="is_popular">
+                                                                <i class="ti ti-fire"></i> Popular
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input type="checkbox" class="form-check-input"
+                                                                id="is_trending" name="is_trending" value="1">
+                                                            <label class="form-check-label" for="is_trending">
+                                                                <i class="ti ti-trending-up"></i> Trending
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="short_description" class="form-label">Short
+                                                        Description</label>
+                                                    <textarea class="form-control" id="short_description" name="short_description" rows="2"
+                                                        placeholder="Brief description for category cards and meta description"></textarea>
+                                                    <div class="invalid-feedback" id="short_description-error"></div>
+                                                    <small class="text-muted" id="shortDescCount">0/500 characters</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="description" class="form-label">Full Description</label>
+                                                    <textarea class="form-control" id="description" name="description" rows="5"
+                                                        placeholder="Detailed description of the category for SEO and category page"></textarea>
+                                                    <div class="invalid-feedback" id="description-error"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {{-- Images Tab --}}
-                                    <div class="tab-pane fade show active" id="images" role="tabpanel">
+                                    <div class="tab-pane fade" id="images" role="tabpanel">
                                         <div class="alert alert-info mb-3">
                                             <div class="d-flex">
                                                 <i class="ti ti-info-circle me-2 fs-5"></i>
@@ -158,12 +199,14 @@
                                                             Banner 1920x400px</li>
                                                         <li>Compression saves bandwidth and improves loading speed by up to
                                                             80%</li>
+                                                        <li>Always provide alt text for better accessibility and SEO</li>
                                                     </ul>
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div class="row">
+                                            {{-- Main Image --}}
                                             <div class="col-md-4">
                                                 <div class="card border">
                                                     <div class="card-header bg-light">
@@ -180,14 +223,20 @@
                                                         <input type="file" class="form-control" id="image"
                                                             name="image" accept="image/*">
                                                         <div class="invalid-feedback" id="image-error"></div>
-                                                        <small class="text-muted mt-2 d-block">
-                                                            <i class="ti ti-info-circle"></i> Max 5MB, will be compressed
-                                                            to ~200KB
-                                                        </small>
+                                                        <div class="mt-2">
+                                                            <label class="form-label small">Alt Text</label>
+                                                            <input type="text" class="form-control form-control-sm"
+                                                                id="image_alt" name="image_alt"
+                                                                placeholder="Describe the image for accessibility">
+                                                            <div class="invalid-feedback" id="image_alt-error"></div>
+                                                            <small class="text-muted">Helps with SEO and screen
+                                                                readers</small>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
+                                            {{-- Thumbnail Image --}}
                                             <div class="col-md-4">
                                                 <div class="card border">
                                                     <div class="card-header bg-light">
@@ -204,14 +253,19 @@
                                                         <input type="file" class="form-control" id="thumbnail_image"
                                                             name="thumbnail_image" accept="image/*">
                                                         <div class="invalid-feedback" id="thumbnail_image-error"></div>
-                                                        <small class="text-muted mt-2 d-block">
-                                                            <i class="ti ti-info-circle"></i> Max 2MB, will be compressed
-                                                            to ~30KB
-                                                        </small>
+                                                        <div class="mt-2">
+                                                            <label class="form-label small">Alt Text</label>
+                                                            <input type="text" class="form-control form-control-sm"
+                                                                id="thumbnail_alt" name="thumbnail_alt"
+                                                                placeholder="Describe the thumbnail">
+                                                            <div class="invalid-feedback" id="thumbnail_alt-error"></div>
+                                                            <small class="text-muted">Used for listings and cards</small>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
 
+                                            {{-- Banner Image --}}
                                             <div class="col-md-4">
                                                 <div class="card border">
                                                     <div class="card-header bg-light">
@@ -228,17 +282,22 @@
                                                         <input type="file" class="form-control" id="banner_image"
                                                             name="banner_image" accept="image/*">
                                                         <div class="invalid-feedback" id="banner_image-error"></div>
-                                                        <small class="text-muted mt-2 d-block">
-                                                            <i class="ti ti-info-circle"></i> Max 10MB, will be compressed
-                                                            to ~400KB
-                                                        </small>
+                                                        <div class="mt-2">
+                                                            <label class="form-label small">Alt Text</label>
+                                                            <input type="text" class="form-control form-control-sm"
+                                                                id="banner_alt" name="banner_alt"
+                                                                placeholder="Describe the banner">
+                                                            <div class="invalid-feedback" id="banner_alt-error"></div>
+                                                            <small class="text-muted">Used for category hero
+                                                                section</small>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {{-- SEO Tab --}}
+                                    {{-- SEO & Social Tab --}}
                                     <div class="tab-pane fade" id="seo" role="tabpanel">
                                         <div class="row">
                                             <div class="col-md-12">
@@ -257,7 +316,8 @@
                                                 <div class="mb-3">
                                                     <label for="meta_title" class="form-label">Meta Title</label>
                                                     <input type="text" class="form-control" id="meta_title"
-                                                        name="meta_title" placeholder="SEO title (60-70 characters)">
+                                                        name="meta_title"
+                                                        placeholder="SEO title (50-60 characters recommended)">
                                                     <div class="invalid-feedback" id="meta_title-error"></div>
                                                     <small class="text-muted" id="metaTitleCount">0/70 characters</small>
                                                 </div>
@@ -280,7 +340,8 @@
                                                     <input type="text" class="form-control" id="meta_keywords"
                                                         name="meta_keywords" placeholder="keyword1, keyword2, keyword3">
                                                     <div class="invalid-feedback" id="meta_keywords-error"></div>
-                                                    <small class="text-muted">Comma separated keywords (optional)</small>
+                                                    <small class="text-muted">Comma separated keywords (optional, less
+                                                        important now)</small>
                                                 </div>
                                             </div>
 
@@ -294,12 +355,69 @@
                                                     <small class="text-muted">Leave empty to use auto-generated URL</small>
                                                 </div>
                                             </div>
+
+                                            {{-- Open Graph / Social Media --}}
+                                            <div class="col-md-12">
+                                                <hr>
+                                                <h6 class="mb-3"><i class="ti ti-share"></i> Social Media (Open Graph)
+                                                </h6>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="og_title" class="form-label">OG Title</label>
+                                                    <input type="text" class="form-control" id="og_title"
+                                                        name="og_title" placeholder="Title for social sharing">
+                                                    <div class="invalid-feedback" id="og_title-error"></div>
+                                                    <small class="text-muted">Leave empty to use meta title</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="og_image" class="form-label">OG Image</label>
+                                                    <input type="file" class="form-control" id="og_image"
+                                                        name="og_image" accept="image/*">
+                                                    <div class="invalid-feedback" id="og_image-error"></div>
+                                                    <small class="text-muted">Image for social sharing (1200x630px
+                                                        recommended)</small>
+                                                </div>
+                                                <div id="ogImagePreview" class="mt-2"></div>
+                                            </div>
+
+                                            <div class="col-md-12">
+                                                <div class="mb-3">
+                                                    <label for="og_description" class="form-label">OG Description</label>
+                                                    <textarea class="form-control" id="og_description" name="og_description" rows="2"
+                                                        placeholder="Description for social sharing"></textarea>
+                                                    <div class="invalid-feedback" id="og_description-error"></div>
+                                                    <small class="text-muted">Leave empty to use meta description</small>
+                                                </div>
+                                            </div>
+
+                                            {{-- Schema Markup --}}
+                                            <div class="col-md-12">
+                                                <hr>
+                                                <h6 class="mb-3"><i class="ti ti-code"></i> Schema Markup (JSON-LD)</h6>
+                                                <div class="mb-3">
+                                                    <label for="schema_markup" class="form-label">Custom Schema
+                                                        Markup</label>
+                                                    <textarea class="form-control" id="schema_markup" name="schema_markup" rows="5"
+                                                        placeholder="Enter JSON-LD schema markup"></textarea>
+                                                    <div class="invalid-feedback" id="schema_markup-error"></div>
+                                                    <small class="text-muted">
+                                                        <i class="ti ti-info-circle"></i>
+                                                        JSON-LD format. Leave empty for auto-generated schema.
+                                                    </small>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {{-- SEO Preview Card --}}
                                         <div class="card border mt-3">
                                             <div class="card-header bg-light">
-                                                <h6 class="mb-0"><i class="ti ti-eye"></i> SEO Preview</h6>
+                                                <h6 class="mb-0"><i class="ti ti-eye"></i> SEO Preview (Google Search
+                                                    Result)</h6>
                                             </div>
                                             <div class="card-body">
                                                 <div class="text-primary fw-bold fs-5" id="seo-preview-title">Category
@@ -308,6 +426,30 @@
                                                     {{ url('/category') }}/category-slug</div>
                                                 <div class="text-muted small mt-2" id="seo-preview-desc">Category
                                                     description will appear here...</div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Social Preview Card --}}
+                                        <div class="card border mt-3">
+                                            <div class="card-header bg-light">
+                                                <h6 class="mb-0"><i class="ti ti-brand-facebook"></i> Social Media
+                                                    Preview</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="d-flex gap-3">
+                                                    <div id="socialImagePreview" class="bg-light rounded"
+                                                        style="width: 120px; height: 63px; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="ti ti-photo text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-semibold" id="social-preview-title">Category Name
+                                                        </div>
+                                                        <div class="text-muted small" id="social-preview-desc">Category
+                                                            description...</div>
+                                                        <div class="text-muted small" id="social-preview-url">
+                                                            {{ url('/category') }}/category-slug</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -342,6 +484,11 @@
                 let slug = $(this).val().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
                 $('#slug-preview').text(slug || 'category-slug');
                 updateSEOPreview();
+                updateSocialPreview();
+
+                // Remove error when typing
+                $(this).removeClass('is-invalid');
+                $('#name-error').text('');
             });
 
             // Update SEO preview
@@ -357,6 +504,19 @@
                 $('#seo-preview-desc').text(desc.substring(0, 160));
             }
 
+            // Update social preview
+            function updateSocialPreview() {
+                let title = $('#og_title').val() || $('#meta_title').val() || $('#name').val() || 'Category Name';
+                let desc = $('#og_description').val() || $('#meta_description').val() || $('#short_description')
+                    .val() || 'Category description...';
+                let slug = $('#name').val().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
+                    'category-name';
+
+                $('#social-preview-title').text(title.substring(0, 60));
+                $('#social-preview-desc').text(desc.substring(0, 200));
+                $('#social-preview-url').text('{{ url('/') }}/category/' + slug);
+            }
+
             // Character counters
             $('#short_description').on('keyup', function() {
                 let length = $(this).val().length;
@@ -367,6 +527,9 @@
                     $('#shortDescCount').removeClass('text-danger');
                 }
                 updateSEOPreview();
+
+                $(this).removeClass('is-invalid');
+                $('#short_description-error').text('');
             });
 
             $('#meta_title').on('keyup', function() {
@@ -378,6 +541,10 @@
                     $('#metaTitleCount').removeClass('text-danger');
                 }
                 updateSEOPreview();
+                updateSocialPreview();
+
+                $(this).removeClass('is-invalid');
+                $('#meta_title-error').text('');
             });
 
             $('#meta_description').on('keyup', function() {
@@ -389,44 +556,48 @@
                     $('#metaDescCount').removeClass('text-danger');
                 }
                 updateSEOPreview();
+                updateSocialPreview();
+
+                $(this).removeClass('is-invalid');
+                $('#meta_description-error').text('');
             });
 
-            // Image preview with size validation
+            $('#og_title, #og_description').on('keyup', function() {
+                updateSocialPreview();
+                $(this).removeClass('is-invalid');
+                $('#' + $(this).attr('name') + '-error').text('');
+            });
+
+            // Main Image preview
             $('#image').on('change', function(event) {
                 let file = event.target.files[0];
                 if (file) {
-                    // Validate file size (5MB max)
                     if (file.size > 5 * 1024 * 1024) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'File Too Large',
-                            text: 'Image size should be less than 5MB. Please compress your image.',
+                            text: 'Image size should be less than 5MB.',
                             confirmButtonColor: '#d33'
                         });
                         $(this).val('');
                         $('#imagePreview').html(
                             '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;"><i class="ti ti-cloud-upload fs-1 text-muted"></i></div>'
-                            );
+                        );
                         return;
                     }
-
                     let reader = new FileReader();
                     reader.onload = function(e) {
-                        let estimatedCompressed = Math.round(file.size / 1024 * 0.7);
-                        $('#imagePreview').html(`
-                    <div>
-                        <img src="${e.target.result}" class="img-fluid rounded mb-2" style="max-height: 150px;">
-                        <div class="small text-muted">
-                            <i class="ti ti-info-circle"></i> Original: ${(file.size / 1024).toFixed(2)} KB
-                            <br><i class="ti ti-compress"></i> Estimated after compression: ~${estimatedCompressed} KB
-                        </div>
-                    </div>
-                `);
+                        $('#imagePreview').html(
+                            `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px;"><div class="small text-muted mt-1">${(file.size / 1024).toFixed(2)} KB</div>`
+                        );
                     };
                     reader.readAsDataURL(file);
                 }
+                $(this).removeClass('is-invalid');
+                $('#image-error').text('');
             });
 
+            // Thumbnail preview
             $('#thumbnail_image').on('change', function(event) {
                 let file = event.target.files[0];
                 if (file) {
@@ -440,21 +611,22 @@
                         $(this).val('');
                         $('#thumbnailPreview').html(
                             '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;"><i class="ti ti-cloud-upload fs-1 text-muted"></i></div>'
-                            );
+                        );
                         return;
                     }
-
                     let reader = new FileReader();
                     reader.onload = function(e) {
-                        $('#thumbnailPreview').html(`
-                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px;">
-                    <div class="small text-muted mt-1">Size: ${(file.size / 1024).toFixed(2)} KB</div>
-                `);
+                        $('#thumbnailPreview').html(
+                            `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px;"><div class="small text-muted mt-1">${(file.size / 1024).toFixed(2)} KB</div>`
+                        );
                     };
                     reader.readAsDataURL(file);
                 }
+                $(this).removeClass('is-invalid');
+                $('#thumbnail_image-error').text('');
             });
 
+            // Banner preview
             $('#banner_image').on('change', function(event) {
                 let file = event.target.files[0];
                 if (file) {
@@ -468,22 +640,52 @@
                         $(this).val('');
                         $('#bannerPreview').html(
                             '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;"><i class="ti ti-cloud-upload fs-1 text-muted"></i></div>'
-                            );
+                        );
                         return;
                     }
-
                     let reader = new FileReader();
                     reader.onload = function(e) {
-                        $('#bannerPreview').html(`
-                    <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px; width: 100%; object-fit: cover;">
-                    <div class="small text-muted mt-1">Size: ${(file.size / 1024).toFixed(2)} KB</div>
-                `);
+                        $('#bannerPreview').html(
+                            `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px; width: 100%; object-fit: cover;"><div class="small text-muted mt-1">${(file.size / 1024).toFixed(2)} KB</div>`
+                        );
                     };
                     reader.readAsDataURL(file);
                 }
+                $(this).removeClass('is-invalid');
+                $('#banner_image-error').text('');
             });
 
-            // Remove error on input
+            // OG Image preview
+            $('#og_image').on('change', function(event) {
+                let file = event.target.files[0];
+                if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'File Too Large',
+                            text: 'OG Image size should be less than 2MB.',
+                            confirmButtonColor: '#d33'
+                        });
+                        $(this).val('');
+                        $('#ogImagePreview').html('');
+                        return;
+                    }
+                    let reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#ogImagePreview').html(
+                            `<img src="${e.target.result}" class="img-fluid rounded border" style="max-height: 100px;"><div class="small text-muted mt-1">${(file.size / 1024).toFixed(2)} KB</div>`
+                        );
+                        $('#socialImagePreview').html(
+                            `<img src="${e.target.result}" style="width: 120px; height: 63px; object-fit: cover;">`
+                        );
+                    };
+                    reader.readAsDataURL(file);
+                }
+                $(this).removeClass('is-invalid');
+                $('#og_image-error').text('');
+            });
+
+            // Remove error on any input change
             $('input, select, textarea').on('input change', function() {
                 $(this).removeClass('is-invalid');
                 $('#' + $(this).attr('name') + '-error').text('');
@@ -496,11 +698,16 @@
                 if (formSubmitting) return false;
 
                 let isValid = true;
+                let nameValue = $('#name').val().trim();
 
-                if (!$('#name').val().trim()) {
+                // Validate name field
+                if (!nameValue) {
                     $('#name').addClass('is-invalid');
                     $('#name-error').text('Category name is required');
                     isValid = false;
+                } else {
+                    $('#name').removeClass('is-invalid');
+                    $('#name-error').text('');
                 }
 
                 if (!isValid) {
@@ -518,24 +725,26 @@
 
                 let formData = new FormData(this);
 
+                // Ensure name is in FormData
+                if (!formData.has('name') || !formData.get('name')) {
+                    formData.set('name', nameValue);
+                }
+
                 $.ajax({
                     url: '{{ route('admin.categories.store') }}',
                     type: 'POST',
                     data: formData,
                     processData: false,
                     contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
                     success: function(response) {
                         if (response.success) {
-                            let message = response.message;
-                            if (response.compression_stats) {
-                                message +=
-                                    `<br><small class="text-muted">Image optimized: ${response.compression_stats.original_size} → ${response.compression_stats.compressed_size} (${response.compression_stats.ratio}% saved)</small>`;
-                            }
-
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Success!',
-                                html: message,
+                                text: response.message,
                                 timer: 2000,
                                 showConfirmButton: false
                             }).then(() => {
@@ -551,10 +760,17 @@
                                 $('#' + field).addClass('is-invalid');
                                 $('#' + field + '-error').text(messages[0]);
                             });
-
                             $('html, body').animate({
                                 scrollTop: $('.is-invalid:first').offset().top - 100
                             }, 500);
+                        } else if (xhr.status === 403) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Permission Denied!',
+                                text: xhr.responseJSON?.message ||
+                                    'You do not have permission to perform this action.',
+                                confirmButtonColor: '#d33'
+                            });
                         } else {
                             Swal.fire({
                                 icon: 'error',
@@ -573,8 +789,33 @@
                 });
             });
 
-            // Initial SEO preview
+            // Initial previews
             updateSEOPreview();
+            updateSocialPreview();
         });
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .nav-tabs .nav-link {
+            color: #6c757d;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .invalid-feedback {
+            display: block;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+    </style>
 @endpush
