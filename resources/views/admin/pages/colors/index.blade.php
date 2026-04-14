@@ -1,5 +1,5 @@
-{{-- resources/views/admin/colors/index.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/admin/pages/colors/index.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Colors')
 
@@ -47,27 +47,27 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-info text-white">
+                    <div class="card bg-warning text-dark">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0">Total Products</h6>
-                                    <h2 class="mb-0">{{ number_format($statistics['total_products'] ?? 0) }}</h2>
+                                    <h6 class="mb-0">Featured Colors</h6>
+                                    <h2 class="mb-0">{{ $statistics['featured'] ?? 0 }}</h2>
                                 </div>
-                                <i class="ti ti-package" style="font-size: 40px; opacity: 0.5;"></i>
+                                <i class="ti ti-star" style="font-size: 40px; opacity: 0.5;"></i>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-warning text-dark">
+                    <div class="card bg-info text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0">Total Revenue</h6>
-                                    <h2 class="mb-0">${{ number_format($statistics['total_revenue'] ?? 0, 2) }}</h2>
+                                    <h6 class="mb-0">Pending Approval</h6>
+                                    <h2 class="mb-0">{{ $statistics['pending'] ?? 0 }}</h2>
                                 </div>
-                                <i class="ti ti-chart-line" style="font-size: 40px; opacity: 0.5;"></i>
+                                <i class="ti ti-clock" style="font-size: 40px; opacity: 0.5;"></i>
                             </div>
                         </div>
                     </div>
@@ -83,9 +83,14 @@
                                 <a href="{{ route('admin.colors.analytics') }}" class="btn btn-info">
                                     <i class="ti ti-chart-bar me-1"></i> Analytics
                                 </a>
-                                @can('create colors')
+                                @can('create_colors')
                                     <a href="{{ route('admin.colors.create') }}" class="btn btn-primary">
                                         <i class="ti ti-plus me-1"></i> Add New Color
+                                    </a>
+                                @endcan
+                                @can('create_colors')
+                                    <a href="{{ route('admin.colors.requests') }}" class="btn btn-success">
+                                        <i class="ti ti-palette me-1"></i> Requested Colors
                                     </a>
                                 @endcan
                             </div>
@@ -97,7 +102,7 @@
                                 <div class="col-md-5">
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="searchInput"
-                                            placeholder="Search by name or code..." value="{{ request('search') }}">
+                                            placeholder="Search by name or hex code..." value="{{ request('search') }}">
                                         <button class="btn btn-primary" type="button" id="searchBtn">
                                             <i class="ti ti-search"></i>
                                         </button>
@@ -126,6 +131,36 @@
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-outline-secondary dropdown-toggle"
                                                 data-bs-toggle="dropdown">
+                                                <i class="ti ti-check-circle me-1"></i> Approval Status
+                                            </button>
+                                            <ul class="dropdown-menu" id="approvalFilter">
+                                                <li><a class="dropdown-item" href="#" data-approval="">All</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="approved">Approved</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="pending">Pending</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="rejected">Rejected</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="ti ti-star me-1"></i> Featured
+                                            </button>
+                                            <ul class="dropdown-menu" id="featuredFilter">
+                                                <li><a class="dropdown-item" href="#" data-featured="">All</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-featured="true">Featured</a></li>
+                                                <li><a class="dropdown-item" href="#" data-featured="false">Not
+                                                        Featured</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
                                                 <i class="ti ti-arrows-sort me-1"></i> Sort By
                                             </button>
                                             <ul class="dropdown-menu" id="sortFilter">
@@ -133,16 +168,12 @@
                                                         Order</a></li>
                                                 <li><a class="dropdown-item" href="#" data-sort="name">Name
                                                         (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="code">Code
-                                                        (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="hex_code">Hex
-                                                        Code</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="view_count">Most
-                                                        Viewed</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="product_count">Most Products</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="total_revenue">Highest Revenue</a></li>
+                                                <li><a class="dropdown-item" href="#" data-sort="code">Hex Code</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="#" data-sort="usage_count">Most
+                                                        Used</a></li>
+                                                <li><a class="dropdown-item" href="#" data-sort="created_at">Newest
+                                                        First</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -150,11 +181,11 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @canany(['edit colors', 'delete colors'])
+                            @canany(['edit_colors', 'delete_colors'])
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group flex-wrap gap-2">
-                                            @can('edit colors')
+                                            @can('edit_colors')
                                                 <button type="button" class="btn btn-outline-success btn-sm"
                                                     onclick="bulkAction('activate')">
                                                     <i class="ti ti-check"></i> Activate Selected
@@ -163,8 +194,32 @@
                                                     onclick="bulkAction('deactivate')">
                                                     <i class="ti ti-x"></i> Deactivate Selected
                                                 </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="bulkAction('feature')">
+                                                    <i class="ti ti-star"></i> Mark as Featured
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="bulkAction('unfeature')">
+                                                    <i class="ti ti-star-off"></i> Remove Featured
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm"
+                                                    onclick="bulkAction('popular')">
+                                                    <i class="ti ti-fire"></i> Mark as Popular
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="bulkAction('unpopular')">
+                                                    <i class="ti ti-fire-off"></i> Remove Popular
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                    onclick="bulkAction('approve')">
+                                                    <i class="ti ti-check-circle"></i> Approve Selected
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="bulkAction('reject')">
+                                                    <i class="ti ti-x-circle"></i> Reject Selected
+                                                </button>
                                             @endcan
-                                            @can('delete colors')
+                                            @can('delete_colors')
                                                 <button type="button" class="btn btn-outline-danger btn-sm"
                                                     onclick="bulkAction('delete')">
                                                     <i class="ti ti-trash"></i> Delete Selected
@@ -177,7 +232,7 @@
 
                             {{-- Colors Table Container --}}
                             <div id="colorsTableContainer">
-                                @include('admin.pages.colors.partials.colors-table', ['colors' => $colors])
+                                @include('admin.pages.colors.partials.colors-table', compact('colors'))
                             </div>
 
                             {{-- Pagination Container --}}
@@ -213,6 +268,8 @@
             let currentFilters = {
                 search: '{{ request('search') }}',
                 status: '{{ request('status') }}',
+                approval_status: '{{ request('approval_status') }}',
+                featured: '{{ request('featured') }}',
                 sort_by: '{{ request('sort_by', 'order') }}',
                 page: 1
             };
@@ -242,30 +299,51 @@
                 $(this).hide();
             });
 
+            // Status filter
             $('#statusFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
                 let status = $(this).data('status');
-
                 $('#statusFilter .dropdown-item').removeClass('active');
                 $(this).addClass('active');
-
                 currentFilters.status = status;
                 currentFilters.page = 1;
                 loadColors();
             });
 
+            // Approval filter
+            $('#approvalFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                let approvalStatus = $(this).data('approval');
+                $('#approvalFilter .dropdown-item').removeClass('active');
+                $(this).addClass('active');
+                currentFilters.approval_status = approvalStatus;
+                currentFilters.page = 1;
+                loadColors();
+            });
+
+            // Featured filter
+            $('#featuredFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                let featured = $(this).data('featured');
+                $('#featuredFilter .dropdown-item').removeClass('active');
+                $(this).addClass('active');
+                currentFilters.featured = featured;
+                currentFilters.page = 1;
+                loadColors();
+            });
+
+            // Sort filter
             $('#sortFilter .dropdown-item').on('click', function(e) {
                 e.preventDefault();
                 let sortBy = $(this).data('sort');
-
                 $('#sortFilter .dropdown-item').removeClass('active');
                 $(this).addClass('active');
-
                 currentFilters.sort_by = sortBy;
                 currentFilters.page = 1;
                 loadColors();
             });
 
+            // Pagination click handler
             $(document).on('click', '.pagination a', function(e) {
                 e.preventDefault();
                 let page = $(this).attr('href').split('page=')[1];
@@ -289,30 +367,26 @@
                     success: function(response) {
                         $('#colorsTableContainer').html(response.table);
                         $('#paginationContainer').html(response.pagination);
-
                         if (response.statistics) {
                             updateStatistics(response.statistics);
                         }
-
                         let url = new URL(window.location);
                         url.searchParams.set('search', currentFilters.search || '');
                         url.searchParams.set('status', currentFilters.status || '');
+                        url.searchParams.set('approval_status', currentFilters.approval_status || '');
+                        url.searchParams.set('featured', currentFilters.featured || '');
                         url.searchParams.set('sort_by', currentFilters.sort_by || 'order');
                         url.searchParams.set('page', currentFilters.page);
                         window.history.pushState({}, '', url);
-
                         $('[data-bs-toggle="tooltip"]').tooltip();
-
                         $('#selectAll').off('change').on('change', function() {
                             $('.color-checkbox').prop('checked', $(this).prop('checked'));
                         });
-
                         $('.color-checkbox').off('change').on('change', function() {
                             let allChecked = $('.color-checkbox:checked').length === $(
                                 '.color-checkbox').length;
                             $('#selectAll').prop('checked', allChecked);
                         });
-
                         $('.toggle-status').off('change').on('change', function() {
                             let colorId = $(this).data('id');
                             toggleStatus(colorId, this);
@@ -328,8 +402,8 @@
             function updateStatistics(statistics) {
                 $('.bg-primary .h2').text(statistics.total || 0);
                 $('.bg-success .h2').text(statistics.active || 0);
-                $('.bg-info .h2').text(statistics.total_products || 0);
-                $('.bg-warning .h2').text('$' + (statistics.total_revenue || 0).toLocaleString());
+                $('.bg-warning .h2').text(statistics.featured || 0);
+                $('.bg-info .h2').text(statistics.pending || 0);
             }
 
             if ($('#searchInput').val()) {
@@ -339,7 +413,6 @@
 
         function toggleStatus(colorId, element) {
             let isChecked = $(element).prop('checked');
-
             $.ajax({
                 url: '{{ url('admin/colors') }}/' + colorId + '/toggle-status',
                 type: 'POST',
@@ -362,7 +435,8 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: 'Failed to update status.'
+                        text: 'Failed to update status.',
+                        confirmButtonColor: '#d33'
                     });
                 }
             });
@@ -381,7 +455,6 @@
                 if (result.isConfirmed) {
                     let form = $('#deleteForm');
                     form.attr('action', '{{ url('admin/colors') }}/' + colorId);
-
                     $.ajax({
                         url: form.attr('action'),
                         type: 'POST',
@@ -389,18 +462,20 @@
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
-                                        icon: 'success',
-                                        title: 'Deleted!',
-                                        text: response.message,
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    })
-                                    .then(() => location.reload());
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
                             } else {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Cannot Delete!',
-                                    text: response.message
+                                    text: response.message,
+                                    confirmButtonColor: '#d33'
                                 });
                             }
                         }
@@ -414,19 +489,48 @@
             $('.color-checkbox:checked').each(function() {
                 selectedColors.push($(this).val());
             });
-
             if (selectedColors.length === 0) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'No Selection',
-                    text: 'Please select at least one color.'
+                    text: 'Please select at least one color.',
+                    confirmButtonColor: '#6c757d'
                 });
                 return;
             }
-
-            let actionText = action === 'activate' ? 'activate' : (action === 'deactivate' ? 'deactivate' : 'delete');
-            let confirmColor = action === 'delete' ? '#d33' : '#28a745';
-
+            let actionText = '',
+                confirmColor = '#28a745';
+            switch (action) {
+                case 'activate':
+                    actionText = 'activate';
+                    break;
+                case 'deactivate':
+                    actionText = 'deactivate';
+                    break;
+                case 'feature':
+                    actionText = 'mark as featured';
+                    break;
+                case 'unfeature':
+                    actionText = 'remove featured';
+                    break;
+                case 'popular':
+                    actionText = 'mark as popular';
+                    break;
+                case 'unpopular':
+                    actionText = 'remove popular';
+                    break;
+                case 'approve':
+                    actionText = 'approve';
+                    break;
+                case 'reject':
+                    actionText = 'reject';
+                    confirmColor = '#dc3545';
+                    break;
+                case 'delete':
+                    actionText = 'delete';
+                    confirmColor = '#d33';
+                    break;
+            }
             Swal.fire({
                 title: `${actionText.toUpperCase()} Colors?`,
                 text: `Are you sure you want to ${actionText} ${selectedColors.length} selected color(s)?`,
@@ -439,7 +543,6 @@
                 if (result.isConfirmed) {
                     $('#bulkAction').val(action);
                     $('#bulkColorIds').val(JSON.stringify(selectedColors));
-
                     $.ajax({
                         url: $('#bulkActionForm').attr('action'),
                         type: 'POST',
@@ -447,18 +550,50 @@
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
-                                        icon: 'success',
-                                        title: 'Success!',
-                                        text: response.message,
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    })
-                                    .then(() => location.reload());
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
                             }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'Failed to process bulk action.',
+                                confirmButtonColor: '#d33'
+                            });
                         }
                     });
                 }
             });
         }
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50% !important;
+        }
+
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #ddd;
+            display: inline-block;
+        }
+    </style>
 @endpush

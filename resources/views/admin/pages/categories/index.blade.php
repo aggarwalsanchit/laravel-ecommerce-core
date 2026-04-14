@@ -1,4 +1,4 @@
-{{-- resources/views/admin/categories/index.blade.php --}}
+{{-- resources/views/admin/pages/categories/index.blade.php --}}
 @extends('management.layouts.app')
 
 @section('title', 'Categories')
@@ -18,7 +18,7 @@
                 </div>
             </div>
 
-            {{-- Statistics Cards --}}
+            {{-- Statistics Cards (Only from categories table, not analytics) --}}
             <div class="row mb-4">
                 <div class="col-md-3">
                     <div class="card bg-primary text-white">
@@ -64,6 +64,36 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
+                                    <h6 class="mb-0">Pending Approval</h6>
+                                    <h2 class="mb-0">{{ $statistics['pending'] ?? 0 }}</h2>
+                                </div>
+                                <i class="ti ti-clock" style="font-size: 40px; opacity: 0.5;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Second Row - Additional Stats --}}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">Rejected</h6>
+                                    <h2 class="mb-0">{{ $statistics['rejected'] ?? 0 }}</h2>
+                                </div>
+                                <i class="ti ti-x-circle" style="font-size: 40px; opacity: 0.5;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
                                     <h6 class="mb-0">Total Views</h6>
                                     <h2 class="mb-0">{{ number_format($statistics['total_views'] ?? 0) }}</h2>
                                 </div>
@@ -80,14 +110,21 @@
                         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <h3 class="card-title mb-0">Category Management</h3>
                             <div class="d-flex gap-2">
+                                @php $admin = auth()->guard('admin')->user(); @endphp
                                 <a href="{{ route('admin.categories.analytics') }}" class="btn btn-info">
                                     <i class="ti ti-chart-bar me-1"></i> Analytics
                                 </a>
-                                @can('create categories')
+
+                                @if ($admin->can('create_categories'))
                                     <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">
                                         <i class="ti ti-plus me-1"></i> Add New Category
                                     </a>
-                                @endcan
+                                @endif
+                                @if ($admin->can('request_categories'))
+                                    <a href="{{ route('admin.categories.requests') }}" class="btn btn-success">
+                                        <i class="ti ti-palette me-1"></i> Requested Categories
+                                    </a>
+                                @endif
                             </div>
                         </div>
                         <div class="card-body">
@@ -116,10 +153,26 @@
                                             </button>
                                             <ul class="dropdown-menu" id="statusFilter">
                                                 <li><a class="dropdown-item" href="#" data-status="">All</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="active">Active</a>
-                                                </li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-status="active">Active</a></li>
                                                 <li><a class="dropdown-item" href="#"
                                                         data-status="inactive">Inactive</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="ti ti-check-circle me-1"></i> Approval Status
+                                            </button>
+                                            <ul class="dropdown-menu" id="approvalFilter">
+                                                <li><a class="dropdown-item" href="#" data-approval="">All</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="approved">Approved</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="pending">Pending</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="rejected">Rejected</a></li>
                                             </ul>
                                         </div>
 
@@ -147,24 +200,20 @@
                                                         Order</a></li>
                                                 <li><a class="dropdown-item" href="#" data-sort="name">Name
                                                         (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="view_count">Most
-                                                        Viewed</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="product_count">Most Products</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="total_revenue">Highest Revenue</a></li>
+                                                <li><a class="dropdown-item" href="#" data-sort="created_at">Newest
+                                                        First</a></li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Bulk Actions - OLD DESIGN (Buttons with icons, no extra styling) --}}
-                            @canany(['edit categories', 'delete categories'])
+                            {{-- Bulk Actions --}}
+                            @if ($admin->can('edit_categories') || $admin->can('delete_categories'))
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group flex-wrap gap-2">
-                                            @can('edit categories')
+                                            @if ($admin->can('edit_categories'))
                                                 <button type="button" class="btn btn-outline-success btn-sm"
                                                     onclick="bulkAction('activate')">
                                                     <i class="ti ti-check"></i> Activate Selected
@@ -189,17 +238,25 @@
                                                     onclick="bulkAction('unpopular')">
                                                     <i class="ti ti-fire-off"></i> Remove Popular
                                                 </button>
-                                            @endcan
-                                            @can('delete categories')
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                    onclick="bulkAction('approve')">
+                                                    <i class="ti ti-check-circle"></i> Approve Selected
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="bulkAction('reject')">
+                                                    <i class="ti ti-x-circle"></i> Reject Selected
+                                                </button>
+                                            @endif
+                                            @if ($admin->can('delete_categories'))
                                                 <button type="button" class="btn btn-outline-danger btn-sm"
                                                     onclick="bulkAction('delete')">
                                                     <i class="ti ti-trash"></i> Delete Selected
                                                 </button>
-                                            @endcan
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
-                            @endcanany
+                            @endif
 
                             {{-- Categories Table Container --}}
                             <div id="categoriesTableContainer">
@@ -242,6 +299,7 @@
             let currentFilters = {
                 search: '{{ request('search') }}',
                 status: '{{ request('status') }}',
+                approval_status: '{{ request('approval_status') }}',
                 type: '{{ request('type') }}',
                 sort_by: '{{ request('sort_by', 'order') }}',
                 page: 1
@@ -283,6 +341,19 @@
                 $(this).addClass('active');
 
                 currentFilters.status = status;
+                currentFilters.page = 1;
+                loadCategories();
+            });
+
+            // Approval filter
+            $('#approvalFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                let approvalStatus = $(this).data('approval');
+
+                $('#approvalFilter .dropdown-item').removeClass('active');
+                $(this).addClass('active');
+
+                currentFilters.approval_status = approvalStatus;
                 currentFilters.page = 1;
                 loadCategories();
             });
@@ -332,31 +403,28 @@
                     beforeSend: function() {
                         $('#categoriesTableContainer').html(
                             '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>'
-                            );
+                        );
                         $('#paginationContainer').html('');
                     },
                     success: function(response) {
                         $('#categoriesTableContainer').html(response.table);
                         $('#paginationContainer').html(response.pagination);
 
-                        // Update statistics if provided
                         if (response.statistics) {
                             updateStatistics(response.statistics);
                         }
 
-                        // Update URL without reload
                         let url = new URL(window.location);
                         url.searchParams.set('search', currentFilters.search || '');
                         url.searchParams.set('status', currentFilters.status || '');
+                        url.searchParams.set('approval_status', currentFilters.approval_status || '');
                         url.searchParams.set('type', currentFilters.type || '');
                         url.searchParams.set('sort_by', currentFilters.sort_by || 'order');
                         url.searchParams.set('page', currentFilters.page);
                         window.history.pushState({}, '', url);
 
-                        // Reinitialize tooltips
                         $('[data-bs-toggle="tooltip"]').tooltip();
 
-                        // Reinitialize select all
                         $('#selectAll').off('change').on('change', function() {
                             $('.category-checkbox').prop('checked', $(this).prop('checked'));
                         });
@@ -367,7 +435,6 @@
                             $('#selectAll').prop('checked', allChecked);
                         });
 
-                        // Reinitialize status toggle switches
                         $('.toggle-status').off('change').on('change', function() {
                             let categoryId = $(this).data('id');
                             toggleStatus(categoryId, this);
@@ -380,21 +447,20 @@
                 });
             }
 
-            // Update statistics cards
             function updateStatistics(statistics) {
                 $('.bg-primary .h2').text(statistics.total || 0);
                 $('.bg-success .h2').text(statistics.active || 0);
                 $('.bg-warning .h2').text(statistics.featured || 0);
-                $('.bg-info .h2').text(statistics.total_views || 0);
+                $('.bg-info .h2').text(statistics.pending || 0);
+                $('.bg-danger .h2').text(statistics.rejected || 0);
+                $('.bg-secondary .h2').text(statistics.total_views || 0);
             }
 
-            // Show clear button if search exists
             if ($('#searchInput').val()) {
                 $('#clearSearch').show();
             }
         });
 
-        // Toggle Status
         function toggleStatus(categoryId, element) {
             let isChecked = $(element).prop('checked');
 
@@ -427,11 +493,10 @@
             });
         }
 
-        // Confirm Delete
         function confirmDelete(categoryId) {
             Swal.fire({
                 title: 'Delete Category?',
-                text: "Are you sure you want to delete this category? This will also delete all subcategories!",
+                text: "Are you sure you want to delete this category?",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -479,7 +544,107 @@
             });
         }
 
-        // Bulk Action
+        function approveCategory(categoryId, categoryName) {
+            Swal.fire({
+                title: 'Approve Category?',
+                text: `Are you sure you want to approve "${categoryName}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, approve it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ url('admin/categories') }}/' + categoryId + '/approve',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Approved!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'Failed to approve category.',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function showRejectModal(categoryId, categoryName) {
+            Swal.fire({
+                title: 'Reject Category',
+                html: `
+                    <p>Are you sure you want to reject "${categoryName}"?</p>
+                    <textarea id="rejectionReason" class="swal2-textarea" placeholder="Please provide a reason for rejection..." rows="3"></textarea>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, reject it!',
+                preConfirm: () => {
+                    const reason = document.getElementById('rejectionReason').value;
+                    if (!reason) {
+                        Swal.showValidationMessage('Please provide a rejection reason');
+                        return false;
+                    }
+                    return {
+                        reason: reason
+                    };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ url('admin/categories') }}/' + categoryId + '/reject',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            rejection_reason: result.value.reason
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Rejected!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message || 'Failed to reject category.',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
         function bulkAction(action) {
             let selectedCategories = [];
             $('.category-checkbox:checked').each(function() {
@@ -517,6 +682,13 @@
                     break;
                 case 'unpopular':
                     actionText = 'remove popular';
+                    break;
+                case 'approve':
+                    actionText = 'approve';
+                    break;
+                case 'reject':
+                    actionText = 'reject';
+                    confirmColor = '#dc3545';
                     break;
                 case 'delete':
                     actionText = 'delete';
@@ -572,7 +744,6 @@
 
 @push('styles')
     <style>
-        /* Action Buttons - Perfect Circles */
         .btn-icon {
             width: 32px;
             height: 32px;
@@ -602,46 +773,6 @@
         .hstack .btn {
             margin: 0;
             flex-shrink: 0;
-        }
-
-        /* Button styles for bulk actions - keep original design */
-        .btn-outline-success,
-        .btn-outline-warning,
-        .btn-outline-primary,
-        .btn-outline-secondary,
-        .btn-outline-info,
-        .btn-outline-danger {
-            transition: all 0.2s ease;
-        }
-
-        .btn-outline-success:hover {
-            background-color: #198754;
-            border-color: #198754;
-            color: #fff;
-        }
-
-        .btn-outline-warning:hover {
-            background-color: #ffc107;
-            border-color: #ffc107;
-            color: #000;
-        }
-
-        .btn-outline-primary:hover {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-            color: #fff;
-        }
-
-        .btn-outline-info:hover {
-            background-color: #0dcaf0;
-            border-color: #0dcaf0;
-            color: #000;
-        }
-
-        .btn-outline-danger:hover {
-            background-color: #dc3545;
-            border-color: #dc3545;
-            color: #fff;
         }
     </style>
 @endpush

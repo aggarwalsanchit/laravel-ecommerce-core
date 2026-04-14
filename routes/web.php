@@ -35,11 +35,15 @@ use App\Http\Controllers\Vendor\VendorProductController;
 use App\Http\Controllers\Vendor\VendorOrderController;
 use App\Http\Controllers\Vendor\VendorStaffController;
 use App\Http\Controllers\Vendor\VendorProfileController;
-use App\Http\Controllers\Vendor\VendorSettingsController;
+use App\Http\Controllers\Vendor\VendorCategoryController;
 use App\Http\Controllers\Vendor\VendorUserController;
 use App\Http\Controllers\Vendor\VendorRoleController;
 use App\Http\Controllers\Vendor\VendorPermissionController;
 use App\Http\Controllers\Vendor\VendorActivityLogController;
+use App\Http\Controllers\Vendor\VendorColorController;
+use App\Http\Controllers\Vendor\VendorSizeController;
+use App\Http\Controllers\Vendor\VendorAttributeController;
+use App\Http\Controllers\Vendor\VendorAttributeValueController;
 
 
 Route::get('/', function () {
@@ -56,18 +60,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['admin.auth'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'showDashboard'])->name('dashboard');
 
-        // ==================== CATEGORIES ====================
-        Route::get('/categories/analytics', [CategoryController::class, 'analytics'])->name('categories.analytics');
-        Route::resource('categories', CategoryController::class);
-        Route::post('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
-        Route::post('/categories/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('categories.toggle-featured');
-        Route::post('/categories/{category}/toggle-popular', [CategoryController::class, 'togglePopular'])->name('categories.toggle-popular');
-        Route::post('/categories/{category}/toggle-menu', [CategoryController::class, 'toggleMenu'])->name('categories.toggle-menu');
-        Route::post('/categories/reorder', [CategoryController::class, 'reorder'])->name('categories.reorder');
-        Route::post('/categories/bulk-action', [CategoryController::class, 'bulkAction'])->name('categories.bulk-action');
-        Route::get('/categories/subcategories', [CategoryController::class, 'getSubcategories'])->name('categories.subcategories');
-        Route::get('/categories/{category}/subcategories', [CategoryController::class, 'getSubcategories'])
-            ->name('admin.categories.subcategories');
+
 
         // ==================== USERS ====================
         Route::resource('users', UserController::class);
@@ -122,51 +115,156 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/staff/{id}', [AdminVendorController::class, 'deleteStaff'])->name('staff.delete');
         });
 
+        // ==================== CATEGORIES ====================
 
-        Route::get('/sizes/analytics', [SizeController::class, 'analytics'])->name('sizes.analytics');
-        Route::post('/sizes/{size}/toggle-status', [SizeController::class, 'toggleStatus'])->name('sizes.toggle-status');
-        Route::post('/sizes/bulk-action', [SizeController::class, 'bulkAction'])->name('sizes.bulk-action');
+        // Category Routes
+        Route::prefix('categories')->name('categories.')->group(function () {
+            // Request management routes (must come before resource)
+            Route::get('/requests', [CategoryController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [CategoryController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [CategoryController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [CategoryController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [CategoryController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [CategoryController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Analytics
+            Route::get('/analytics', [CategoryController::class, 'analytics'])->name('analytics');
+
+            // Bulk action
+            Route::post('/bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
+
+            // Toggle routes
+            Route::post('/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{category}/toggle-menu', [CategoryController::class, 'toggleMenu'])->name('toggle-menu');
+            Route::post('/{category}/toggle-featured', [CategoryController::class, 'toggleFeatured'])->name('toggle-featured');
+            Route::post('/{category}/toggle-popular', [CategoryController::class, 'togglePopular'])->name('toggle-popular');
+
+            // Subcategories
+            Route::get('/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories');
+            Route::get('/{category}/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories.by-category');
+        });
+
+        // Resource route for categories (must come after custom routes)
+        Route::resource('categories', CategoryController::class);
+
+
+        // ==================== SIZE ROUTES ====================
+        Route::prefix('sizes')->name('sizes.')->group(function () {
+
+            // Request management routes (must come before resource)
+            Route::get('/requests', [SizeController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [SizeController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [SizeController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [SizeController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [SizeController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [SizeController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Analytics
+            Route::get('/analytics', [SizeController::class, 'analytics'])->name('analytics');
+
+            // Bulk action
+            Route::post('/bulk-action', [SizeController::class, 'bulkAction'])->name('bulk-action');
+
+            // Toggle routes
+            Route::post('/{size}/toggle-status', [SizeController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{size}/toggle-featured', [SizeController::class, 'toggleFeatured'])->name('toggle-featured');
+            Route::post('/{size}/toggle-popular', [SizeController::class, 'togglePopular'])->name('toggle-popular');
+        });
+
+        // Resource route for sizes (must come after custom routes)
         Route::resource('sizes', SizeController::class);
 
 
-        Route::get('/colors/analytics', [ColorController::class, 'analytics'])->name('colors.analytics');
-        Route::post('/colors/{color}/toggle-status', [ColorController::class, 'toggleStatus'])->name('colors.toggle-status');
-        Route::post('/colors/bulk-action', [ColorController::class, 'bulkAction'])->name('colors.bulk-action');
+        // Color Routes
+        Route::prefix('colors')->name('colors.')->group(function () {
+            // Request management routes (must come before resource)
+            Route::get('/requests', [ColorController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [ColorController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [ColorController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [ColorController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [ColorController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [ColorController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Analytics
+            Route::get('/analytics', [ColorController::class, 'analytics'])->name('analytics');
+
+            // Bulk action
+            Route::post('/bulk-action', [ColorController::class, 'bulkAction'])->name('bulk-action');
+
+            // Toggle routes
+            Route::post('/{color}/toggle-status', [ColorController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{color}/toggle-featured', [ColorController::class, 'toggleFeatured'])->name('toggle-featured');
+            Route::post('/{color}/toggle-popular', [ColorController::class, 'togglePopular'])->name('toggle-popular');
+        });
+
+        // Resource route for colors (must come after custom routes)
         Route::resource('colors', ColorController::class);
 
 
-        Route::get('/fabrics/analytics', [FabricController::class, 'analytics'])->name('fabrics.analytics');
-        Route::post('/fabrics/{fabric}/toggle-status', [FabricController::class, 'toggleStatus'])->name('fabrics.toggle-status');
-        Route::post('/fabrics/bulk-action', [FabricController::class, 'bulkAction'])->name('fabrics.bulk-action');
-        Route::resource('fabrics', FabricController::class);
-
-
-        Route::get('/occasions/analytics', [OccasionController::class, 'analytics'])->name('occasions.analytics');
-        Route::post('/occasions/{occasion}/toggle-status', [OccasionController::class, 'toggleStatus'])->name('occasions.toggle-status');
-        Route::post('/occasions/{occasion}/toggle-featured', [OccasionController::class, 'toggleFeatured'])->name('occasions.toggle-featured');
-        Route::post('/occasions/bulk-action', [OccasionController::class, 'bulkAction'])->name('occasions.bulk-action');
-        Route::resource('occasions', OccasionController::class);
-
-
-        Route::get('/collections/analytics', [CollectionController::class, 'analytics'])->name('collections.analytics');
-        Route::post('/collections/{collection}/toggle-status', [CollectionController::class, 'toggleStatus'])->name('collections.toggle-status');
-        Route::post('/collections/{collection}/toggle-featured', [CollectionController::class, 'toggleFeatured'])->name('collections.toggle-featured');
-        Route::post('/collections/bulk-action', [CollectionController::class, 'bulkAction'])->name('collections.bulk-action');
-        Route::resource('collections', CollectionController::class);
-
-
-        Route::get('/seasons/analytics', [SeasonController::class, 'analytics'])->name('seasons.analytics');
-        Route::post('/seasons/{season}/toggle-status', [SeasonController::class, 'toggleStatus'])->name('seasons.toggle-status');
-        Route::post('/seasons/{season}/set-current', [SeasonController::class, 'setCurrent'])->name('seasons.set-current');
-        Route::post('/seasons/bulk-action', [SeasonController::class, 'bulkAction'])->name('seasons.bulk-action');
-        Route::resource('seasons', SeasonController::class);
-
-
-        Route::get('/brands/analytics', [BrandController::class, 'analytics'])->name('brands.analytics');
-        Route::post('/brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
-        Route::post('/brands/{brand}/toggle-featured', [BrandController::class, 'toggleFeatured'])->name('brands.toggle-featured');
-        Route::post('/brands/bulk-action', [BrandController::class, 'bulkAction'])->name('brands.bulk-action');
-        Route::resource('brands', BrandController::class);
+       // ==================== ATTRIBUTE GROUP ROUTES ====================
+    Route::prefix('attribute-groups')->name('attribute-groups.')->group(function () {
+        // Request management routes
+        Route::get('/requests', [AttributeGroupController::class, 'pendingRequests'])->name('requests');
+        Route::get('/requests/{id}', [AttributeGroupController::class, 'viewRequest'])->name('requests.show');
+        Route::post('/requests/{id}/approve', [AttributeGroupController::class, 'approveRequest'])->name('requests.approve');
+        Route::post('/requests/{id}/reject', [AttributeGroupController::class, 'rejectRequest'])->name('requests.reject');
+        Route::delete('/requests/{id}', [AttributeGroupController::class, 'deleteRequest'])->name('requests.delete');
+        Route::post('/requests/bulk-action', [AttributeGroupController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+        
+        // Analytics
+        Route::get('/analytics', [AttributeGroupController::class, 'analytics'])->name('analytics');
+        
+        // Bulk action
+        Route::post('/bulk-action', [AttributeGroupController::class, 'bulkAction'])->name('bulk-action');
+        
+        // Toggle routes
+        Route::post('/{group}/toggle-status', [AttributeGroupController::class, 'toggleStatus'])->name('toggle-status');
+    });
+    
+    Route::resource('attribute-groups', AttributeGroupController::class);
+    
+    // ==================== ATTRIBUTE ROUTES ====================
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        // Request management routes
+        Route::get('/requests', [AttributeController::class, 'pendingRequests'])->name('requests');
+        Route::get('/requests/{id}', [AttributeController::class, 'viewRequest'])->name('requests.show');
+        Route::post('/requests/{id}/approve', [AttributeController::class, 'approveRequest'])->name('requests.approve');
+        Route::post('/requests/{id}/reject', [AttributeController::class, 'rejectRequest'])->name('requests.reject');
+        Route::delete('/requests/{id}', [AttributeController::class, 'deleteRequest'])->name('requests.delete');
+        Route::post('/requests/bulk-action', [AttributeController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+        
+        // Value request routes
+        Route::get('/value-requests', [AttributeController::class, 'valueRequests'])->name('value-requests');
+        Route::get('/value-requests/{id}', [AttributeController::class, 'viewValueRequest'])->name('value-requests.show');
+        Route::post('/value-requests/{id}/approve', [AttributeController::class, 'approveValueRequest'])->name('value-requests.approve');
+        Route::post('/value-requests/{id}/reject', [AttributeController::class, 'rejectValueRequest'])->name('value-requests.reject');
+        Route::delete('/value-requests/{id}', [AttributeController::class, 'deleteValueRequest'])->name('value-requests.delete');
+        Route::post('/value-requests/bulk-action', [AttributeController::class, 'bulkValueRequestAction'])->name('value-requests.bulk-action');
+        
+        // Values management
+        Route::get('/{attribute}/values', [AttributeController::class, 'manageValues'])->name('values');
+        Route::post('/{attribute}/values', [AttributeController::class, 'storeValue'])->name('values.store');
+        Route::put('/values/{value}', [AttributeController::class, 'updateValue'])->name('values.update');
+        Route::delete('/values/{value}', [AttributeController::class, 'destroyValue'])->name('values.destroy');
+        Route::post('/values/reorder', [AttributeController::class, 'reorderValues'])->name('values.reorder');
+        
+        // Analytics
+        Route::get('/analytics', [AttributeController::class, 'analytics'])->name('analytics');
+        Route::get('/analytics/{attribute}', [AttributeController::class, 'attributeAnalytics'])->name('analytics.show');
+        
+        // Bulk action
+        Route::post('/bulk-action', [AttributeController::class, 'bulkAction'])->name('bulk-action');
+        
+        // Toggle routes
+        Route::post('/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/{attribute}/toggle-featured', [AttributeController::class, 'toggleFeatured'])->name('toggle-featured');
+        Route::post('/{attribute}/toggle-filterable', [AttributeController::class, 'toggleFilterable'])->name('toggle-filterable');
+        
+        // Get attributes by category (for AJAX)
+        Route::get('/by-category/{category}', [AttributeController::class, 'getByCategory'])->name('by-category');
+    });
+    
+    Route::resource('attributes', AttributeController::class);
 
         Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
@@ -176,32 +274,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('discounts.attribute-values');
         Route::resource('discounts', DiscountController::class);
 
-        Route::resource('attribute-groups', AttributeGroupController::class);
-        Route::post('/attribute-groups/{group}/toggle-status', [AttributeGroupController::class, 'toggleStatus'])->name('attribute-groups.toggle-status');
-
-        // Attributes
-        Route::resource('attributes', AttributeController::class);
-        Route::get('/attributes/by-category/{category}', [AttributeController::class, 'getByCategory'])
-            ->name('admin.attributes.by-category');
-        Route::get('/attributes/{attribute}/analytics', [AttributeController::class, 'analytics'])->name('attributes.analytics');
-        Route::post('/attributes/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('attributes.toggle-status');
-
-        // Attribute Values
-        Route::get('/attributes/{attribute}/values', [AttributeValueController::class, 'index'])->name('attributes.values.index');
-        Route::post('/attributes/{attribute}/values', [AttributeValueController::class, 'store'])->name('attributes.values.store');
-        Route::put('/attribute-values/{value}', [AttributeValueController::class, 'update'])->name('attribute-values.update');
-        Route::delete('/attribute-values/{value}', [AttributeValueController::class, 'destroy'])->name('attribute-values.destroy');
-        Route::get('/attribute-values/export', [AttributeValueController::class, 'export'])->name('attributes.values.export');
-
-        Route::prefix('attribute-values')->name('attribute-values.')->group(function () {
-            Route::get('/{value}', [AttributeValueController::class, 'show'])->name('show');
-            Route::get('/{value}/analytics', [AttributeValueController::class, 'analytics'])->name('analytics');
-            Route::put('/{value}', [AttributeValueController::class, 'update'])->name('update');
-            Route::delete('/{value}', [AttributeValueController::class, 'destroy'])->name('destroy');
-            Route::post('/{value}/toggle-default', [AttributeValueController::class, 'toggleDefault'])->name('toggle-default');
-            Route::post('/{value}/toggle-visibility', [AttributeValueController::class, 'toggleVisibility'])->name('toggle-visibility');
-            Route::post('/{value}/reorder', [AttributeValueController::class, 'reorder'])->name('reorder');
-        });
+       
 
 
 
@@ -300,10 +373,88 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
         Route::post('/permissions/bulk-action', [VendorPermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
 
 
+        // ==================== CATEGORIES ====================
+
+        // Category Routes
+        Route::prefix('categories')->name('categories.')->group(function () {
+        // View categories
+        Route::get('/', [VendorCategoryController::class, 'index'])->name('index');
+        Route::get('/requests', [VendorCategoryController::class, 'myRequests'])->name('requests.index');
+        Route::get('/{id}', [VendorCategoryController::class, 'show'])->name('show');
+        
+        // Category requests
+        
+        Route::get('/request/create', [VendorCategoryController::class, 'createRequest'])->name('request.create');
+        Route::post('/request', [VendorCategoryController::class, 'storeRequest'])->name('request.store');
+        
+        Route::get('/requests/{id}', [VendorCategoryController::class, 'showRequest'])->name('requests.show');
+        Route::delete('/requests/{id}', [VendorCategoryController::class, 'cancelRequest'])->name('requests.cancel');
+        
+        // AJAX endpoints
+        Route::get('/subcategories/{categoryId}', [VendorCategoryController::class, 'getSubcategories'])->name('subcategories');
+        Route::get('/tree', [VendorCategoryController::class, 'getCategoryTree'])->name('tree');
+    });
 
 
+// ==================== SIZE ROUTES ====================
+        Route::prefix('sizes')->name('sizes.')->group(function () {
+        // View sizes
+        Route::get('/', [VendorSizeController::class, 'index'])->name('index');
+        Route::get('/requests', [VendorSizeController::class, 'myRequests'])->name('requests.index');
+        Route::get('/{id}', [VendorSizeController::class, 'show'])->name('show');
+        
+        // Size requests
+        Route::get('/request/create', [VendorSizeController::class, 'createRequest'])->name('request.create');
+        Route::post('/request', [VendorSizeController::class, 'storeRequest'])->name('request.store');
+        Route::get('/requests/{id}', [VendorSizeController::class, 'showRequest'])->name('requests.show');
+        Route::delete('/requests/{id}', [VendorSizeController::class, 'cancelRequest'])->name('requests.cancel');
+        
+        // AJAX endpoints
+        Route::get('/by-category/{categoryId}', [VendorSizeController::class, 'getSizesByCategory'])->name('by-category');
+    });
 
 
+       // Color Routes (Read-only for vendors)
+    Route::prefix('colors')->name('colors.')->group(function () {
+        // View colors
+        Route::get('/', [VendorColorController::class, 'index'])->name('index');
+        Route::get('/requests', [VendorColorController::class, 'myRequests'])->name('requests.index');
+        Route::get('/{id}', [VendorColorController::class, 'show'])->name('show');
+        
+        // Color requests
+        Route::get('/request/create', [VendorColorController::class, 'createRequest'])->name('request.create');
+        Route::post('/request', [VendorColorController::class, 'storeRequest'])->name('request.store');
+        Route::get('/requests/{id}', [VendorColorController::class, 'showRequest'])->name('requests.show');
+        Route::delete('/requests/{id}', [VendorColorController::class, 'cancelRequest'])->name('requests.cancel');
+    });
+
+
+       // ==================== ATTRIBUTE GROUP ROUTES ====================
+     // Attribute Routes (Read-only for vendors)
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        // View attributes
+        Route::get('/', [VendorAttributeController::class, 'index'])->name('index');
+        Route::get('/requests', [VendorAttributeController::class, 'myRequests'])->name('requests.index');
+        Route::get('/value-requests', [VendorAttributeController::class, 'myValueRequests'])->name('value-requests.index');
+        Route::get('/{id}', [VendorAttributeController::class, 'show'])->name('show');
+        
+        // Attribute requests
+        Route::get('/request/create', [VendorAttributeController::class, 'createRequest'])->name('request.create');
+        Route::post('/request', [VendorAttributeController::class, 'storeRequest'])->name('request.store');
+        Route::get('/requests/{id}', [VendorAttributeController::class, 'showRequest'])->name('requests.show');
+        Route::delete('/requests/{id}', [VendorAttributeController::class, 'cancelRequest'])->name('requests.cancel');
+        
+        // Attribute value requests
+        
+        Route::get('/value-request/create', [VendorAttributeController::class, 'createValueRequest'])->name('value-request.create');
+        Route::post('/value-request', [VendorAttributeController::class, 'storeValueRequest'])->name('value-request.store');
+        Route::get('/value-requests/{id}', [VendorAttributeController::class, 'showValueRequest'])->name('value-requests.show');
+        Route::delete('/value-requests/{id}', [VendorAttributeController::class, 'cancelValueRequest'])->name('value-requests.cancel');
+        
+        // AJAX endpoints
+        Route::get('/by-category/{categoryId}', [VendorAttributeController::class, 'getAttributesByCategory'])->name('by-category');
+        Route::get('/values/{attributeId}', [VendorAttributeController::class, 'getAttributeValues'])->name('values');
+    });
 
 
 
