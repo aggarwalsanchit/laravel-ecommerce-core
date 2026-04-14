@@ -1,7 +1,7 @@
-{{-- resources/views/admin/colors/show.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/admin/pages/colors/show.blade.php --}}
+@extends('management.layouts.app')
 
-@section('title', 'Color Details')
+@section('title', 'Color Details - ' . $color->name)
 
 @section('content')
     <div class="page-content">
@@ -14,494 +14,490 @@
                     <ol class="breadcrumb m-0 py-0">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('admin.colors.index') }}">Colors</a></li>
-                        <li class="breadcrumb-item active">Color Details</li>
+                        <li class="breadcrumb-item active">{{ $color->name }}</li>
                     </ol>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-lg-4">
+                    {{-- Color Preview Card --}}
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="ti ti-palette"></i> Color Preview</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="rounded mb-3 mx-auto"
+                                style="width: 150px; height: 150px; background-color: {{ $color->code }}; border: 1px solid #ddd;">
+                            </div>
+                            <h3>{{ $color->name }}</h3>
+                            <code class="fs-4">{{ $color->code }}</code>
+                            @if ($color->rgb)
+                                <div class="text-muted mt-2">{{ $color->rgb }}</div>
+                            @endif
+                            @if ($color->hsl)
+                                <div class="text-muted">{{ $color->hsl }}</div>
+                            @endif
+                        </div>
+                    </div>
+
                     {{-- Color Information Card --}}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">Color Information</h5>
+                            <h5 class="card-title mb-0"><i class="ti ti-info-circle"></i> Color Information</h5>
                         </div>
                         <div class="card-body">
-                            <div class="text-center mb-4">
-                                {{-- Color Preview Circle --}}
-                                <div
-                                    style="width: 120px; height: 120px; background: {{ $color->hex_code }}; border-radius: 50%; margin: 0 auto; border: 3px solid #fff; box-shadow: 0 0 0 2px #dee2e6; transition: transform 0.3s ease;">
-                                </div>
-                                <div class="mt-3">
-                                    <code class="fs-5">{{ $color->hex_code }}</code>
-                                </div>
-                            </div>
-
                             <table class="table table-borderless">
-                                32
-                                <td width="120"><strong>ID:</strong>64
-                                <td>#{{ $color->id }}64
-                                    </tr>
-                                    32
-                                <td><strong>Name:</strong>64
-                                <td>
-                                    <span class="fw-semibold">{{ $color->name }}</span>
-                                    <br><small class="text-muted">{{ $color->slug }}</small>
-                                    64
-                                    </tr>
-                                    32
-                                <td><strong>Code:</strong>64
-                                <td>
-                                    <span class="badge bg-secondary-subtle text-secondary p-2">
-                                        <i class="ti ti-barcode"></i> {{ $color->code }}
-                                    </span>
-                                    64
-                                    </tr>
-                                    32
-                                <td><strong>Status:</strong>64
-                                <td>
-                                    @if ($color->status)
-                                        <span class="badge bg-success-subtle text-success">
-                                            <i class="ti ti-circle-check"></i> Active
-                                        </span>
-                                    @else
-                                        <span class="badge bg-danger-subtle text-danger">
-                                            <i class="ti ti-circle-x"></i> Inactive
-                                        </span>
-                                    @endif
-                                    64
-                                    </tr>
-                                    32
-                                <td><strong>Display Order:</strong>64
-                                <td>{{ $color->order }}64
-                                    </tr>
-                                    32
-                                <td><strong>Created:</strong>64
-                                <td>
-                                    {{ $color->created_at->format('F d, Y H:i') }}<br>
-                                    <small class="text-muted">{{ $color->created_at->diffForHumans() }}</small>
-                                    64
-                                    </tr>
-                                    32
-                                <td><strong>Last Updated:</strong>64
-                                <td>{{ $color->updated_at->diffForHumans() }}64
-                                    </tr>
+                                <tr>
+                                    <td width="120"><strong>ID:</strong></td>
+                                    <td>#{{ $color->id }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Name:</strong></td>
+                                    <td>{{ $color->name }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Slug:</strong></td>
+                                    <td><code>{{ $color->slug }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Order:</strong></td>
+                                    <td>{{ $color->order }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>{!! $color->status_badge !!}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Featured:</strong></td>
+                                    <td>
+                                        @if ($color->is_featured)
+                                        <span class="badge bg-warning">Yes</span>@else<span
+                                                class="badge bg-secondary">No</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Popular:</strong></td>
+                                    <td>
+                                        @if ($color->is_popular)
+                                        <span class="badge bg-danger">Yes</span>@else<span
+                                                class="badge bg-secondary">No</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>{{ $color->created_at->format('F d, Y H:i') }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Updated:</strong></td>
+                                    <td>{{ $color->updated_at->diffForHumans() }}</td>
+                                </tr>
                             </table>
                         </div>
                     </div>
 
-                    {{-- Analytics Card --}}
+                    {{-- Usage Stats Card --}}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="ti ti-chart-bar"></i> Analytics
-                            </h5>
+                            <h5 class="card-title mb-0"><i class="ti ti-chart-bar"></i> Usage Statistics</h5>
                         </div>
                         <div class="card-body">
                             <div class="row text-center">
                                 <div class="col-6 mb-3">
                                     <div class="bg-primary-subtle rounded p-3">
-                                        <h3 class="mb-0">{{ number_format($color->view_count) }}</h3>
+                                        <h3 class="mb-0">{{ number_format($color->usage_count) }}</h3>
+                                        <small class="text-muted">Products Using</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <div class="bg-info-subtle rounded p-3">
+                                        <h3 class="mb-0">{{ number_format($color->analytics->sum('view_count')) }}</h3>
                                         <small class="text-muted">Total Views</small>
                                     </div>
                                 </div>
                                 <div class="col-6 mb-3">
                                     <div class="bg-success-subtle rounded p-3">
-                                        <h3 class="mb-0">{{ number_format($color->product_count) }}</h3>
-                                        <small class="text-muted">Products</small>
-                                    </div>
-                                </div>
-                                <div class="col-6 mb-3">
-                                    <div class="bg-warning-subtle rounded p-3">
-                                        <h3 class="mb-0">{{ number_format($color->order_count) }}</h3>
+                                        <h3 class="mb-0">{{ number_format($color->analytics->sum('order_count')) }}</h3>
                                         <small class="text-muted">Orders</small>
                                     </div>
                                 </div>
                                 <div class="col-6 mb-3">
-                                    <div class="bg-info-subtle rounded p-3">
-                                        <h3 class="mb-0">${{ number_format($color->total_revenue, 2) }}</h3>
+                                    <div class="bg-warning-subtle rounded p-3">
+                                        <h3 class="mb-0">${{ number_format($color->analytics->sum('total_revenue'), 2) }}
+                                        </h3>
                                         <small class="text-muted">Revenue</small>
                                     </div>
                                 </div>
                             </div>
-                            <hr>
-                            <div class="small text-muted text-center">
-                                <i class="ti ti-info-circle"></i>
-                                Performance data updated in real-time
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- SEO Information Card --}}
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="ti ti-chart-line"></i> SEO Information
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            @if ($color->meta_title || $color->meta_description)
-                                <div class="mb-3">
-                                    <label class="text-muted small">Meta Title</label>
-                                    <p class="mb-0">{{ $color->meta_title ?: 'Not set' }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small">Meta Description</label>
-                                    <p class="mb-0">{{ $color->meta_description ?: 'Not set' }}</p>
-                                </div>
-                                <div class="alert alert-info mt-2">
-                                    <i class="ti ti-eye me-1"></i>
-                                    <strong>SEO Preview:</strong>
-                                    <div class="mt-2">
-                                        <div class="text-primary">{{ $color->meta_title ?: $color->name }}</div>
-                                        <div class="text-muted small">{{ url('/color') }}/{{ $color->slug }}</div>
-                                        <div class="text-muted small">
-                                            {{ Str::limit($color->meta_description ?: $color->description ?: 'Color description will appear here...', 160) }}
-                                        </div>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="text-center py-3">
-                                    <i class="ti ti-chart-line-off" style="font-size: 48px; opacity: 0.5;"></i>
-                                    <p class="text-muted mt-2">No SEO settings configured.</p>
-                                    <a href="{{ route('admin.colors.edit', $color->id) }}" class="btn btn-sm btn-primary">
-                                        <i class="ti ti-edit"></i> Add SEO
-                                    </a>
-                                </div>
+                            @if ($color->last_used_at)
+                                <hr>
+                                <div class="text-center"><small class="text-muted">Last used:
+                                        {{ $color->last_used_at->diffForHumans() }}</small></div>
                             @endif
                         </div>
                     </div>
+
+                    {{-- Approval Info Card --}}
+                    @if ($color->approval_status !== 'approved')
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="ti ti-check-circle"></i> Approval Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2"><strong>Status:</strong> {!! $color->status_badge !!}</div>
+                                @if ($color->requested_by)
+                                    <div class="mb-2"><strong>Requested by:</strong> Vendor #{{ $color->requested_by }}
+                                        @if ($color->requested_at)
+                                            <br><small>{{ $color->requested_at->format('F d, Y') }}</small>
+                                        @endif
+                                    </div>
+                                @endif
+                                @if ($color->rejection_reason)
+                                    <div class="mb-2"><strong>Rejection Reason:</strong><br><span
+                                            class="text-danger">{{ $color->rejection_reason }}</span></div>
+                                @endif
+                                @if ($color->approved_by)
+                                    <div class="mb-2"><strong>Processed by:</strong> Admin #{{ $color->approved_by }} on
+                                        {{ $color->approved_at->format('F d, Y') }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="col-lg-8">
                     {{-- Description Card --}}
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Description</h5>
+                    @if ($color->description)
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="ti ti-align-left"></i> Description</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ $color->description }}</p>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            @if ($color->description)
-                                <div class="p-3 bg-light rounded">
-                                    {!! nl2br(e($color->description)) !!}
-                                </div>
-                            @else
-                                <div class="text-center py-4">
-                                    <i class="ti ti-file-description" style="font-size: 48px; opacity: 0.5;"></i>
-                                    <p class="text-muted mt-2">No description provided.</p>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
+                    @endif
 
-                    {{-- Products Using This Color --}}
+                    {{-- Products Using This Color Card --}}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="ti ti-package"></i> Products Using This Color
-                                <span class="badge bg-primary ms-2">{{ $color->products()->count() }}</span>
-                            </h5>
+                            <h5 class="card-title mb-0"><i class="ti ti-package"></i> Products Using This Color
+                                ({{ $color->products->count() }})</h5>
                         </div>
                         <div class="card-body">
-                            @if ($color->products()->count() > 0)
+                            @if ($color->products->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
-                                            32
-                                            <th>ID</th>
-                                            <th>Product</th>
-                                            <th>Price</th>
-                                            <th>Stock</th>
-                                            <th>Orders</th>
-                                            <th>Revenue</th>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Variant SKU</th>
+                                                <th>Stock</th>
+                                                <th>Price Adj.</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($color->products()->take(10)->get() as $product)
+                                            @foreach ($color->products as $product)
                                                 <tr>
-                                                    <td>#{{ $product->id }}</td>
-                                                    <td>
-                                                        <a href="{{ route('admin.products.show', $product->id) }}">
-                                                            {{ $product->name }}
-                                                        </a>
+                                                    <td><a
+                                                            href="{{ route('admin.products.show', $product->id) }}">{{ $product->name }}</a>
                                                     </td>
-                                                    <td>${{ number_format($product->price, 2) }}</td>
-                                                    <td>
-                                                        @if ($product->stock > 0)
-                                                            <span class="badge bg-success">In Stock</span>
-                                                        @else
-                                                            <span class="badge bg-danger">Out of Stock</span>
-                                                        @endif
-                                                    </td>
-                                                    <td>{{ number_format($product->order_count ?? 0) }}</td>
-                                                    <td>${{ number_format($product->total_sold_value ?? 0, 2) }}</td>
+                                                    <td><code>{{ $product->pivot->color_image ?: 'N/A' }}</code></td>
+                                                    <td>{{ number_format($product->pivot->stock_quantity) }}</td>
+                                                    <td>${{ number_format($product->pivot->price_adjustment, 2) }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
-                                @if ($color->products()->count() > 10)
-                                    <div class="text-center mt-3">
-                                        <a href="#" class="btn btn-sm btn-outline-primary">View All
-                                            {{ $color->products()->count() }} Products</a>
-                                    </div>
-                                @endif
                             @else
-                                <div class="text-center py-4">
-                                    <i class="ti ti-package-off" style="font-size: 48px; opacity: 0.5;"></i>
-                                    <p class="text-muted mt-2">No products currently use this color.</p>
+                                <div class="text-center py-4"><i class="ti ti-package-off"
+                                        style="font-size: 48px; opacity: 0.5;"></i>
+                                    <p class="mt-2">No products using this color yet.</p>
                                 </div>
                             @endif
                         </div>
                     </div>
 
-                    {{-- Color Variations Preview --}}
+                    {{-- SEO Information Card --}}
                     <div class="card mb-3">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="ti ti-palette"></i> Color Variations
-                            </h5>
+                            <h5 class="card-title mb-0"><i class="ti ti-meta-tag"></i> SEO Information</h5>
                         </div>
                         <div class="card-body">
                             @php
-                                $variations = [
-                                    'lighter' => $color->hex_code,
-                                    'darker' => $color->hex_code,
-                                    'complementary' => $color->hex_code,
-                                ];
+                                $seoScore = 0;
+                                if (
+                                    $color->meta_title &&
+                                    strlen($color->meta_title) >= 30 &&
+                                    strlen($color->meta_title) <= 60
+                                ) {
+                                    $seoScore += 34;
+                                }
+                                if (
+                                    $color->meta_description &&
+                                    strlen($color->meta_description) >= 120 &&
+                                    strlen($color->meta_description) <= 160
+                                ) {
+                                    $seoScore += 33;
+                                }
+                                if ($color->focus_keyword) {
+                                    $seoScore += 33;
+                                }
+                                $badgeColor =
+                                    $seoScore >= 80
+                                        ? 'success'
+                                        : ($seoScore >= 60
+                                            ? 'info'
+                                            : ($seoScore >= 40
+                                                ? 'warning'
+                                                : 'secondary'));
                             @endphp
-                            <div class="row text-center">
-                                <div class="col-4">
-                                    <div
-                                        style="width: 80px; height: 80px; background: {{ $color->hex_code }}; border-radius: 12px; margin: 0 auto; border: 1px solid #dee2e6;">
+                            <div class="row">
+                                <div class="col-md-4 text-center mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <div class="display-4 text-{{ $badgeColor }}">{{ $seoScore }}%</div>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-{{ $badgeColor }}"
+                                                style="width: {{ $seoScore }}%;"></div>
+                                        </div><span
+                                            class="badge bg-{{ $badgeColor }} mt-2">{{ $seoScore >= 80 ? 'Excellent' : ($seoScore >= 60 ? 'Good' : ($seoScore >= 40 ? 'Average' : 'Poor')) }}</span>
                                     </div>
-                                    <small class="text-muted mt-2 d-block">Original</small>
                                 </div>
-                                <div class="col-4">
-                                    <div
-                                        style="width: 80px; height: 80px; background: {{ $color->hex_code }}; opacity: 0.7; border-radius: 12px; margin: 0 auto; border: 1px solid #dee2e6;">
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-6"><small>Meta Title</small>
+                                            <div class="{{ $color->meta_title ? 'text-success' : 'text-danger' }}">
+                                                {{ $color->meta_title ? '✓ Present' : '✗ Missing' }}</div>
+                                        </div>
+                                        <div class="col-6"><small>Meta Description</small>
+                                            <div class="{{ $color->meta_description ? 'text-success' : 'text-danger' }}">
+                                                {{ $color->meta_description ? '✓ Present' : '✗ Missing' }}</div>
+                                        </div>
+                                        <div class="col-6 mt-2"><small>Focus Keyword</small>
+                                            <div class="{{ $color->focus_keyword ? 'text-success' : 'text-danger' }}">
+                                                {{ $color->focus_keyword ? '✓ Present' : '✗ Missing' }}</div>
+                                        </div>
+                                        <div class="col-6 mt-2"><small>OG Image</small>
+                                            <div class="{{ $color->og_image ? 'text-success' : 'text-danger' }}">
+                                                {{ $color->og_image ? '✓ Set' : '✗ Not set' }}</div>
+                                        </div>
                                     </div>
-                                    <small class="text-muted mt-2 d-block">Light (70%)</small>
-                                </div>
-                                <div class="col-4">
-                                    <div
-                                        style="width: 80px; height: 80px; background: {{ $color->hex_code }}; opacity: 0.3; border-radius: 12px; margin: 0 auto; border: 1px solid #dee2e6;">
-                                    </div>
-                                    <small class="text-muted mt-2 d-block">Very Light (30%)</small>
                                 </div>
                             </div>
+                            @if ($color->meta_title || $color->meta_description)
+                                <hr>
+                                @if ($color->meta_title)
+                                    <div><strong>Meta Title:</strong> {{ $color->meta_title }}</div>
+                                @endif
+                                @if ($color->meta_description)
+                                    <div class="mt-1"><strong>Meta Description:</strong> {{ $color->meta_description }}
+                                    </div>
+                                @endif
+                                @if ($color->focus_keyword)
+                                    <div class="mt-1"><strong>Focus Keyword:</strong> {{ $color->focus_keyword }}</div>
+                                @endif
+                            @endif
                         </div>
                     </div>
 
-                    {{-- Performance Chart --}}
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="ti ti-chart-bar"></i> Performance (Last 30 Days)
-                            </h5>
+                    {{-- Recent Analytics Chart --}}
+                    @if (isset($recentAnalytics) && $recentAnalytics->count() > 0)
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="ti ti-chart-line"></i> Performance Trends (Last 30
+                                    Days)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="analyticsChart" height="250"></canvas>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <canvas id="colorPerformanceChart" height="200"></canvas>
-                        </div>
-                    </div>
+                    @endif
 
                     {{-- Action Buttons --}}
-                    <div class="card mt-3">
-                        <div class="card-footer text-end">
-                            <a href="{{ route('admin.colors.index') }}" class="btn btn-secondary">
-                                <i class="ti ti-arrow-left me-1"></i> Back
-                            </a>
-                            @can('edit colors')
-                                <a href="{{ route('admin.colors.edit', $color->id) }}" class="btn btn-primary">
-                                    <i class="ti ti-edit me-1"></i> Edit Color
-                                </a>
+                    <div class="card">
+                        <div class="card-footer d-flex justify-content-end gap-2">
+                            <a href="{{ route('admin.colors.index') }}" class="btn btn-secondary"><i
+                                    class="ti ti-arrow-left me-1"></i> Back</a>
+                            @can('edit_colors')
+                                <a href="{{ route('admin.colors.edit', $color->id) }}" class="btn btn-primary"><i
+                                        class="ti ti-edit me-1"></i> Edit Color</a>
                             @endcan
-                            @can('delete colors')
-                                @if ($color->product_count == 0)
-                                    <button type="button" class="btn btn-danger"
-                                        onclick="confirmDelete({{ $color->id }})">
-                                        <i class="ti ti-trash me-1"></i> Delete Color
-                                    </button>
-                                @endif
-                            @endcan
+                            @if ($color->approval_status === 'pending' && auth()->guard('admin')->user()->can('edit_colors'))
+                                <button type="button" class="btn btn-info"
+                                    onclick="approveColor({{ $color->id }})"><i class="ti ti-check"></i>
+                                    Approve</button>
+                                <button type="button" class="btn btn-warning"
+                                    onclick="showRejectModal({{ $color->id }})"><i class="ti ti-x"></i>
+                                    Reject</button>
+                            @endif
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    {{-- Delete Form --}}
-    <form id="deleteForm" method="POST" style="display: none;">
-        @csrf
-        @method('DELETE')
-    </form>
 @endsection
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        $(document).ready(function() {
-            // Initialize tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // Performance Chart
-            const ctx = document.getElementById('colorPerformanceChart').getContext('2d');
-
-            // Generate sample data for last 30 days
-            const labels = [];
-            const viewsData = [];
-            const ordersData = [];
-
-            for (let i = 29; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                labels.push(date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                }));
-
-                // Sample data - in real app, fetch from backend
-                viewsData.push(Math.floor(Math.random() * 100) + 10);
-                ordersData.push(Math.floor(Math.random() * 20) + 1);
-            }
-
-            new Chart(ctx, {
+        @if (isset($recentAnalytics) && $recentAnalytics->count() > 0)
+            const analyticsData = @json($recentAnalytics->sortBy('date')->values());
+            new Chart(document.getElementById('analyticsChart'), {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: analyticsData.map(item => new Date(item.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    })),
                     datasets: [{
                             label: 'Views',
-                            data: viewsData,
-                            borderColor: '#{{ substr($color->hex_code, 1) }}',
-                            backgroundColor: 'rgba({{ hexdec(substr($color->hex_code, 1, 2)) }}, {{ hexdec(substr($color->hex_code, 3, 2)) }}, {{ hexdec(substr($color->hex_code, 5, 2)) }}, 0.1)',
+                            data: analyticsData.map(item => item.view_count),
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            yAxisID: 'y'
                         },
                         {
                             label: 'Orders',
-                            data: ordersData,
-                            borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            data: analyticsData.map(item => item.order_count),
+                            borderColor: '#198754',
+                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Revenue ($)',
+                            data: analyticsData.map(item => item.total_revenue),
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Count'
+                                text: 'Views & Orders'
                             }
                         },
-                        x: {
+                        y1: {
+                            beginAtZero: true,
+                            position: 'right',
                             title: {
                                 display: true,
-                                text: 'Date'
+                                text: 'Revenue ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
                             }
                         }
                     }
                 }
             });
-        });
+        @endif
 
-        // Confirm Delete
-        function confirmDelete(colorId) {
+        function approveColor(colorId) {
             Swal.fire({
-                title: 'Delete Color?',
-                text: "Are you sure you want to delete this color? This action cannot be undone.",
-                icon: 'warning',
+                title: 'Approve Color?',
+                text: 'Are you sure you want to approve this color?',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, delete it!'
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Yes, approve it!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    let form = $('#deleteForm');
-                    form.attr('action', '{{ url('admin/colors') }}/' + colorId);
-
                     $.ajax({
-                        url: form.attr('action'),
+                        url: '{{ url('admin/colors') }}/' + colorId + '/approve',
                         type: 'POST',
-                        data: form.serialize(),
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
                         success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted!',
-                                    text: response.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    window.location.href = '{{ route('admin.colors.index') }}';
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Cannot Delete!',
-                                    text: response.message,
-                                    confirmButtonColor: '#d33'
-                                });
-                            }
+                            if (response.success) Swal.fire({
+                                icon: 'success',
+                                title: 'Approved!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: 'Failed to approve color.',
+                                confirmButtonColor: '#d33'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function showRejectModal(colorId) {
+            Swal.fire({
+                title: 'Reject Color',
+                html: '<textarea id="rejectionReason" class="swal2-textarea" placeholder="Please provide a reason for rejection..." rows="3"></textarea>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, reject it!',
+                preConfirm: () => {
+                    const reason = document.getElementById('rejectionReason').value;
+                    if (!reason) {
+                        Swal.showValidationMessage('Please provide a rejection reason');
+                        return false;
+                    }
+                    return {
+                        reason: reason
+                    };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ url('admin/colors') }}/' + colorId + '/reject',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            rejection_reason: result.value.reason
+                        },
+                        success: function(response) {
+                            if (response.success) Swal.fire({
+                                icon: 'success',
+                                title: 'Rejected!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: 'Failed to reject color.',
+                                confirmButtonColor: '#d33'
+                            });
                         }
                     });
                 }
             });
         }
     </script>
-@endpush
-
-@push('styles')
-    <style>
-        .table-borderless td {
-            padding: 8px 0;
-        }
-
-        .bg-primary-subtle {
-            background-color: rgba(13, 110, 253, 0.1);
-        }
-
-        .bg-success-subtle {
-            background-color: rgba(25, 135, 84, 0.1);
-        }
-
-        .bg-warning-subtle {
-            background-color: rgba(255, 193, 7, 0.1);
-        }
-
-        .bg-info-subtle {
-            background-color: rgba(13, 202, 240, 0.1);
-        }
-
-        .rounded {
-            border-radius: 0.5rem;
-        }
-
-        .card {
-            transition: box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-
-        /* Color preview circle animation */
-        [style*="border-radius: 50%"]:hover {
-            transform: scale(1.05);
-            transition: transform 0.3s ease;
-        }
-    </style>
 @endpush

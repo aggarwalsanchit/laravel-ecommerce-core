@@ -1,411 +1,285 @@
-{{-- resources/views/admin/attributes/index.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/marketplace/pages/attributes/index.blade.php --}}
+@extends('management.layouts.app')
 
-@section('title', 'Attributes')
+@section('title', 'Product Attributes')
 
 @section('content')
-    <div class="page-content">
-        <div class="page-container">
-            <div class="page-title-head d-flex align-items-sm-center flex-sm-row flex-column gap-2">
-                <div class="flex-grow-1">
-                    <h4 class="fs-18 text-uppercase fw-bold mb-0">Custom Attributes</h4>
-                </div>
-                <div class="text-end">
-                    <ol class="breadcrumb m-0 py-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Attributes</li>
-                    </ol>
-                </div>
+<div class="page-content">
+    <div class="page-container">
+        <div class="page-title-head d-flex align-items-sm-center flex-sm-row flex-column gap-2">
+            <div class="flex-grow-1">
+                <h4 class="fs-18 text-uppercase fw-bold mb-0">Product Attributes</h4>
+                <p class="text-muted mb-0">Browse available attributes for your products</p>
             </div>
-
-            {{-- Statistics Cards --}}
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>Total Attributes</h6>
-                                    <h2 class="mb-0">{{ $statistics['total'] ?? 0 }}</h2>
-                                </div>
-                                <i class="ti ti-list fs-1 opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>Active Attributes</h6>
-                                    <h2 class="mb-0">{{ $statistics['active'] ?? 0 }}</h2>
-                                </div>
-                                <i class="ti ti-circle-check fs-1 opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>Total Values</h6>
-                                    <h2 class="mb-0">{{ number_format($statistics['total_values'] ?? 0) }}</h2>
-                                </div>
-                                <i class="ti ti-list-check fs-1 opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>Total Products</h6>
-                                    <h2 class="mb-0">{{ number_format($statistics['total_products'] ?? 0) }}</h2>
-                                </div>
-                                <i class="ti ti-package fs-1 opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="text-end">
+                <ol class="breadcrumb m-0 py-0">
+                    <li class="breadcrumb-item"><a href="{{ route('vendor.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Attributes</li>
+                </ol>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <h3 class="card-title mb-0">Custom Attributes</h3>
-                            <div class="d-flex gap-2">
-                                <a href="" class="btn btn-info">
-                                    <i class="ti ti-chart-bar me-1"></i> Analytics
-                                </a>
-                                <a href="{{ route('admin.attribute-groups.index') }}" class="btn btn-secondary">
-                                    <i class="ti ti-category me-1"></i> Groups
-                                </a>
-                                @can('create attributes')
-                                    <a href="{{ route('admin.attributes.create') }}" class="btn btn-primary">
-                                        <i class="ti ti-plus me-1"></i> Add New Attribute
-                                    </a>
-                                @endcan
-                            </div>
-                        </div>
-                        <div class="card-body">
-
-                            {{-- Search and Filter --}}
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="searchInput"
-                                            placeholder="Search by name or code..." value="{{ request('search') }}">
-                                        <button class="btn btn-primary" type="button" id="searchBtn">
-                                            <i class="ti ti-search"></i>
-                                        </button>
-                                        <button class="btn btn-secondary" type="button" id="clearSearch"
-                                            style="display: none;">
-                                            <i class="ti ti-x"></i> Clear
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="d-flex gap-2 justify-content-end flex-wrap">
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                <i class="ti ti-filter me-1"></i> Filter by Group
-                                            </button>
-                                            <ul class="dropdown-menu" id="groupFilter">
-                                                <li><a class="dropdown-item" href="#" data-group="">All Groups</a>
-                                                </li>
-                                                @foreach ($groups as $group)
-                                                    <li><a class="dropdown-item" href="#"
-                                                            data-group="{{ $group->id }}">{{ $group->name }}</a></li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                <i class="ti ti-layers me-1"></i> Filter by Type
-                                            </button>
-                                            <ul class="dropdown-menu" id="typeFilter">
-                                                <li><a class="dropdown-item" href="#" data-type="">All Types</a>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#" data-type="text">Text</a></li>
-                                                <li><a class="dropdown-item" href="#" data-type="select">Select</a>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#" data-type="color">Color</a>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#" data-type="size">Size</a>
-                                                </li>
-                                                <li><a class="dropdown-item" href="#" data-type="number">Number</a>
-                                                </li>
-                                            </ul>
-                                        </div>
-
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
-                                                data-bs-toggle="dropdown">
-                                                <i class="ti ti-filter me-1"></i> Filter by Status
-                                            </button>
-                                            <ul class="dropdown-menu" id="statusFilter">
-                                                <li><a class="dropdown-item" href="#" data-status="">All</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-status="active">Active</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-status="inactive">Inactive</a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Bulk Actions --}}
-                            @canany(['edit attributes', 'delete attributes'])
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <div class="btn-group gap-2">
-                                            @can('edit attributes')
-                                                <button type="button" class="btn btn-outline-success btn-sm"
-                                                    onclick="bulkAction('activate')">
-                                                    <i class="ti ti-check"></i> Activate Selected
-                                                </button>
-                                                <button type="button" class="btn btn-outline-warning btn-sm"
-                                                    onclick="bulkAction('deactivate')">
-                                                    <i class="ti ti-x"></i> Deactivate Selected
-                                                </button>
-                                            @endcan
-                                            @can('delete attributes')
-                                                <button type="button" class="btn btn-outline-danger btn-sm"
-                                                    onclick="bulkAction('delete')">
-                                                    <i class="ti ti-trash"></i> Delete Selected
-                                                </button>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                            @endcanany
-
-                            {{-- Attributes Table Container --}}
-                            <div id="attributesTableContainer">
-                                @include('admin.pages.attributes.partials.table', ['attributes' => $attributes])
-                            </div>
-
-                            {{-- Pagination Container --}}
-                            <div id="paginationContainer" class="mt-3">
-                                {{ $attributes->appends(request()->query())->links('pagination::bootstrap-5') }}
-                            </div>
-                        </div>
+        {{-- Info Alert --}}
+        <div class="alert alert-info mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <i class="ti ti-info-circle me-2"></i>
+                    These are the available attributes for your products. Attributes define product specifications like color, size, material, etc.
+                    @if(($pendingRequestsCount ?? 0) > 0 || ($pendingValueRequestsCount ?? 0) > 0)
+                        <strong>You have {{ ($pendingRequestsCount ?? 0) + ($pendingValueRequestsCount ?? 0) }} pending request(s).</strong>
+                    @endif
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-warning dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="ti ti-plus"></i> Request New
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('vendor.attributes.request.create') }}">
+                                <i class="ti ti-input"></i> Request New Attribute
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('vendor.attributes.value-request.create') }}">
+                                <i class="ti ti-list"></i> Request New Attribute Value
+                            </a></li>
+                        </ul>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="ti ti-list"></i> My Requests
+                            @if(($pendingRequestsCount ?? 0) > 0 || ($pendingValueRequestsCount ?? 0) > 0)
+                                <span class="badge bg-light text-dark ms-1">{{ ($pendingRequestsCount ?? 0) + ($pendingValueRequestsCount ?? 0) }}</span>
+                            @endif
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ route('vendor.attributes.requests.index') }}">
+                                <i class="ti ti-input"></i> Attribute Requests
+                                @if(($pendingRequestsCount ?? 0) > 0)
+                                    <span class="badge bg-warning text-dark ms-1">{{ $pendingRequestsCount ?? 0 }}</span>
+                                @endif
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('vendor.attributes.value-requests.index') }}">
+                                <i class="ti ti-list"></i> Value Requests
+                                @if(($pendingValueRequestsCount ?? 0) > 0)
+                                    <span class="badge bg-warning text-dark ms-1">{{ $pendingValueRequestsCount ?? 0 }}</span>
+                                @endif
+                            </a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- Search and Filter --}}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchInput" 
+                                   placeholder="Search by name..." 
+                                   value="{{ request('search') }}">
+                            <button class="btn btn-primary" id="searchBtn">
+                                <i class="ti ti-search"></i>
+                            </button>
+                            <button class="btn btn-secondary" id="clearSearch" style="display: none;">
+                                <i class="ti ti-x"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="typeFilter">
+                            <option value="">All Types</option>
+                            <option value="text" {{ request('type') == 'text' ? 'selected' : '' }}>Text</option>
+                            <option value="textarea" {{ request('type') == 'textarea' ? 'selected' : '' }}>Textarea</option>
+                            <option value="number" {{ request('type') == 'number' ? 'selected' : '' }}>Number</option>
+                            <option value="select" {{ request('type') == 'select' ? 'selected' : '' }}>Select</option>
+                            <option value="multiselect" {{ request('type') == 'multiselect' ? 'selected' : '' }}>Multi-Select</option>
+                            <option value="checkbox" {{ request('type') == 'checkbox' ? 'selected' : '' }}>Checkbox</option>
+                            <option value="radio" {{ request('type') == 'radio' ? 'selected' : '' }}>Radio</option>
+                            <option value="date" {{ request('type') == 'date' ? 'selected' : '' }}>Date</option>
+                            <option value="color" {{ request('type') == 'color' ? 'selected' : '' }}>Color</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                    {{ str_repeat('— ', $category->depth ?? 0) }}{{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="groupFilter">
+                            <option value="">All Groups</option>
+                            @foreach($groups as $group)
+                                <option value="{{ $group->id }}" {{ request('group_id') == $group->id ? 'selected' : '' }}>
+                                    {{ $group->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="sortFilter">
+                            <option value="order" {{ request('sort_by') == 'order' ? 'selected' : '' }}>Default Order</option>
+                            <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name (A-Z)</option>
+                            <option value="type" {{ request('sort_by') == 'type' ? 'selected' : '' }}>Type</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Attributes Grid --}}
+        <div class="row">
+            @forelse($attributes as $attribute)
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 attribute-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="attribute-icon">
+                                    @if($attribute->icon)
+                                        <i class="{{ $attribute->icon }} fs-4 text-primary"></i>
+                                    @else
+                                        <i class="ti ti-input fs-4 text-primary"></i>
+                                    @endif
+                                </div>
+                                <span class="badge bg-info">{{ $attribute->type_label }}</span>
+                            </div>
+                            <h5 class="card-title mb-1">{{ $attribute->name }}</h5>
+                            <p class="card-text text-muted small">{{ Str::limit($attribute->description ?? 'No description', 80) }}</p>
+                            
+                            <div class="mt-2">
+                                @if($attribute->is_required)
+                                    <span class="badge bg-danger"><i class="ti ti-asterisk"></i> Required</span>
+                                @endif
+                                @if($attribute->is_filterable)
+                                    <span class="badge bg-success"><i class="ti ti-filter"></i> Filterable</span>
+                                @endif
+                                @if($attribute->is_searchable)
+                                    <span class="badge bg-info"><i class="ti ti-search"></i> Searchable</span>
+                                @endif
+                            </div>
+                            
+                            @if($attribute->unit)
+                                <div class="mt-2 small text-muted">
+                                    <i class="ti ti-ruler"></i> Unit: {{ $attribute->unit }}
+                                </div>
+                            @endif
+                            
+                            @if($attribute->group)
+                                <div class="mt-2 small text-muted">
+                                    <i class="ti ti-layout-sidebar"></i> Group: {{ $attribute->group->name }}
+                                </div>
+                            @endif
+                            
+                            @if($attribute->categories->count() > 0)
+                                <div class="mt-2">
+                                    @foreach($attribute->categories->take(2) as $category)
+                                        <span class="badge bg-secondary">{{ $category->name }}</span>
+                                    @endforeach
+                                    @if($attribute->categories->count() > 2)
+                                        <span class="badge bg-secondary">+{{ $attribute->categories->count() - 2 }}</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                        <div class="card-footer bg-transparent text-center">
+                            <a href="{{ route('vendor.attributes.show', $attribute->id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="ti ti-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="ti ti-input-off" style="font-size: 64px; opacity: 0.5;"></i>
+                        <h4 class="mt-3">No Attributes Found</h4>
+                        <p class="text-muted">No attributes are available at the moment.</p>
+                        <a href="{{ route('vendor.attributes.request.create') }}" class="btn btn-primary mt-2">
+                            <i class="ti ti-plus"></i> Request an Attribute
+                        </a>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
+        {{-- Pagination --}}
+        <div class="mt-4">
+            {{ $attributes->appends(request()->query())->links('pagination::bootstrap-5') }}
+        </div>
     </div>
-
-    {{-- Delete Form --}}
-    <form id="deleteForm" method="POST" style="display: none;">
-        @csrf
-        @method('DELETE')
-    </form>
-
-    {{-- Bulk Action Form --}}
-    <form id="bulkActionForm" method="POST" action=""
-        style="display: none;">
-        @csrf
-        <input type="hidden" name="action" id="bulkAction">
-        <input type="hidden" name="attribute_ids" id="bulkAttributeIds">
-    </form>
+</div>
 @endsection
 
 @push('scripts')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function() {
-            let currentFilters = {
-                search: '{{ request('search') }}',
-                group_id: '{{ request('group_id') }}',
-                type: '{{ request('type') }}',
-                status: '{{ request('status') }}',
-                page: 1
-            };
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    function applyFilters() {
+        let search = $('#searchInput').val();
+        let type = $('#typeFilter').val();
+        let categoryId = $('#categoryFilter').val();
+        let groupId = $('#groupFilter').val();
+        let sortBy = $('#sortFilter').val();
+        
+        let url = '{{ route("vendor.attributes.index") }}?';
+        let params = [];
+        
+        if (search) params.push('search=' + encodeURIComponent(search));
+        if (type) params.push('type=' + type);
+        if (categoryId) params.push('category_id=' + categoryId);
+        if (groupId) params.push('group_id=' + groupId);
+        if (sortBy && sortBy !== 'order') params.push('sort_by=' + sortBy);
+        
+        window.location.href = url + params.join('&');
+    }
 
-            // Search
-            $('#searchBtn').on('click', function() {
-                currentFilters.search = $('#searchInput').val();
-                currentFilters.page = 1;
-                loadAttributes();
-                $('#clearSearch').toggle(currentFilters.search !== '');
-            });
+    $('#searchBtn').on('click', applyFilters);
+    $('#typeFilter, #categoryFilter, #groupFilter, #sortFilter').on('change', applyFilters);
+    
+    $('#searchInput').on('keypress', function(e) {
+        if (e.which === 13) applyFilters();
+    });
 
-            $('#searchInput').on('keypress', function(e) {
-                if (e.which === 13) {
-                    currentFilters.search = $(this).val();
-                    currentFilters.page = 1;
-                    loadAttributes();
-                    $('#clearSearch').toggle(currentFilters.search !== '');
-                }
-            });
+    $('#clearSearch').on('click', function() {
+        $('#searchInput').val('');
+        applyFilters();
+    });
 
-            $('#clearSearch').on('click', function() {
-                $('#searchInput').val('');
-                currentFilters.search = '';
-                currentFilters.page = 1;
-                loadAttributes();
-                $(this).hide();
-            });
+    if ($('#searchInput').val()) $('#clearSearch').show();
+});
+</script>
+@endpush
 
-            // Filters
-            $('#groupFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let groupId = $(this).data('group');
-                currentFilters.group_id = groupId;
-                currentFilters.page = 1;
-                loadAttributes();
-            });
-
-            $('#typeFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let type = $(this).data('type');
-                currentFilters.type = type;
-                currentFilters.page = 1;
-                loadAttributes();
-            });
-
-            $('#statusFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let status = $(this).data('status');
-                currentFilters.status = status;
-                currentFilters.page = 1;
-                loadAttributes();
-            });
-
-            // Pagination
-            $(document).on('click', '.pagination a', function(e) {
-                e.preventDefault();
-                let page = $(this).attr('href').split('page=')[1];
-                if (page) {
-                    currentFilters.page = page;
-                    loadAttributes();
-                }
-            });
-
-            function loadAttributes() {
-                $.ajax({
-                    url: '{{ route('admin.attributes.index') }}',
-                    type: 'GET',
-                    data: currentFilters,
-                    beforeSend: function() {
-                        $('#attributesTableContainer').html(
-                            '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>'
-                            );
-                        $('#paginationContainer').html('');
-                    },
-                    success: function(response) {
-                        $('#attributesTableContainer').html(response.table);
-                        $('#paginationContainer').html(response.pagination);
-
-                        let url = new URL(window.location);
-                        url.searchParams.set('search', currentFilters.search || '');
-                        url.searchParams.set('group_id', currentFilters.group_id || '');
-                        url.searchParams.set('type', currentFilters.type || '');
-                        url.searchParams.set('status', currentFilters.status || '');
-                        url.searchParams.set('page', currentFilters.page);
-                        window.history.pushState({}, '', url);
-
-                        $('[data-bs-toggle="tooltip"]').tooltip();
-
-                        $('#selectAll').off('change').on('change', function() {
-                            $('.attribute-checkbox').prop('checked', $(this).prop('checked'));
-                        });
-
-                        $('.attribute-checkbox').off('change').on('change', function() {
-                            let allChecked = $('.attribute-checkbox:checked').length === $(
-                                '.attribute-checkbox').length;
-                            $('#selectAll').prop('checked', allChecked);
-                        });
-                    }
-                });
-            }
-
-            if ($('#searchInput').val()) {
-                $('#clearSearch').show();
-            }
-        });
-
-        function toggleStatus(id) {
-            $.ajax({
-                url: '{{ url('admin/attributes') }}/' + id + '/toggle-status',
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                                icon: 'success',
-                                title: 'Updated!',
-                                text: response.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            })
-                            .then(() => location.reload());
-                    }
-                }
-            });
-        }
-
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Delete Attribute?',
-                text: "Are you sure? This will also delete all values!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    let form = $('#deleteForm');
-                    form.attr('action', '{{ url('admin/attributes') }}/' + id);
-                    form.submit();
-                }
-            });
-        }
-
-        function bulkAction(action) {
-            let selected = [];
-            $('.attribute-checkbox:checked').each(function() {
-                selected.push($(this).val());
-            });
-
-            if (selected.length === 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'No Selection',
-                    text: 'Please select at least one attribute.'
-                });
-                return;
-            }
-
-            Swal.fire({
-                title: `${action.toUpperCase()} Attributes?`,
-                text: `Are you sure you want to ${action} ${selected.length} selected attribute(s)?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: action === 'delete' ? '#d33' : '#28a745',
-                confirmButtonText: `Yes, ${action} them!`
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $('#bulkAction').val(action);
-                    $('#bulkAttributeIds').val(JSON.stringify(selected));
-                    $('#bulkActionForm').submit();
-                }
-            });
-        }
-    </script>
+@push('styles')
+<style>
+    .attribute-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .attribute-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .attribute-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 10px;
+    }
+    .card-footer {
+        border-top: none;
+        padding-top: 0;
+    }
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>
 @endpush

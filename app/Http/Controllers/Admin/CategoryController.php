@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CategoryRequest;
 use App\Models\CategoryAnalytic;
 use App\Services\ImageCompressionService;
 use App\Traits\LogsAdminActivity;
@@ -30,11 +31,324 @@ class CategoryController extends Controller implements HasMiddleware
     {
         return [
             'auth:admin',
-            new Middleware('permission:view_categories', only: ['index', 'show', 'analytics']),
+            new Middleware('permission:view_categories', only: ['index', 'show', 'analytics', 'pendingRequests', 'viewRequest']),
             new Middleware('permission:create_categories', only: ['create', 'store']),
-            new Middleware('permission:edit_categories', only: ['edit', 'update', 'toggleStatus', 'toggleMenu', 'toggleFeatured', 'togglePopular', 'bulkAction', 'approveCategory', 'rejectCategory']),
-            new Middleware('permission:delete_categories', only: ['destroy']),
+            new Middleware('permission:edit_categories', only: ['edit', 'update', 'toggleStatus', 'toggleMenu', 'toggleFeatured', 'togglePopular', 'bulkAction']),
+            new Middleware('permission:approve_categories', only: ['approveRequest', 'rejectRequest']),
+            new Middleware('permission:delete_categories', only: ['destroy', 'deleteRequest']),
         ];
+    }
+
+    /**
+     * Display pending category requests from vendors
+     */
+    public function pendingRequests(Request $request)
+    {
+        $query = CategoryRequest::with('vendor');
+
+        // Filter by status
+        $status = $request->get('status', 'pending');
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('requested_name', 'like', "%{$search}%")
+                    ->orWhere('requested_slug', 'like', "%{$search}%");
+            });
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        $statistics = [
+            'total_pending' => CategoryRequest::where('status', 'pending')->count(),
+            'total_approved' => CategoryRequest::where('status', 'approved')->count(),
+            'total_rejected' => CategoryRequest::where('status', 'rejected')->count(),
+            'total_requests' => CategoryRequest::count(),
+        ];
+
+        return view('admin.pages.categories.requests', compact('requests', 'statistics', 'status'));
+    }
+
+    /**
+     * View single category request details
+     */
+    public function viewRequest($id)
+    {
+        $categoryRequest = CategoryRequest::with('vendor', 'requestedParent', 'approvedBy', 'createdCategory')->findOrFail($id);
+        return view('admin.pages.categories.request-details', compact('categoryRequest'));
+    }
+
+    /**
+     * Approve a category request and create the category
+     */
+    public function approveRequest(Request $request, $id)
+    {
+        $categoryRequest = CategoryRequest::with('vendor')->findOrFail($id);
+
+        if ($categoryRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request has already been processed.'
+            ], 422);
+        }
+
+        // Check if category already exists
+        $existingCategory = Category::where('name', $categoryRequest->requested_name)->first();
+        if ($existingCategory) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A category with name "' . $categoryRequest->requested_name . '" already exists. Please reject this request.'
+            ], 422);
+        }
+
+        // Create the category in main categories table
+        $category = Category::create([
+            'name' => $categoryRequest->requested_name,
+            'slug' => Str::slug($categoryRequest->requested_name),
+            'description' => $categoryRequest->description,
+            'parent_id' => $categoryRequest->requested_parent_id,
+            'image' => $categoryRequest->image,
+            'requested_by' => $categoryRequest->vendor_id,
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'approval_status' => 'approved',
+            'status' => true,
+            'order' => Category::max('order') + 1,
+        ]);
+
+        // Update the request
+        $categoryRequest->update([
+            'status' => 'approved',
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'created_category_id' => $category->id,
+            'admin_notes' => $request->admin_notes,
+        ]);
+
+        // Log activity
+        $this->logActivity(
+            'approve_category_request',
+            'category_request',
+            'admin',
+            $categoryRequest->id,
+            $categoryRequest->requested_name,
+            null,
+            [
+                'request_id' => $categoryRequest->id,
+                'category_id' => $category->id,
+                'vendor_id' => $categoryRequest->vendor_id,
+                'vendor_name' => $categoryRequest->vendor->name ?? 'Unknown',
+            ],
+            "Approved category request '{$categoryRequest->requested_name}' from Vendor #{$categoryRequest->vendor_id} and created category"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category request approved and category created successfully.',
+            'category' => $category
+        ]);
+    }
+
+    /**
+     * Reject a category request
+     */
+    public function rejectRequest(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        $categoryRequest = CategoryRequest::findOrFail($id);
+
+        if ($categoryRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request has already been processed.'
+            ], 422);
+        }
+
+        $categoryRequest->update([
+            'status' => 'rejected',
+            'approved_by' => auth('admin')->id(),
+            'approved_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+            'admin_notes' => $request->admin_notes,
+        ]);
+
+        // Log activity
+        $this->logActivity(
+            'reject_category_request',
+            'category_request',
+            'admin',
+            $categoryRequest->id,
+            $categoryRequest->requested_name,
+            null,
+            [
+                'request_id' => $categoryRequest->id,
+                'vendor_id' => $categoryRequest->vendor_id,
+                'rejection_reason' => $request->rejection_reason,
+            ],
+            "Rejected category request '{$categoryRequest->requested_name}' - Reason: {$request->rejection_reason}"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category request rejected successfully.'
+        ]);
+    }
+
+    /**
+     * Delete a category request (for rejected/spam requests)
+     */
+    public function deleteRequest($id)
+    {
+        $categoryRequest = CategoryRequest::findOrFail($id);
+
+        if ($categoryRequest->status === 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete approved requests. Delete the category instead.'
+            ], 422);
+        }
+
+        $requestName = $categoryRequest->requested_name;
+        $categoryRequest->delete();
+
+        $this->logActivity(
+            'delete_category_request',
+            'category_request',
+            'admin',
+            $id,
+            $requestName,
+            null,
+            null,
+            "Deleted category request '{$requestName}'"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category request deleted successfully.'
+        ]);
+    }
+
+    /**
+     * Bulk action on category requests
+     */
+    public function bulkRequestAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:approve,reject,delete',
+            'request_ids' => 'required|string',
+        ]);
+
+        $action = $request->action;
+        $requestIds = json_decode($request->request_ids);
+        $requests = CategoryRequest::whereIn('id', $requestIds)->get();
+
+        $count = 0;
+        $errors = [];
+        $processedRequests = [];
+
+        foreach ($requests as $categoryRequest) {
+            try {
+                if ($categoryRequest->status !== 'pending' && in_array($action, ['approve', 'reject'])) {
+                    $errors[] = "Request '{$categoryRequest->requested_name}' is already processed.";
+                    continue;
+                }
+
+                switch ($action) {
+                    case 'approve':
+                        // Check if category already exists
+                        $existingCategory = Category::where('name', $categoryRequest->requested_name)->first();
+                        if ($existingCategory) {
+                            $errors[] = "Category '{$categoryRequest->requested_name}' already exists.";
+                            continue 2;
+                        }
+
+                        $category = Category::create([
+                            'name' => $categoryRequest->requested_name,
+                            'slug' => Str::slug($categoryRequest->requested_name),
+                            'description' => $categoryRequest->description,
+                            'parent_id' => $categoryRequest->requested_parent_id,
+                            'image' => $categoryRequest->image,
+                            'requested_by' => $categoryRequest->vendor_id,
+                            'approved_by' => auth('admin')->id(),
+                            'approved_at' => now(),
+                            'approval_status' => 'approved',
+                            'status' => true,
+                            'order' => Category::max('order') + 1,
+                        ]);
+
+                        $categoryRequest->update([
+                            'status' => 'approved',
+                            'approved_by' => auth('admin')->id(),
+                            'approved_at' => now(),
+                            'created_category_id' => $category->id,
+                        ]);
+                        $count++;
+                        $processedRequests[] = $categoryRequest->requested_name;
+                        break;
+
+                    case 'reject':
+                        $categoryRequest->update([
+                            'status' => 'rejected',
+                            'approved_by' => auth('admin')->id(),
+                            'approved_at' => now(),
+                            'rejection_reason' => $request->rejection_reason ?? 'Bulk rejection',
+                        ]);
+                        $count++;
+                        $processedRequests[] = $categoryRequest->requested_name;
+                        break;
+
+                    case 'delete':
+                        if ($categoryRequest->status === 'approved') {
+                            $errors[] = "Cannot delete approved request '{$categoryRequest->requested_name}'.";
+                            continue 2;
+                        }
+                        $categoryRequest->delete();
+                        $count++;
+                        $processedRequests[] = $categoryRequest->requested_name;
+                        break;
+                }
+            } catch (\Exception $e) {
+                $errors[] = "Error processing '{$categoryRequest->requested_name}': " . $e->getMessage();
+            }
+        }
+
+        // Log bulk action
+        if ($count > 0) {
+            $this->logActivity(
+                'bulk_' . $action . '_requests',
+                'category_request',
+                'admin',
+                null,
+                'Bulk Action',
+                null,
+                [
+                    'action' => $action,
+                    'affected_requests' => $processedRequests,
+                    'count' => $count,
+                    'errors' => $errors
+                ],
+                "Bulk {$action} performed on {$count} category requests"
+            );
+        }
+
+        $message = "{$count} requests processed successfully.";
+        if (!empty($errors)) {
+            $message .= " Errors: " . implode(' ', $errors);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'count' => $count,
+            'errors' => $errors
+        ]);
     }
 
     /**

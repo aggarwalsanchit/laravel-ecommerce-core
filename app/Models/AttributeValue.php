@@ -4,101 +4,90 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AttributeValue extends Model
 {
+    protected $table = 'attribute_values';
+
     protected $fillable = [
-        'attribute_id',
-        'value',
-        'slug',
-        'description',
-        'short_description',
-        'color_code',
-        'color_name',
-        'size_value',
-        'size_unit',
-        'image',
-        'thumbnail',
-        'icon',
-        'price_adjustment',
-        'weight_adjustment',
-        'stock',
-        'sku',
-        'barcode',
-        'min_value',
-        'max_value',
-        'display_order',
-        'is_default',
-        'is_visible',
-        'discount_applicable',
-        'max_discount_percentage',
-        'view_count',
-        'click_count',
-        'order_count',
-        'total_revenue',
-        'avg_rating',
-        'review_count',
-        'usage_count',
-        'meta_title',
-        'meta_description',
-        'meta_keywords'
+        'attribute_id', 'value', 'label', 'color_code',
+        'image', 'image_alt', 'order', 'description',
+        'price_adjustment', 'weight_adjustment', 'status', 'is_default'
     ];
 
     protected $casts = [
-        'is_default' => 'boolean',
-        'is_visible' => 'boolean',
-        'discount_applicable' => 'boolean',
         'price_adjustment' => 'decimal:2',
         'weight_adjustment' => 'decimal:2',
-        'total_revenue' => 'decimal:2',
-        'avg_rating' => 'decimal:2',
+        'status' => 'boolean',
+        'is_default' => 'boolean',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($value) {
-            $value->slug = Str::slug($value->value);
-        });
-    }
+    protected $appends = ['display_name', 'status_badge'];
 
-    public function attribute()
+    // ==================== RELATIONSHIPS ====================
+
+    /**
+     * Get the attribute this value belongs to
+     */
+    public function attribute(): BelongsTo
     {
         return $this->belongsTo(Attribute::class);
     }
 
-    public function products()
+    /**
+     * Get product attribute values using this value
+     */
+    public function productValues(): HasMany
     {
-        return $this->belongsToMany(Product::class, 'product_attribute_values', 'attribute_value_id', 'product_id')
-            ->withPivot('additional_price', 'additional_stock', 'custom_sku', 'has_discount')
-            ->withTimestamps();
+        return $this->hasMany(ProductAttributeValue::class, 'attribute_value_id');
     }
 
-    public function productValues()
+    /**
+     * Get analytics for this attribute value
+     */
+    public function analytics(): HasMany
     {
-        return $this->hasMany(ProductAttributeValue::class);
+        return $this->hasMany(AttributeAnalytic::class, 'attribute_value_id');
     }
 
-    public function discountRules()
+    // ==================== ACCESSORS ====================
+
+    public function getDisplayNameAttribute(): string
     {
-        return $this->hasMany(AttributeDiscountRule::class);
+        return $this->label ?? $this->value;
     }
 
-    public function analyticsLogs()
+    public function getStatusBadgeAttribute(): string
     {
-        return $this->hasMany(AttributeAnalyticsLog::class);
+        return $this->status 
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-danger">Inactive</span>';
     }
+
+    public function getColorPreviewAttribute(): string
+    {
+        if ($this->color_code) {
+            return "<div style='width: 30px; height: 30px; background-color: {$this->color_code}; border-radius: 50%; border: 1px solid #ddd;'></div>";
+        }
+        return '';
+    }
+
+    // ==================== SCOPES ====================
 
     public function scopeActive($query)
     {
-        return $query->whereHas('attribute', function ($q) {
-            $q->where('status', true);
-        })->where('is_visible', true);
+        return $query->where('status', true);
     }
 
     public function scopeDefault($query)
     {
         return $query->where('is_default', true);
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('order');
     }
 }

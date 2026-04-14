@@ -260,63 +260,59 @@
                             </div>
                         </li>
                     @endif
-                    @if ($vendor->can('view_categories'))
+                    @if (
+                        $vendor->can('view_categories') ||
+                            $vendor->can('view_colors') ||
+                            $vendor->can('view_sizes') ||
+                            $vendor->can('view_attributes'))
                         <li class="side-nav-item">
-                            <a href="{{ route('vendor.categories.index') }}"
-                                class="side-nav-link {{ request()->routeIs('admin.categories.index') ? 'active' : '' }}">
-                                <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
-                                <span class="menu-text"> Categories </span>
-                            </a>
-                        </li>
-                    @endif
-                    @if ($vendor->can('view_colors'))
-                        <li class="side-nav-item">
-                            <a href="{{ route('vendor.colors.index') }}"
-                                class="side-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                                <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
-                                <span class="menu-text"> Colors </span>
-                            </a>
-                        </li>
-                    @endif
-                    @if ($vendor->can('view_sizes'))
-                        <li class="side-nav-item">
-                            <a href="{{ route('vendor.sizes.index') }}"
-                                class="side-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                                <span class="menu-icon"><i class="ti ti-dashboard"></i></span>
-                                <span class="menu-text"> Sizes </span>
-                            </a>
-                        </li>
-                    @endif
-                    @if ($vendor->can('view_attributes'))
-                        <li class="side-nav-item">
-                            <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
-                                aria-controls="sidebarEcommerce" class="side-nav-link">
+                            <a data-bs-toggle="collapse" href="#sidebarAttributes" aria-expanded="false"
+                                aria-controls="sidebarAttributes"
+                                class="side-nav-link {{ request()->routeIs('vendor.users.index') ? 'active' : '' }}">
                                 <span class="menu-icon"><i class="ti ti-user-filled"></i></span>
-                                <span class="menu-text"> Custom Attributes </span>
+                                <span class="menu-text"> Attributes</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <div class="collapse" id="sidebarEcommerce">
+                            <div class="collapse" id="sidebarAttributes">
                                 <ul class="sub-menu">
-                                    @if ($vendor->can('create_attributes'))
-                                        <li class="side-nav-item">
+                                    @if ($vendor->can('view_categories'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('vendor.users.index') ? 'active' : '' }}">
+                                            <a href="{{ route('vendor.categories.index') }}" class="side-nav-link">
+                                                <span class="menu-text">Categories</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if ($vendor->can('view_colors'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('vendor.permissions.index') ? 'active' : '' }}">
+                                            <a href="{{ route('vendor.colors.index') }}" class="side-nav-link">
+                                                <span class="menu-text">Colors</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if ($vendor->can('view_sizes'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('vendor.roles.index') ? 'active' : '' }}">
+                                            <a href="{{ route('vendor.sizes.index') }}" class="side-nav-link">
+                                                <span class="menu-text">Sizes</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if ($vendor->can('view_attributes'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('vendor.roles.index') ? 'active' : '' }}">
                                             <a href="{{ route('vendor.attributes.index') }}" class="side-nav-link">
-                                                <span class="menu-text">Add Attributes</span>
+                                                <span class="menu-text">Custom Attributes</span>
                                             </a>
                                         </li>
                                     @endif
-                                    @if ($vendor->can('group_attributes'))
-                                        <li class="side-nav-item">
-                                            <a href="{{ route('vendor.attribute-groups.index') }}"
-                                                class="side-nav-link">
-                                                <span class="menu-text">Attributes Groups</span>
-                                            </a>
-                                        </li>
-                                    @endif
+                                    
                                 </ul>
                             </div>
                         </li>
                     @endif
-                    @if ($vendor->can('view_discounts'))
+                    {{--@if ($vendor->can('view_discounts'))
                         <li class="side-nav-item">
                             <a href="{{ route('vendor.discounts.index') }}" class="side-nav-link">
                                 <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
@@ -331,7 +327,7 @@
                                 <span class="menu-text"> Products </span>
                             </a>
                         </li>
-                    @endif
+                    @endif--}}
                     {{-- <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
                             aria-controls="sidebarEcommerce" class="side-nav-link">

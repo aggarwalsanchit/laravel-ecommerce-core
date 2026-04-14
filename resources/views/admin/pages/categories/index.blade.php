@@ -120,6 +120,11 @@
                                         <i class="ti ti-plus me-1"></i> Add New Category
                                     </a>
                                 @endif
+                                @if ($admin->can('request_categories'))
+                                    <a href="{{ route('admin.categories.requests') }}" class="btn btn-success">
+                                        <i class="ti ti-palette me-1"></i> Requested Categories
+                                    </a>
+                                @endif
                             </div>
                         </div>
                         <div class="card-body">

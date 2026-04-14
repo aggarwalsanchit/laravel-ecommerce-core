@@ -1,5 +1,5 @@
-{{-- resources/views/admin/sizes/index.blade.php --}}
-@extends('admin.layouts.app')
+{{-- resources/views/admin/pages/sizes/index.blade.php --}}
+@extends('management.layouts.app')
 
 @section('title', 'Sizes')
 
@@ -47,27 +47,71 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-info text-white">
+                    <div class="card bg-warning text-dark">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0">Total Products</h6>
-                                    <h2 class="mb-0">{{ number_format($statistics['total_products'] ?? 0) }}</h2>
+                                    <h6 class="mb-0">Featured Sizes</h6>
+                                    <h2 class="mb-0">{{ $statistics['featured'] ?? 0 }}</h2>
                                 </div>
-                                <i class="ti ti-package" style="font-size: 40px; opacity: 0.5;"></i>
+                                <i class="ti ti-star" style="font-size: 40px; opacity: 0.5;"></i>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card bg-warning text-dark">
+                    <div class="card bg-info text-white">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="mb-0">Total Revenue</h6>
-                                    <h2 class="mb-0">${{ number_format($statistics['total_revenue'] ?? 0, 2) }}</h2>
+                                    <h6 class="mb-0">Pending Approval</h6>
+                                    <h2 class="mb-0">{{ $statistics['pending'] ?? 0 }}</h2>
                                 </div>
-                                <i class="ti ti-chart-line" style="font-size: 40px; opacity: 0.5;"></i>
+                                <i class="ti ti-clock" style="font-size: 40px; opacity: 0.5;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Second Row - Gender Stats --}}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <h6 class="mb-0">Men's Sizes</h6>
+                                <h2 class="mb-0">{{ $statistics['men'] ?? 0 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-pink text-white">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <h6 class="mb-0">Women's Sizes</h6>
+                                <h2 class="mb-0">{{ $statistics['women'] ?? 0 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-purple text-white">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <h6 class="mb-0">Unisex Sizes</h6>
+                                <h2 class="mb-0">{{ $statistics['unisex'] ?? 0 }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-teal text-white">
+                        <div class="card-body">
+                            <div class="text-center">
+                                <h6 class="mb-0">Kids Sizes</h6>
+                                <h2 class="mb-0">{{ $statistics['kids'] ?? 0 }}</h2>
                             </div>
                         </div>
                     </div>
@@ -83,7 +127,13 @@
                                 <a href="{{ route('admin.sizes.analytics') }}" class="btn btn-info">
                                     <i class="ti ti-chart-bar me-1"></i> Analytics
                                 </a>
-                                @can('create sizes')
+                                <a href="{{ route('admin.sizes.requests') }}" class="btn btn-success">
+                                    <i class="ti ti-clipboard-list me-1"></i> Pending Requests
+                                    @if (($statistics['pending'] ?? 0) > 0)
+                                        <span class="badge bg-light text-dark ms-1">{{ $statistics['pending'] }}</span>
+                                    @endif
+                                </a>
+                                @can('create_sizes')
                                     <a href="{{ route('admin.sizes.create') }}" class="btn btn-primary">
                                         <i class="ti ti-plus me-1"></i> Add New Size
                                     </a>
@@ -94,10 +144,10 @@
 
                             {{-- Search and Filter --}}
                             <div class="row mb-3">
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="searchInput"
-                                            placeholder="Search by name or code..." value="{{ request('search') }}">
+                                            placeholder="Search by name, code or size..." value="{{ request('search') }}">
                                         <button class="btn btn-primary" type="button" id="searchBtn">
                                             <i class="ti ti-search"></i>
                                         </button>
@@ -107,19 +157,67 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-md-7">
+                                <div class="col-md-8">
                                     <div class="d-flex gap-2 justify-content-end flex-wrap">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-outline-secondary dropdown-toggle"
                                                 data-bs-toggle="dropdown">
-                                                <i class="ti ti-filter me-1"></i> Filter by Status
+                                                <i class="ti ti-filter me-1"></i> Status
                                             </button>
                                             <ul class="dropdown-menu" id="statusFilter">
                                                 <li><a class="dropdown-item" href="#" data-status="">All</a></li>
-                                                <li><a class="dropdown-item" href="#" data-status="active">Active</a>
-                                                </li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-status="active">Active</a></li>
                                                 <li><a class="dropdown-item" href="#"
                                                         data-status="inactive">Inactive</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="ti ti-check-circle me-1"></i> Approval
+                                            </button>
+                                            <ul class="dropdown-menu" id="approvalFilter">
+                                                <li><a class="dropdown-item" href="#" data-approval="">All</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="approved">Approved</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="pending">Pending</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-approval="rejected">Rejected</a></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="ti ti-gender"></i> Gender
+                                            </button>
+                                            <ul class="dropdown-menu" id="genderFilter">
+                                                <li><a class="dropdown-item" href="#" data-gender="">All</a></li>
+                                                <li><a class="dropdown-item" href="#" data-gender="Men">Men</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="#" data-gender="Women">Women</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-gender="Unisex">Unisex</a></li>
+                                                <li><a class="dropdown-item" href="#" data-gender="Kids">Kids</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="ti ti-star me-1"></i> Featured
+                                            </button>
+                                            <ul class="dropdown-menu" id="featuredFilter">
+                                                <li><a class="dropdown-item" href="#" data-featured="">All</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        data-featured="true">Featured</a></li>
+                                                <li><a class="dropdown-item" href="#" data-featured="false">Not
+                                                        Featured</a></li>
                                             </ul>
                                         </div>
 
@@ -133,14 +231,14 @@
                                                         Order</a></li>
                                                 <li><a class="dropdown-item" href="#" data-sort="name">Name
                                                         (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="code">Code
-                                                        (A-Z)</a></li>
-                                                <li><a class="dropdown-item" href="#" data-sort="view_count">Most
-                                                        Viewed</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="product_count">Most Products</a></li>
-                                                <li><a class="dropdown-item" href="#"
-                                                        data-sort="total_revenue">Highest Revenue</a></li>
+                                                <li><a class="dropdown-item" href="#" data-sort="code">Code</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="#" data-sort="gender">Gender</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="#" data-sort="usage_count">Most
+                                                        Used</a></li>
+                                                <li><a class="dropdown-item" href="#" data-sort="created_at">Newest
+                                                        First</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -148,11 +246,11 @@
                             </div>
 
                             {{-- Bulk Actions --}}
-                            @canany(['edit sizes', 'delete sizes'])
+                            @canany(['edit_sizes', 'delete_sizes'])
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <div class="btn-group flex-wrap gap-2">
-                                            @can('edit sizes')
+                                            @can('edit_sizes')
                                                 <button type="button" class="btn btn-outline-success btn-sm"
                                                     onclick="bulkAction('activate')">
                                                     <i class="ti ti-check"></i> Activate Selected
@@ -161,8 +259,32 @@
                                                     onclick="bulkAction('deactivate')">
                                                     <i class="ti ti-x"></i> Deactivate Selected
                                                 </button>
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="bulkAction('feature')">
+                                                    <i class="ti ti-star"></i> Mark as Featured
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="bulkAction('unfeature')">
+                                                    <i class="ti ti-star-off"></i> Remove Featured
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm"
+                                                    onclick="bulkAction('popular')">
+                                                    <i class="ti ti-fire"></i> Mark as Popular
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    onclick="bulkAction('unpopular')">
+                                                    <i class="ti ti-fire-off"></i> Remove Popular
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success btn-sm"
+                                                    onclick="bulkAction('approve')">
+                                                    <i class="ti ti-check-circle"></i> Approve Selected
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="bulkAction('reject')">
+                                                    <i class="ti ti-x-circle"></i> Reject Selected
+                                                </button>
                                             @endcan
-                                            @can('delete sizes')
+                                            @can('delete_sizes')
                                                 <button type="button" class="btn btn-outline-danger btn-sm"
                                                     onclick="bulkAction('delete')">
                                                     <i class="ti ti-trash"></i> Delete Selected
@@ -175,7 +297,7 @@
 
                             {{-- Sizes Table Container --}}
                             <div id="sizesTableContainer">
-                                @include('admin.pages.sizes.partials.sizes-table', ['sizes' => $sizes])
+                                @include('admin.pages.sizes.partials.sizes-table', compact('sizes'))
                             </div>
 
                             {{-- Pagination Container --}}
@@ -211,74 +333,13 @@
             let currentFilters = {
                 search: '{{ request('search') }}',
                 status: '{{ request('status') }}',
+                approval_status: '{{ request('approval_status') }}',
+                gender: '{{ request('gender') }}',
+                featured: '{{ request('featured') }}',
                 sort_by: '{{ request('sort_by', 'order') }}',
                 page: 1
             };
 
-            // Search button click
-            $('#searchBtn').on('click', function() {
-                currentFilters.search = $('#searchInput').val();
-                currentFilters.page = 1;
-                loadSizes();
-                $('#clearSearch').toggle(currentFilters.search !== '');
-            });
-
-            // Search on enter key
-            $('#searchInput').on('keypress', function(e) {
-                if (e.which === 13) {
-                    currentFilters.search = $(this).val();
-                    currentFilters.page = 1;
-                    loadSizes();
-                    $('#clearSearch').toggle(currentFilters.search !== '');
-                }
-            });
-
-            // Clear search
-            $('#clearSearch').on('click', function() {
-                $('#searchInput').val('');
-                currentFilters.search = '';
-                currentFilters.page = 1;
-                loadSizes();
-                $(this).hide();
-            });
-
-            // Status filter
-            $('#statusFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let status = $(this).data('status');
-
-                $('#statusFilter .dropdown-item').removeClass('active');
-                $(this).addClass('active');
-
-                currentFilters.status = status;
-                currentFilters.page = 1;
-                loadSizes();
-            });
-
-            // Sort filter
-            $('#sortFilter .dropdown-item').on('click', function(e) {
-                e.preventDefault();
-                let sortBy = $(this).data('sort');
-
-                $('#sortFilter .dropdown-item').removeClass('active');
-                $(this).addClass('active');
-
-                currentFilters.sort_by = sortBy;
-                currentFilters.page = 1;
-                loadSizes();
-            });
-
-            // Pagination click handler
-            $(document).on('click', '.pagination a', function(e) {
-                e.preventDefault();
-                let page = $(this).attr('href').split('page=')[1];
-                if (page) {
-                    currentFilters.page = page;
-                    loadSizes();
-                }
-            });
-
-            // Load sizes via AJAX
             function loadSizes() {
                 $.ajax({
                     url: '{{ route('admin.sizes.index') }}',
@@ -287,39 +348,31 @@
                     beforeSend: function() {
                         $('#sizesTableContainer').html(
                             '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>'
-                        );
+                            );
                         $('#paginationContainer').html('');
                     },
                     success: function(response) {
                         $('#sizesTableContainer').html(response.table);
                         $('#paginationContainer').html(response.pagination);
-
-                        if (response.statistics) {
-                            updateStatistics(response.statistics);
-                        }
-
+                        if (response.statistics) updateStatistics(response.statistics);
                         let url = new URL(window.location);
-                        url.searchParams.set('search', currentFilters.search || '');
-                        url.searchParams.set('status', currentFilters.status || '');
-                        url.searchParams.set('sort_by', currentFilters.sort_by || 'order');
-                        url.searchParams.set('page', currentFilters.page);
+                        Object.keys(currentFilters).forEach(key => {
+                            if (currentFilters[key]) url.searchParams.set(key, currentFilters[
+                                key]);
+                            else url.searchParams.delete(key);
+                        });
                         window.history.pushState({}, '', url);
-
                         $('[data-bs-toggle="tooltip"]').tooltip();
-
                         $('#selectAll').off('change').on('change', function() {
                             $('.size-checkbox').prop('checked', $(this).prop('checked'));
                         });
-
                         $('.size-checkbox').off('change').on('change', function() {
                             let allChecked = $('.size-checkbox:checked').length === $(
                                 '.size-checkbox').length;
                             $('#selectAll').prop('checked', allChecked);
                         });
-
                         $('.toggle-status').off('change').on('change', function() {
-                            let sizeId = $(this).data('id');
-                            toggleStatus(sizeId, this);
+                            toggleStatus($(this).data('id'), this);
                         });
                     },
                     error: function() {
@@ -332,18 +385,82 @@
             function updateStatistics(statistics) {
                 $('.bg-primary .h2').text(statistics.total || 0);
                 $('.bg-success .h2').text(statistics.active || 0);
-                $('.bg-info .h2').text(statistics.total_products || 0);
-                $('.bg-warning .h2').text('$' + (statistics.total_revenue || 0).toLocaleString());
+                $('.bg-warning .h2').text(statistics.featured || 0);
+                $('.bg-info .h2').text(statistics.pending || 0);
+                $('.bg-danger .h2').text(statistics.men || 0);
+                $('.bg-pink .h2').text(statistics.women || 0);
+                $('.bg-purple .h2').text(statistics.unisex || 0);
+                $('.bg-teal .h2').text(statistics.kids || 0);
             }
 
-            if ($('#searchInput').val()) {
-                $('#clearSearch').show();
-            }
+            $('#searchBtn').on('click', function() {
+                currentFilters.search = $('#searchInput').val();
+                currentFilters.page = 1;
+                loadSizes();
+                $('#clearSearch').toggle(currentFilters.search !== '');
+            });
+
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) $('#searchBtn').click();
+            });
+
+            $('#clearSearch').on('click', function() {
+                $('#searchInput').val('');
+                currentFilters.search = '';
+                currentFilters.page = 1;
+                loadSizes();
+                $(this).hide();
+            });
+
+            $('#statusFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                currentFilters.status = $(this).data('status');
+                currentFilters.page = 1;
+                loadSizes();
+            });
+
+            $('#approvalFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                currentFilters.approval_status = $(this).data('approval');
+                currentFilters.page = 1;
+                loadSizes();
+            });
+
+            $('#genderFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                currentFilters.gender = $(this).data('gender');
+                currentFilters.page = 1;
+                loadSizes();
+            });
+
+            $('#featuredFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                currentFilters.featured = $(this).data('featured');
+                currentFilters.page = 1;
+                loadSizes();
+            });
+
+            $('#sortFilter .dropdown-item').on('click', function(e) {
+                e.preventDefault();
+                currentFilters.sort_by = $(this).data('sort');
+                currentFilters.page = 1;
+                loadSizes();
+            });
+
+            $(document).on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                let page = $(this).attr('href').split('page=')[1];
+                if (page) {
+                    currentFilters.page = page;
+                    loadSizes();
+                }
+            });
+
+            if ($('#searchInput').val()) $('#clearSearch').show();
         });
 
         function toggleStatus(sizeId, element) {
             let isChecked = $(element).prop('checked');
-
             $.ajax({
                 url: '{{ url('admin/sizes') }}/' + sizeId + '/toggle-status',
                 type: 'POST',
@@ -366,7 +483,8 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Error!',
-                        text: 'Failed to update status.'
+                        text: 'Failed to update status.',
+                        confirmButtonColor: '#d33'
                     });
                 }
             });
@@ -385,7 +503,6 @@
                 if (result.isConfirmed) {
                     let form = $('#deleteForm');
                     form.attr('action', '{{ url('admin/sizes') }}/' + sizeId);
-
                     $.ajax({
                         url: form.attr('action'),
                         type: 'POST',
@@ -393,18 +510,18 @@
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
-                                        icon: 'success',
-                                        title: 'Deleted!',
-                                        text: response.message,
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    })
-                                    .then(() => location.reload());
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
                             } else {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Cannot Delete!',
-                                    text: response.message
+                                    text: response.message,
+                                    confirmButtonColor: '#d33'
                                 });
                             }
                         }
@@ -418,19 +535,48 @@
             $('.size-checkbox:checked').each(function() {
                 selectedSizes.push($(this).val());
             });
-
             if (selectedSizes.length === 0) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'No Selection',
-                    text: 'Please select at least one size.'
+                    text: 'Please select at least one size.',
+                    confirmButtonColor: '#6c757d'
                 });
                 return;
             }
-
-            let actionText = action === 'activate' ? 'activate' : (action === 'deactivate' ? 'deactivate' : 'delete');
-            let confirmColor = action === 'delete' ? '#d33' : '#28a745';
-
+            let actionText = '',
+                confirmColor = '#28a745';
+            switch (action) {
+                case 'activate':
+                    actionText = 'activate';
+                    break;
+                case 'deactivate':
+                    actionText = 'deactivate';
+                    break;
+                case 'feature':
+                    actionText = 'mark as featured';
+                    break;
+                case 'unfeature':
+                    actionText = 'remove featured';
+                    break;
+                case 'popular':
+                    actionText = 'mark as popular';
+                    break;
+                case 'unpopular':
+                    actionText = 'remove popular';
+                    break;
+                case 'approve':
+                    actionText = 'approve';
+                    break;
+                case 'reject':
+                    actionText = 'reject';
+                    confirmColor = '#dc3545';
+                    break;
+                case 'delete':
+                    actionText = 'delete';
+                    confirmColor = '#d33';
+                    break;
+            }
             Swal.fire({
                 title: `${actionText.toUpperCase()} Sizes?`,
                 text: `Are you sure you want to ${actionText} ${selectedSizes.length} selected size(s)?`,
@@ -443,7 +589,6 @@
                 if (result.isConfirmed) {
                     $('#bulkAction').val(action);
                     $('#bulkSizeIds').val(JSON.stringify(selectedSizes));
-
                     $.ajax({
                         url: $('#bulkActionForm').attr('action'),
                         type: 'POST',
@@ -451,18 +596,59 @@
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
-                                        icon: 'success',
-                                        title: 'Success!',
-                                        text: response.message,
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    })
-                                    .then(() => location.reload());
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
                             }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: xhr.responseJSON?.message ||
+                                    'Failed to process bulk action.',
+                                confirmButtonColor: '#d33'
+                            });
                         }
                     });
                 }
             });
         }
     </script>
+@endpush
+
+@push('styles')
+    <style>
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50% !important;
+        }
+
+        .bg-pink {
+            background-color: #d63384 !important;
+        }
+
+        .bg-purple {
+            background-color: #6f42c1 !important;
+        }
+
+        .bg-teal {
+            background-color: #20c997 !important;
+        }
+
+        .size-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    </style>
 @endpush
