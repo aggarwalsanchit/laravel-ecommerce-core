@@ -4,50 +4,44 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductVariant extends Model
 {
     protected $fillable = [
-        'product_id', 'color_id', 'size_id', 'sku', 'price', 'sale_price', 
-        'stock', 'image', 'custom_attributes', 'status'
+        'product_id', 'color_id', 'size_id', 'sku', 'price', 'compare_price', 'wholesale_price',
+        'stock_quantity', 'stock_status', 'image', 'image_alt', 'sort_order'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
-        'stock' => 'integer',
-        'custom_attributes' => 'array',
-        'status' => 'boolean',
+        'compare_price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
+        'stock_quantity' => 'integer',
     ];
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function color()
+    public function color(): BelongsTo
     {
         return $this->belongsTo(Color::class);
     }
 
-    public function size()
+    public function size(): BelongsTo
     {
         return $this->belongsTo(Size::class);
     }
 
-    public function getCurrentPriceAttribute()
+    public function tierPrices()
     {
-        return $this->sale_price ?: $this->price;
+        return $this->hasMany(ProductTierPrice::class, 'variant_id');
     }
 
-    public function getImageUrlAttribute()
+    public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? Storage::disk('public')->url('products/variants/' . $this->image) : null;
-    }
-
-    public function isInStock()
-    {
-        return $this->stock > 0;
+        return $this->image ? asset('storage/variants/' . $this->image) : null;
     }
 }

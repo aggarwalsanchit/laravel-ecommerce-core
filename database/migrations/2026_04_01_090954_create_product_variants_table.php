@@ -1,5 +1,5 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_product_variants_table.php
+// database/migrations/2026_04_15_000007_create_product_variants_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,20 +11,27 @@ return new class extends Migration
     {
         Schema::create('product_variants', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('color_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('size_id')->nullable()->constrained()->onDelete('set null');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('color_id')->nullable();
+            $table->unsignedBigInteger('size_id')->nullable();
             $table->string('sku')->unique();
-            $table->decimal('price', 10, 2);
-            $table->decimal('sale_price', 10, 2)->nullable();
-            $table->integer('stock')->default(0);
+            $table->decimal('price', 12, 2)->nullable(); // overrides product price
+            $table->decimal('compare_price', 12, 2)->nullable();
+            $table->decimal('wholesale_price', 12, 2)->nullable();
+            $table->integer('stock_quantity')->default(0);
+            $table->string('stock_status')->default('instock');
             $table->string('image')->nullable();
-            $table->json('custom_attributes')->nullable(); // For dynamic attribute combinations
-            $table->boolean('status')->default(true);
+            $table->string('image_alt')->nullable();
+            $table->integer('sort_order')->default(0);
             $table->timestamps();
             
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->foreign('color_id')->references('id')->on('colors')->onDelete('set null');
+            $table->foreign('size_id')->references('id')->on('sizes')->onDelete('set null');
+            
+            $table->index('product_id');
+            $table->index('sku');
             $table->unique(['product_id', 'color_id', 'size_id'], 'product_variant_unique');
-            $table->index(['product_id', 'status']);
         });
     }
 

@@ -4,324 +4,215 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Builder;
-use App\Services\DiscountService;
 
 class Product extends Model
 {
+    use SoftDeletes;
+
+    protected $table = 'products';
+
     protected $fillable = [
         'name',
         'slug',
-        'sku',
         'short_description',
         'description',
-        'category_id',
-        'pricing_type',
+        'highlights',
+        'brand_id',
+        'vendor_id',
+        'sku',
+        'barcode',
         'price',
-        'sale_price',
-        'sale_start_date',
-        'sale_end_date',
-        'track_stock',
-        'stock',
+        'compare_price',
+        'cost',
+        'wholesale_price',
+        'is_wholesale',
+        'min_price',
+        'max_price',
+        'is_range',
+        'stock_quantity',
         'low_stock_threshold',
-        'stock_status',
+        'track_stock',
         'allow_backorder',
+        'stock_status',
         'weight',
         'length',
         'width',
         'height',
+        'free_shipping',
+        'status',
+        'is_featured',
+        'is_bestseller',
+        'is_new',
+        'sort_order',
+        'published_at',
         'meta_title',
         'meta_description',
         'meta_keywords',
-        'status',
-        'is_featured',
-        'is_new',
-        'is_bestseller',
-        'is_on_sale',
-        'view_count',
-        'order_count',
-        'total_sold',
-        'avg_rating',
-        'review_count'
+        'focus_keyword',
+        'canonical_url',
+        'og_title',
+        'og_description',
+        'og_image',
+        'primary_category_id',
+        'approval_status',
+        'rejection_reason',
+        'approved_by',
+        'approved_at'
     ];
 
     protected $casts = [
-        'sale_start_date' => 'date',
-        'sale_end_date' => 'date',
+        'highlights' => 'array',
+        'is_wholesale' => 'boolean',
+        'is_range' => 'boolean',
+        'track_stock' => 'boolean',
+        'allow_backorder' => 'boolean',
+        'free_shipping' => 'boolean',
         'status' => 'boolean',
         'is_featured' => 'boolean',
-        'is_new' => 'boolean',
         'is_bestseller' => 'boolean',
-        'is_on_sale' => 'boolean',
-        'allow_backorder' => 'boolean',
-        'track_stock' => 'boolean',
-        'price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
-        'weight' => 'decimal:2',
-        'length' => 'decimal:2',
-        'width' => 'decimal:2',
-        'height' => 'decimal:2',
-        'view_count' => 'integer',
-        'order_count' => 'integer',
-        'total_sold' => 'decimal:2',
-        'avg_rating' => 'decimal:2',
-        'review_count' => 'integer',
-        'stock' => 'integer',
-        'low_stock_threshold' => 'integer',
+        'is_new' => 'boolean',
+        'sale_start_at' => 'datetime',
+        'sale_end_at' => 'datetime',
+        'published_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
+
+    // ==================== RELATIONSHIPS ====================
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function approvedBy(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'approved_by');
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    public function mainImage()
+    {
+        return $this->hasOne(ProductImage::class)->where('is_main', true);
+    }
+
+    public function videos(): HasMany
+    {
+        return $this->hasMany(ProductVideo::class)->orderBy('sort_order');
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'product_categories');
+    }
+
+    public function primaryCategory()
+    {
+        return $this->belongsTo(Category::class, 'primary_category_id');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'product_tag');
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
+    public function tierPrices(): HasMany
+    {
+        return $this->hasMany(ProductTierPrice::class);
+    }
+
+    public function discounts()
+    {
+        return $this->belongsToMany(Discount::class, 'discount_product');
+    }
+
+    public function relatedProducts()
+    {
+        return $this->hasMany(ProductRelation::class, 'product_id');
+    }
+
+    public function questions(): HasMany
+    {
+        return $this->hasMany(ProductQuestion::class);
+    }
+
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(ProductRating::class);
+    }
+
+    public function dailyAnalytics(): HasMany
+    {
+        return $this->hasMany(ProductDailyAnalytic::class);
+    }
+
+    // ==================== SCOPES ====================
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', true)->where('approval_status', 'approved');
+    }
+
+    public function scopeInStock($query)
+    {
+        return $query->where('stock_status', 'instock');
+    }
+
+    public function scopeOnSale($query)
+    {
+        return $query->whereNotNull('sale_start_at')
+            ->where('sale_start_at', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('sale_end_at')->orWhere('sale_end_at', '>=', now());
+            });
+    }
+
+    // ==================== ACCESSORS ====================
+
+    public function getDiscountedPriceAttribute(): ?float
+    {
+        if ($this->sale_start_at && $this->sale_end_at && now()->between($this->sale_start_at, $this->sale_end_at)) {
+            return $this->compare_price ?? $this->price;
+        }
+        return null;
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        return $this->discounted_price !== null && $this->discounted_price < $this->price;
+    }
+
+    // ==================== BOOT ====================
 
     protected static function boot()
     {
         parent::boot();
         static::creating(function ($product) {
-            $product->slug = Str::slug($product->name);
-        });
-    }
-
-    // ========== RELATIONSHIPS ==========
-
-    // Main Category
-    public function mainCategory()
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
-    // Multiple Subcategories (via ProductSubcategory pivot)
-    public function subcategories()
-    {
-        return $this->belongsToMany(Category::class, 'product_subcategories', 'product_id', 'category_id')
-            ->withTimestamps();
-    }
-
-    // Multiple Colors (via ProductColor pivot)
-    public function colors()
-    {
-        return $this->belongsToMany(Color::class, 'product_colors', 'product_id', 'color_id')
-            ->withPivot('color_image')
-            ->withTimestamps();
-    }
-
-    // Multiple Sizes (via ProductSize pivot)
-    public function sizes()
-    {
-        return $this->belongsToMany(Size::class, 'product_sizes', 'product_id', 'size_id')
-            ->withPivot('stock', 'price_adjustment')
-            ->withTimestamps();
-    }
-
-    // Variants (Color + Size combinations)
-    public function variants()
-    {
-        return $this->hasMany(ProductVariant::class);
-    }
-
-    // Multiple Images
-    public function images()
-    {
-        return $this->hasMany(ProductImage::class)->orderBy('order');
-    }
-
-    // Featured Image (convenience method)
-    public function featuredImage()
-    {
-        return $this->hasOne(ProductImage::class)->where('is_featured', true);
-    }
-
-    // Tiered Pricing
-    public function tierPrices()
-    {
-        return $this->hasMany(ProductTierPrice::class);
-    }
-
-    // Custom Attributes (Universal Attributes System)
-    public function customAttributes()
-    {
-        return $this->belongsToMany(AttributeValue::class, 'product_custom_attributes', 'product_id', 'attribute_value_id')
-            ->withTimestamps();
-    }
-
-    // ========== HELPER METHODS ==========
-
-    // Get featured image URL
-    public function getFeaturedImageUrlAttribute()
-    {
-        $featured = $this->images()->where('is_featured', true)->first();
-        if ($featured) {
-            return Storage::disk('public')->url($featured->image_path);
-        }
-
-        $firstImage = $this->images()->first();
-        if ($firstImage) {
-            return Storage::disk('public')->url($firstImage->image_path);
-        }
-
-        return asset('images/placeholder.jpg');
-    }
-
-    // Get all image URLs
-    public function getAllImageUrlsAttribute()
-    {
-        return $this->images->map(function ($image) {
-            return Storage::disk('public')->url($image->image_path);
-        });
-    }
-
-    // Get current price (considering sale)
-    public function getCurrentPriceAttribute()
-    {
-        if (
-            $this->is_on_sale && $this->sale_price &&
-            $this->sale_start_date <= now() && $this->sale_end_date >= now()
-        ) {
-            return $this->sale_price;
-        }
-        return $this->price;
-    }
-
-    // Get formatted price
-    public function getFormattedPriceAttribute()
-    {
-        return '$' . number_format($this->price, 2);
-    }
-
-    // Get formatted sale price
-    public function getFormattedSalePriceAttribute()
-    {
-        return $this->sale_price ? '$' . number_format($this->sale_price, 2) : null;
-    }
-
-    // Get discount percentage
-    public function getDiscountPercentageAttribute()
-    {
-        if ($this->sale_price && $this->price > 0) {
-            return round((($this->price - $this->sale_price) / $this->price) * 100);
-        }
-        return 0;
-    }
-
-    // Get price for specific quantity (tiered pricing)
-    public function getPriceForQuantity($quantity)
-    {
-        if ($this->pricing_type === 'tiered') {
-            $tier = $this->tierPrices()
-                ->where('min_quantity', '<=', $quantity)
-                ->where(function ($q) use ($quantity) {
-                    $q->whereNull('max_quantity')->orWhere('max_quantity', '>=', $quantity);
-                })
-                ->first();
-
-            if ($tier) {
-                return $tier->price;
-            }
-        }
-        return $this->current_price;
-    }
-
-    // Check if product is in stock
-    public function isInStock()
-    {
-        if (!$this->track_stock) return true;
-        return $this->stock > 0;
-    }
-
-    // Get stock status badge
-    public function getStockStatusBadgeAttribute()
-    {
-        if (!$this->track_stock) return ['class' => 'success', 'text' => 'In Stock'];
-
-        return match ($this->stock_status) {
-            'in_stock' => ['class' => 'success', 'text' => 'In Stock'],
-            'out_of_stock' => ['class' => 'danger', 'text' => 'Out of Stock'],
-            'backorder' => ['class' => 'warning', 'text' => 'Backorder'],
-            'pre_order' => ['class' => 'info', 'text' => 'Pre-Order'],
-            default => ['class' => 'secondary', 'text' => 'Unknown'],
-        };
-    }
-
-    // Get available colors
-    public function getAvailableColorsAttribute()
-    {
-        return $this->colors()->get();
-    }
-
-    // Get available sizes
-    public function getAvailableSizesAttribute()
-    {
-        return $this->sizes()->get();
-    }
-
-    // Increment view count
-    public function incrementViewCount()
-    {
-        $this->increment('view_count');
-    }
-
-    // ========== SCOPES ==========
-
-    public function scopeActive($query)
-    {
-        return $query->where('status', true);
-    }
-
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
-    }
-
-    public function scopeOnSale($query)
-    {
-        return $query->where('is_on_sale', true)
-            ->where('sale_start_date', '<=', now())
-            ->where('sale_end_date', '>=', now());
-    }
-
-    public function scopeInStock($query)
-    {
-        return $query->where(function ($q) {
-            $q->where('track_stock', false)
-                ->orWhere('stock', '>', 0);
-        });
-    }
-
-    public function getDiscountInfoAttribute()
-    {
-        return DiscountService::applyDiscountToProduct($this);
-    }
-
-    public function getHasDiscountAttribute()
-    {
-        return $this->discount_info['has_discount'];
-    }
-
-    public function getFinalPriceAttribute()
-    {
-        return $this->discount_info['final_price'];
-    }
-
-    public function vendor()
-    {
-        return $this->belongsTo(Vendor::class);
-    }
-
-    public function isOwnStoreProduct()
-    {
-        return $this->vendor && $this->vendor->vendor_type === 'own_store';
-    }
-
-    public function getVendorNameAttribute()
-    {
-        return $this->vendor ? $this->vendor->shop_name : 'Admin Store';
-    }
-
-    // Add global scope for vendors
-    protected static function booted()
-    {
-        static::addGlobalScope('vendor', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->hasRole('Vendor')) {
-                $vendorId = auth()->user()->vendor->id;
-                $builder->where('vendor_id', $vendorId);
+            if (empty($product->slug)) {
+                $product->slug = Str::slug($product->name);
             }
         });
     }

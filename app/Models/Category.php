@@ -285,8 +285,8 @@ class Category extends Model
      */
     public function getFullPathAttribute(): string
     {
-        if (!$this->path) {
-            return $this->slug;
+        if (empty($this->path)) {
+            return $this->slug ?? '';
         }
 
         $ids = explode('/', $this->path);
@@ -294,7 +294,12 @@ class Category extends Model
             ->orderBy('level')
             ->get();
 
-        return $categories->pluck('slug')->implode('/') . '/' . $this->slug;
+        if ($categories->isEmpty()) {
+            return $this->slug ?? '';
+        }
+
+        $path = $categories->pluck('slug')->implode('/');
+        return $path . '/' . $this->slug;
     }
 
     /**
@@ -472,6 +477,12 @@ class Category extends Model
         }
 
         return $data;
+    }
+
+    public function brands()
+    {
+        return $this->belongsToMany(Brand::class, 'brand_category', 'category_id', 'brand_id')
+            ->withTimestamps();
     }
 
     // ==================== BOOT METHODS ====================

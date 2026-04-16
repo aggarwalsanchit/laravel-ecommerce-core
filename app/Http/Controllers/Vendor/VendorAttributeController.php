@@ -378,6 +378,37 @@ class VendorAttributeController extends Controller implements HasMiddleware
     }
 
     /**
+     * Get attributes by category (for AJAX)
+     */
+    /**
+     * Get attributes by multiple category IDs
+     */
+    public function getByCategories(Request $request)
+    {
+        $categoryIds = $request->category_ids;
+
+        if (empty($categoryIds)) {
+            return response()->json([
+                'success' => true,
+                'attributes' => []
+            ]);
+        }
+
+        $attributes = Attribute::whereHas('categories', function ($query) use ($categoryIds) {
+            $query->whereIn('category_id', $categoryIds);
+        })
+            ->with('values')
+            ->where('status', true)
+            ->orderBy('order')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'attributes' => $attributes
+        ]);
+    }
+
+    /**
      * Show single attribute request details
      */
     public function showRequest($id)
@@ -495,8 +526,8 @@ class VendorAttributeController extends Controller implements HasMiddleware
     public function getAttributesByCategory($categoryId)
     {
         $attributes = Attribute::whereHas('categories', function ($q) use ($categoryId) {
-                $q->where('category_id', $categoryId);
-            })
+            $q->where('category_id', $categoryId);
+        })
             ->where('status', true)
             ->where('approval_status', 'approved')
             ->with('values')
@@ -514,7 +545,7 @@ class VendorAttributeController extends Controller implements HasMiddleware
     public function getAttributeValues($attributeId)
     {
         $attribute = Attribute::findOrFail($attributeId);
-        
+
         $values = [];
         if (in_array($attribute->type, ['select', 'multiselect', 'radio', 'color'])) {
             $values = $attribute->values()->where('status', true)->orderBy('order')->get();
