@@ -1,5 +1,5 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_product_images_table.php
+// database/migrations/2026_04_15_000003_create_product_images_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,16 +11,17 @@ return new class extends Migration
     {
         Schema::create('product_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->string('image_path');
-            $table->string('thumbnail_path')->nullable();
-            $table->boolean('is_featured')->default(false);
-            $table->integer('order')->default(0);
+            $table->unsignedBigInteger('product_id');
+            $table->string('image');
             $table->string('alt_text')->nullable();
+            $table->string('title')->nullable();
+            $table->integer('sort_order')->default(0);
+            $table->boolean('is_main')->default(false);
             $table->timestamps();
             
-            $table->index(['product_id', 'is_featured']);
-            $table->index('order');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->index('product_id');
+            $table->index('is_main');
         });
     }
 

@@ -4,37 +4,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ProductTierPrice extends Model
 {
     protected $fillable = [
-        'product_id', 'min_quantity', 'max_quantity', 'price'
+        'product_id', 'variant_id', 'min_quantity', 'max_quantity', 'price'
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'min_quantity' => 'integer',
-        'max_quantity' => 'integer',
     ];
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function getFormattedPriceAttribute()
+    public function variant(): BelongsTo
     {
-        return '$' . number_format($this->price, 2);
-    }
-
-    public function getQuantityRangeAttribute()
-    {
-        $range = $this->min_quantity;
-        if ($this->max_quantity) {
-            $range .= ' - ' . $this->max_quantity;
-        } else {
-            $range .= '+';
-        }
-        return $range;
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

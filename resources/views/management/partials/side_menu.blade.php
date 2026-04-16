@@ -164,6 +164,14 @@
                                             </a>
                                         </li>
                                     @endif
+                                    @if ($admin->can('view_brands'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('admin.permissions.index') ? 'active' : '' }}">
+                                            <a href="{{ route('admin.brands.index') }}" class="side-nav-link">
+                                                <span class="menu-text">Brands</span>
+                                            </a>
+                                        </li>
+                                    @endif
                                     @if ($admin->can('view_attributes'))
                                         <li
                                             class="side-nav-item {{ request()->routeIs('admin.roles.index') ? 'active' : '' }}">
@@ -194,7 +202,7 @@
                             </a>
                         </li>
                     @endif
-                    @if ($admin->can('view_products'))
+                    @if ($admin->can('view_all_products'))
                         <li class="side-nav-item">
                             <a href="{{ route('admin.products.index') }}" class="side-nav-link">
                                 <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
@@ -299,6 +307,14 @@
                                             </a>
                                         </li>
                                     @endif
+                                    @if ($vendor->can('view_brands'))
+                                        <li
+                                            class="side-nav-item {{ request()->routeIs('vendor.permissions.index') ? 'active' : '' }}">
+                                            <a href="{{ route('vendor.brands.index') }}" class="side-nav-link">
+                                                <span class="menu-text">Brands</span>
+                                            </a>
+                                        </li>
+                                    @endif
                                     @if ($vendor->can('view_attributes'))
                                         <li
                                             class="side-nav-item {{ request()->routeIs('vendor.roles.index') ? 'active' : '' }}">
@@ -307,27 +323,27 @@
                                             </a>
                                         </li>
                                     @endif
-                                    
+
                                 </ul>
                             </div>
                         </li>
                     @endif
-                    {{--@if ($vendor->can('view_discounts'))
+                    {{-- @if ($vendor->can('view_discounts'))
                         <li class="side-nav-item">
                             <a href="{{ route('vendor.discounts.index') }}" class="side-nav-link">
                                 <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
                                 <span class="menu-text"> Discounts </span>
                             </a>
                         </li>
-                    @endif
-                    @if ($vendor->can('view_products'))
-                        <li class="side-nav-item">
-                            <a href="{{ route('vendor.products.index') }}" class="side-nav-link">
-                                <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
-                                <span class="menu-text"> Products </span>
-                            </a>
-                        </li>
-                    @endif--}}
+                    @endif --}}
+
+                    <li class="side-nav-item">
+                        <a href="{{ route('vendor.products.index') }}" class="side-nav-link">
+                            <span class="menu-icon"><i class="ti ti-folder-filled"></i></span>
+                            <span class="menu-text"> Products </span>
+                        </a>
+                    </li>
+
                     {{-- <li class="side-nav-item">
                         <a data-bs-toggle="collapse" href="#sidebarEcommerce" aria-expanded="false"
                             aria-controls="sidebarEcommerce" class="side-nav-link">

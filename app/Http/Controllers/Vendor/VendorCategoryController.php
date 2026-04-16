@@ -180,9 +180,9 @@ class VendorCategoryController extends Controller implements HasMiddleware
             $categoryRequest->requested_name,            // entity_name
             null,                                        // old_values
             $newValues,                                  // new_values
-            "Requested new category: {$categoryRequest->requested_name}" . 
-            ($parentName ? " under parent category: {$parentName}" : " as main category") . 
-            " - Reason: " . Str::limit($request->reason, 100)
+            "Requested new category: {$categoryRequest->requested_name}" .
+                ($parentName ? " under parent category: {$parentName}" : " as main category") .
+                " - Reason: " . Str::limit($request->reason, 100)
         );
 
         if ($request->ajax()) {
@@ -195,6 +195,13 @@ class VendorCategoryController extends Controller implements HasMiddleware
 
         return redirect()->route('vendor.categories.requests.index')
             ->with('success', 'Category request submitted successfully. Admin will review it.');
+    }
+
+    public function getNames(Request $request)
+    {
+        $ids = $request->ids;
+        $categories = Category::whereIn('id', $ids)->get(['id', 'name']);
+        return response()->json(['categories' => $categories]);
     }
 
     /**

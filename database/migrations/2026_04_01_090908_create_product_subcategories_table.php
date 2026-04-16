@@ -1,5 +1,5 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_product_subcategories_table.php
+// database/migrations/2026_04_15_000005_create_product_categories_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -9,19 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('product_subcategories', function (Blueprint $table) {
+        Schema::create('product_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('category_id');
             $table->timestamps();
             
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->unique(['product_id', 'category_id']);
-            $table->index(['category_id', 'product_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('product_subcategories');
+        Schema::dropIfExists('product_categories');
     }
 };

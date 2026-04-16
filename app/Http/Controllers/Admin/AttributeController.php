@@ -46,7 +46,7 @@ class AttributeController extends Controller implements HasMiddleware
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('slug', 'like', "%{$search}%");
+                    ->orWhere('slug', 'like', "%{$search}%");
             });
         }
 
@@ -437,13 +437,42 @@ class AttributeController extends Controller implements HasMiddleware
     /**
      * Get attributes by category (for AJAX)
      */
-    public function getByCategory($categoryId)
+    /**
+     * Get attributes by multiple category IDs
+     */
+    public function getByCategories(Request $request)
     {
-        $attributes = Attribute::active()
-            ->forCategory($categoryId)
+        $categoryIds = $request->category_ids;
+
+        if (empty($categoryIds)) {
+            return response()->json([
+                'success' => true,
+                'attributes' => []
+            ]);
+        }
+
+        $attributes = Attribute::whereHas('categories', function ($query) use ($categoryIds) {
+            $query->whereIn('category_id', $categoryIds);
+        })
             ->with('values')
+            ->where('status', true)
             ->orderBy('order')
             ->get();
+
+        return response()->json([
+            'success' => true,
+            'attributes' => $attributes
+        ]);
+    }
+
+    /**
+     * Get attributes for a single category (legacy/other uses)
+     */
+    public function getByCategory($categoryId)
+    {
+        $attributes = Attribute::whereHas('categories', function ($q) use ($categoryId) {
+            $q->where('category_id', $categoryId);
+        })->with('values')->orderBy('order')->get();
 
         return response()->json(['attributes' => $attributes]);
     }
@@ -546,8 +575,13 @@ class AttributeController extends Controller implements HasMiddleware
             ->get();
 
         return view('admin.pages.attributes.analytics', compact(
-            'totalAttributes', 'activeAttributes', 'filterableAttributes', 'requiredAttributes',
-            'topUsedAttributes', 'topViewedAttributes', 'attributesByType'
+            'totalAttributes',
+            'activeAttributes',
+            'filterableAttributes',
+            'requiredAttributes',
+            'topUsedAttributes',
+            'topViewedAttributes',
+            'attributesByType'
         ));
     }
 
@@ -788,7 +822,7 @@ class AttributeController extends Controller implements HasMiddleware
         $action = $request->action;
         $requestIds = json_decode($request->request_ids);
         $requests = AttributeRequest::whereIn('id', $requestIds)->get();
-        
+
         $count = 0;
         $errors = [];
         $processedRequests = [];
@@ -952,13 +986,13 @@ class AttributeController extends Controller implements HasMiddleware
     }
 
     /**
- * View single attribute value request details
- */
-public function viewValueRequest($id)
-{
-    $valueRequest = AttributeValueRequest::with('vendor', 'attribute', 'approvedBy', 'createdValue')->findOrFail($id);
-    return view('admin.pages.attributes.value-request-details', compact('valueRequest'));
-}
+     * View single attribute value request details
+     */
+    public function viewValueRequest($id)
+    {
+        $valueRequest = AttributeValueRequest::with('vendor', 'attribute', 'approvedBy', 'createdValue')->findOrFail($id);
+        return view('admin.pages.attributes.value-request-details', compact('valueRequest'));
+    }
 
     /**
      * Approve an attribute value request and create the value
@@ -1130,7 +1164,7 @@ public function viewValueRequest($id)
         $action = $request->action;
         $requestIds = json_decode($request->request_ids);
         $requests = AttributeValueRequest::whereIn('id', $requestIds)->get();
-        
+
         $count = 0;
         $errors = [];
         $processedRequests = [];

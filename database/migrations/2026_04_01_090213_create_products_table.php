@@ -1,5 +1,5 @@
 <?php
-// database/migrations/xxxx_xx_xx_xxxxxx_create_products_table.php
+// database/migrations/2026_04_15_000002_create_products_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -11,64 +11,84 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            
-            // Basic Information
+
+            // Basic
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('sku')->unique();
             $table->text('short_description')->nullable();
             $table->longText('description')->nullable();
-            
-            // Main Category (Required)
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
-            
+            $table->json('highlights')->nullable(); // bullet points
+            $table->unsignedBigInteger('brand_id')->nullable();
+            $table->unsignedBigInteger('vendor_id')->nullable(); // null = admin product
+            $table->string('sku')->unique()->nullable();
+            $table->string('barcode')->nullable();
+            $table->unsignedBigInteger('primary_category_id')->nullable();
+
             // Pricing
-            $table->enum('pricing_type', ['single', 'tiered'])->default('single');
-            $table->decimal('price', 10, 2);
-            $table->decimal('sale_price', 10, 2)->nullable();
-            $table->date('sale_start_date')->nullable();
-            $table->date('sale_end_date')->nullable();
-            
-            // Stock Management
-            $table->boolean('track_stock')->default(true);
-            $table->integer('stock')->default(0);
+            $table->decimal('price', 12, 2)->default(0);
+            $table->decimal('compare_price', 12, 2)->nullable();
+            $table->decimal('cost', 12, 2)->nullable();
+            $table->decimal('wholesale_price', 12, 2)->nullable(); // for wholesale customers
+            $table->boolean('is_wholesale')->default(false);
+            $table->decimal('min_price', 12, 2)->nullable();
+            $table->decimal('max_price', 12, 2)->nullable();
+            $table->boolean('is_range')->default(false);
+
+            // Sale / Promotion dates
+            $table->timestamp('sale_start_at')->nullable();
+            $table->timestamp('sale_end_at')->nullable();
+
+            // Stock & Inventory
+            $table->integer('stock_quantity')->default(0);
             $table->integer('low_stock_threshold')->default(5);
-            $table->enum('stock_status', ['in_stock', 'out_of_stock', 'backorder', 'pre_order'])->default('in_stock');
+            $table->boolean('track_stock')->default(true);
             $table->boolean('allow_backorder')->default(false);
-            
+            $table->string('stock_status')->default('instock'); // instock, outofstock, backorder
+
             // Shipping
             $table->decimal('weight', 10, 2)->nullable();
             $table->decimal('length', 10, 2)->nullable();
             $table->decimal('width', 10, 2)->nullable();
             $table->decimal('height', 10, 2)->nullable();
-            
-            // SEO
+            $table->boolean('free_shipping')->default(false);
+
+            // Status & Visibility
+            $table->boolean('status')->default(true);
+            $table->boolean('is_featured')->default(false);
+            $table->boolean('is_bestseller')->default(false);
+            $table->boolean('is_new')->default(true);
+            $table->integer('sort_order')->default(0);
+            $table->timestamp('published_at')->nullable();
+
+            // SEO & Social
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();
             $table->string('meta_keywords')->nullable();
-            
-            // Status
-            $table->boolean('status')->default(true);
-            $table->boolean('is_featured')->default(false);
-            $table->boolean('is_new')->default(false);
-            $table->boolean('is_bestseller')->default(false);
-            $table->boolean('is_on_sale')->default(false);
-            
-            // Analytics
-            $table->integer('view_count')->default(0);
-            $table->integer('order_count')->default(0);
-            $table->decimal('total_sold', 10, 2)->default(0);
-            $table->decimal('avg_rating', 3, 2)->default(0);
-            $table->integer('review_count')->default(0);
-            
+            $table->string('focus_keyword')->nullable();
+            $table->string('canonical_url')->nullable();
+            $table->string('og_title')->nullable();
+            $table->text('og_description')->nullable();
+            $table->string('og_image')->nullable();
+
+            // Vendor approval
+            $table->enum('approval_status', ['approved', 'pending', 'rejected'])->default('approved');
+            $table->text('rejection_reason')->nullable();
+            $table->unsignedBigInteger('approved_by')->nullable();
+            $table->timestamp('approved_at')->nullable();
+
             $table->timestamps();
-            
-            // Indexes
-            $table->index('status');
-            $table->index('is_featured');
+            $table->softDeletes();
+
+            $table->foreign('brand_id')->references('id')->on('brands')->onDelete('set null');
+            $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('set null');
+            $table->foreign('approved_by')->references('id')->on('admins')->onDelete('set null');
+            $table->foreign('primary_category_id')->references('id')->on('categories')->onDelete('set null');
+
+            $table->index(['status', 'approval_status']);
+            $table->index('slug');
             $table->index('sku');
-            $table->index('category_id');
             $table->index('price');
+            $table->index('created_at');
         });
     }
 

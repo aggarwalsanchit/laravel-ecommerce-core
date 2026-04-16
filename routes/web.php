@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminVendorController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\AdminActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ColorController;
 use App\Http\Controllers\Admin\DiscountController;
@@ -20,11 +21,12 @@ use App\Http\Controllers\Admin\FabricController;
 use App\Http\Controllers\Admin\OccasionController;
 use App\Http\Controllers\Admin\CollectionController;
 use App\Http\Controllers\Admin\SeasonController;
-use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\AttributeGroupController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\AttributeValueController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\TagController;
+
 use App\Http\Controllers\Vendor\VendorApprovedController;
 use App\Http\Controllers\Vendor\VendorManagementController;
 use App\Http\Controllers\Vendor\VendorAuthController;
@@ -36,6 +38,7 @@ use App\Http\Controllers\Vendor\VendorOrderController;
 use App\Http\Controllers\Vendor\VendorStaffController;
 use App\Http\Controllers\Vendor\VendorProfileController;
 use App\Http\Controllers\Vendor\VendorCategoryController;
+use App\Http\Controllers\Vendor\VendorBrandController;
 use App\Http\Controllers\Vendor\VendorUserController;
 use App\Http\Controllers\Vendor\VendorRoleController;
 use App\Http\Controllers\Vendor\VendorPermissionController;
@@ -46,21 +49,20 @@ use App\Http\Controllers\Vendor\VendorAttributeController;
 use App\Http\Controllers\Vendor\VendorAttributeValueController;
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('admin.guest')->group(function () {
+        // ==================== LOGINS ====================
         Route::get('/', [AuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     });
 
-
     Route::middleware(['admin.auth'])->group(function () {
+        // ==================== DASHBOARD ================
         Route::get('/dashboard', [DashboardController::class, 'showDashboard'])->name('dashboard');
-
-
 
         // ==================== USERS ====================
         Route::resource('users', UserController::class);
@@ -74,11 +76,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/roles/{role}/sync-permissions', [RoleController::class, 'syncPermissions'])->name('roles.sync-permissions');
         Route::post('/roles/bulk-action', [RoleController::class, 'bulkAction'])->name('roles.bulk-action');
 
-        // ==================== PERMISSIONS ====================
+        // ==================== PERMISSIONS ==============
         Route::resource('permissions', PermissionController::class);
         Route::post('/permissions/bulk-action', [PermissionController::class, 'bulkAction'])->name('permissions.bulk-action');
 
-        // ==================== PROFILE ====================
+        // ==================== PROFILE ==================
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [ProfileController::class, 'index'])->name('index');
             Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
@@ -87,17 +89,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('update-password');
         });
 
+        // ==================== LOCATIONS ================
         Route::get('location/states/{countryId}', [ProfileController::class, 'getStates'])->name('location.states');
         Route::get('location/cities/{stateId}', [ProfileController::class, 'getCities'])->name('location.cities');
         Route::get('admin/location/phone-code/{countryId}', [ProfileController::class, 'getPhoneCode'])->name('admin.location.phone-code');
 
+        // ==================== LOGS ====================
         Route::prefix('activity-logs')->name('activity-logs.')->group(function () {
             Route::get('/', [AdminActivityLogController::class, 'index'])->name('index');
             Route::get('/{id}', [AdminActivityLogController::class, 'show'])->name('show');
             Route::get('/export/csv', [AdminActivityLogController::class, 'export'])->name('export');
         });
 
-        // Admin Vendor Management Routes
+        // ==================== VENDORS =================
         Route::prefix('vendors')->name('vendors.')->group(function () {
             Route::get('/', [AdminVendorController::class, 'index'])->name('index');
             Route::get('/{id}', [AdminVendorController::class, 'show'])->name('show');
@@ -140,8 +144,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{category}/toggle-popular', [CategoryController::class, 'togglePopular'])->name('toggle-popular');
 
             // Subcategories
-            Route::get('/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories');
             Route::get('/{category}/subcategories', [CategoryController::class, 'getSubcategories'])->name('subcategories.by-category');
+            Route::post('/categories/get-names', [CategoryController::class, 'getNames'])->name('get-names');
         });
 
         // Resource route for categories (must come after custom routes)
@@ -200,71 +204,134 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Resource route for colors (must come after custom routes)
         Route::resource('colors', ColorController::class);
 
+        // ==================== BRANDS ====================
 
-       // ==================== ATTRIBUTE GROUP ROUTES ====================
-    Route::prefix('attribute-groups')->name('attribute-groups.')->group(function () {
-        // Request management routes
-        Route::get('/requests', [AttributeGroupController::class, 'pendingRequests'])->name('requests');
-        Route::get('/requests/{id}', [AttributeGroupController::class, 'viewRequest'])->name('requests.show');
-        Route::post('/requests/{id}/approve', [AttributeGroupController::class, 'approveRequest'])->name('requests.approve');
-        Route::post('/requests/{id}/reject', [AttributeGroupController::class, 'rejectRequest'])->name('requests.reject');
-        Route::delete('/requests/{id}', [AttributeGroupController::class, 'deleteRequest'])->name('requests.delete');
-        Route::post('/requests/bulk-action', [AttributeGroupController::class, 'bulkRequestAction'])->name('requests.bulk-action');
-        
-        // Analytics
-        Route::get('/analytics', [AttributeGroupController::class, 'analytics'])->name('analytics');
-        
-        // Bulk action
-        Route::post('/bulk-action', [AttributeGroupController::class, 'bulkAction'])->name('bulk-action');
-        
-        // Toggle routes
-        Route::post('/{group}/toggle-status', [AttributeGroupController::class, 'toggleStatus'])->name('toggle-status');
-    });
-    
-    Route::resource('attribute-groups', AttributeGroupController::class);
-    
-    // ==================== ATTRIBUTE ROUTES ====================
-    Route::prefix('attributes')->name('attributes.')->group(function () {
-        // Request management routes
-        Route::get('/requests', [AttributeController::class, 'pendingRequests'])->name('requests');
-        Route::get('/requests/{id}', [AttributeController::class, 'viewRequest'])->name('requests.show');
-        Route::post('/requests/{id}/approve', [AttributeController::class, 'approveRequest'])->name('requests.approve');
-        Route::post('/requests/{id}/reject', [AttributeController::class, 'rejectRequest'])->name('requests.reject');
-        Route::delete('/requests/{id}', [AttributeController::class, 'deleteRequest'])->name('requests.delete');
-        Route::post('/requests/bulk-action', [AttributeController::class, 'bulkRequestAction'])->name('requests.bulk-action');
-        
-        // Value request routes
-        Route::get('/value-requests', [AttributeController::class, 'valueRequests'])->name('value-requests');
-        Route::get('/value-requests/{id}', [AttributeController::class, 'viewValueRequest'])->name('value-requests.show');
-        Route::post('/value-requests/{id}/approve', [AttributeController::class, 'approveValueRequest'])->name('value-requests.approve');
-        Route::post('/value-requests/{id}/reject', [AttributeController::class, 'rejectValueRequest'])->name('value-requests.reject');
-        Route::delete('/value-requests/{id}', [AttributeController::class, 'deleteValueRequest'])->name('value-requests.delete');
-        Route::post('/value-requests/bulk-action', [AttributeController::class, 'bulkValueRequestAction'])->name('value-requests.bulk-action');
-        
-        // Values management
-        Route::get('/{attribute}/values', [AttributeController::class, 'manageValues'])->name('values');
-        Route::post('/{attribute}/values', [AttributeController::class, 'storeValue'])->name('values.store');
-        Route::put('/values/{value}', [AttributeController::class, 'updateValue'])->name('values.update');
-        Route::delete('/values/{value}', [AttributeController::class, 'destroyValue'])->name('values.destroy');
-        Route::post('/values/reorder', [AttributeController::class, 'reorderValues'])->name('values.reorder');
-        
-        // Analytics
-        Route::get('/analytics', [AttributeController::class, 'analytics'])->name('analytics');
-        Route::get('/analytics/{attribute}', [AttributeController::class, 'attributeAnalytics'])->name('analytics.show');
-        
-        // Bulk action
-        Route::post('/bulk-action', [AttributeController::class, 'bulkAction'])->name('bulk-action');
-        
-        // Toggle routes
-        Route::post('/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('toggle-status');
-        Route::post('/{attribute}/toggle-featured', [AttributeController::class, 'toggleFeatured'])->name('toggle-featured');
-        Route::post('/{attribute}/toggle-filterable', [AttributeController::class, 'toggleFilterable'])->name('toggle-filterable');
-        
-        // Get attributes by category (for AJAX)
-        Route::get('/by-category/{category}', [AttributeController::class, 'getByCategory'])->name('by-category');
-    });
-    
-    Route::resource('attributes', AttributeController::class);
+        // Brand Routes (following same pattern as Category routes)
+        Route::prefix('brands')->name('brands.')->group(function () {
+
+            // Request management routes (must come before resource)
+            Route::get('/requests', [BrandController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [BrandController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [BrandController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [BrandController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [BrandController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [BrandController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Analytics
+            Route::get('/analytics', [BrandController::class, 'analytics'])->name('analytics');
+
+            // Export
+            Route::get('/export', [BrandController::class, 'export'])->name('export');
+
+            // Bulk action
+            Route::post('/bulk-action', [BrandController::class, 'bulkAction'])->name('bulk-action');
+
+            // AJAX route for getting brands by category
+            Route::get('/by-category/{categoryId}', [BrandController::class, 'getBrandsByCategory'])->name('by-category');
+
+            // Toggle routes
+            Route::post('/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{brand}/toggle-featured', [BrandController::class, 'toggleFeatured'])->name('toggle-featured');
+        });
+
+        // Resource route for brands (must come after custom routes)
+        Route::resource('brands', BrandController::class);
+
+
+        // ==================== ATTRIBUTE GROUP ROUTES ====================
+        Route::prefix('attribute-groups')->name('attribute-groups.')->group(function () {
+            // Request management routes
+            Route::get('/requests', [AttributeGroupController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [AttributeGroupController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [AttributeGroupController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [AttributeGroupController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [AttributeGroupController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [AttributeGroupController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Analytics
+            Route::get('/analytics', [AttributeGroupController::class, 'analytics'])->name('analytics');
+
+            // Bulk action
+            Route::post('/bulk-action', [AttributeGroupController::class, 'bulkAction'])->name('bulk-action');
+
+            // Toggle routes
+            Route::post('/{group}/toggle-status', [AttributeGroupController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        Route::resource('attribute-groups', AttributeGroupController::class);
+
+        // ==================== ATTRIBUTE ROUTES ====================
+        Route::prefix('attributes')->name('attributes.')->group(function () {
+            // Request management routes
+            Route::get('/requests', [AttributeController::class, 'pendingRequests'])->name('requests');
+            Route::get('/requests/{id}', [AttributeController::class, 'viewRequest'])->name('requests.show');
+            Route::post('/requests/{id}/approve', [AttributeController::class, 'approveRequest'])->name('requests.approve');
+            Route::post('/requests/{id}/reject', [AttributeController::class, 'rejectRequest'])->name('requests.reject');
+            Route::delete('/requests/{id}', [AttributeController::class, 'deleteRequest'])->name('requests.delete');
+            Route::post('/requests/bulk-action', [AttributeController::class, 'bulkRequestAction'])->name('requests.bulk-action');
+
+            // Value request routes
+            Route::get('/value-requests', [AttributeController::class, 'valueRequests'])->name('value-requests');
+            Route::get('/value-requests/{id}', [AttributeController::class, 'viewValueRequest'])->name('value-requests.show');
+            Route::post('/value-requests/{id}/approve', [AttributeController::class, 'approveValueRequest'])->name('value-requests.approve');
+            Route::post('/value-requests/{id}/reject', [AttributeController::class, 'rejectValueRequest'])->name('value-requests.reject');
+            Route::delete('/value-requests/{id}', [AttributeController::class, 'deleteValueRequest'])->name('value-requests.delete');
+            Route::post('/value-requests/bulk-action', [AttributeController::class, 'bulkValueRequestAction'])->name('value-requests.bulk-action');
+
+            // Values management
+            Route::get('/{attribute}/values', [AttributeController::class, 'manageValues'])->name('values');
+            Route::post('/{attribute}/values', [AttributeController::class, 'storeValue'])->name('values.store');
+            Route::put('/values/{value}', [AttributeController::class, 'updateValue'])->name('values.update');
+            Route::delete('/values/{value}', [AttributeController::class, 'destroyValue'])->name('values.destroy');
+            Route::post('/values/reorder', [AttributeController::class, 'reorderValues'])->name('values.reorder');
+
+            // Analytics
+            Route::get('/analytics', [AttributeController::class, 'analytics'])->name('analytics');
+            Route::get('/analytics/{attribute}', [AttributeController::class, 'attributeAnalytics'])->name('analytics.show');
+
+            // Bulk action
+            Route::post('/bulk-action', [AttributeController::class, 'bulkAction'])->name('bulk-action');
+
+            // Toggle routes
+            Route::post('/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{attribute}/toggle-featured', [AttributeController::class, 'toggleFeatured'])->name('toggle-featured');
+            Route::post('/{attribute}/toggle-filterable', [AttributeController::class, 'toggleFilterable'])->name('toggle-filterable');
+
+            // Get attributes by category (for AJAX)
+            Route::post('/by-categories', [AttributeController::class, 'getByCategories'])->name('by-categories');
+
+            // For single category (GET) - use this for other purposes
+            Route::get('/by-category/{category}', [AttributeController::class, 'getByCategory'])->name('by-category');
+        });
+
+        Route::resource('attributes', AttributeController::class);
+
+
+        // Product routes
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/', [ProductController::class, 'index'])->name('index');
+            Route::get('/create', [ProductController::class, 'create'])->name('create');
+            Route::post('/', [ProductController::class, 'store'])->name('store');
+            Route::get('/analytics', [ProductController::class, 'analytics'])->name('analytics');
+            Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+            Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
+            Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+
+            // Toggle routes
+            Route::post('/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('toggle-featured');
+
+            // Approval routes (for vendor products)
+            Route::post('/{product}/approve', [ProductController::class, 'approveProduct'])->name('approve');
+            Route::post('/{product}/reject', [ProductController::class, 'rejectProduct'])->name('reject');
+
+            // Bulk action
+            Route::post('/bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
+
+            Route::get('/analytics', [ProductController::class, 'analytics'])->name('analytics');
+            Route::get('/export-low-stock', [ProductController::class, 'exportLowStock'])->name('export-low-stock');
+        });
 
         Route::get('/discounts/analytics', [DiscountController::class, 'analytics'])->name('discounts.analytics');
         Route::post('/discounts/{discount}/toggle-status', [DiscountController::class, 'toggleStatus'])->name('discounts.toggle-status');
@@ -274,7 +341,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('discounts.attribute-values');
         Route::resource('discounts', DiscountController::class);
 
-       
+
 
 
 
@@ -377,84 +444,110 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
 
         // Category Routes
         Route::prefix('categories')->name('categories.')->group(function () {
-        // View categories
-        Route::get('/', [VendorCategoryController::class, 'index'])->name('index');
-        Route::get('/requests', [VendorCategoryController::class, 'myRequests'])->name('requests.index');
-        Route::get('/{id}', [VendorCategoryController::class, 'show'])->name('show');
-        
-        // Category requests
-        
-        Route::get('/request/create', [VendorCategoryController::class, 'createRequest'])->name('request.create');
-        Route::post('/request', [VendorCategoryController::class, 'storeRequest'])->name('request.store');
-        
-        Route::get('/requests/{id}', [VendorCategoryController::class, 'showRequest'])->name('requests.show');
-        Route::delete('/requests/{id}', [VendorCategoryController::class, 'cancelRequest'])->name('requests.cancel');
-        
-        // AJAX endpoints
-        Route::get('/subcategories/{categoryId}', [VendorCategoryController::class, 'getSubcategories'])->name('subcategories');
-        Route::get('/tree', [VendorCategoryController::class, 'getCategoryTree'])->name('tree');
-    });
+            // View categories
+            Route::get('/', [VendorCategoryController::class, 'index'])->name('index');
+            Route::get('/requests', [VendorCategoryController::class, 'myRequests'])->name('requests.index');
+            Route::get('/{id}', [VendorCategoryController::class, 'show'])->name('show');
+
+            // Category requests
+
+            Route::get('/request/create', [VendorCategoryController::class, 'createRequest'])->name('request.create');
+            Route::post('/request', [VendorCategoryController::class, 'storeRequest'])->name('request.store');
+
+            Route::get('/requests/{id}', [VendorCategoryController::class, 'showRequest'])->name('requests.show');
+            Route::delete('/requests/{id}', [VendorCategoryController::class, 'cancelRequest'])->name('requests.cancel');
+
+            // AJAX endpoints
+            Route::get('/{category}/subcategories', [VendorCategoryController::class, 'getSubcategories'])->name('subcategories.by-category');
+            Route::post('/categories/get-names', [VendorCategoryController::class, 'getNames'])->name('get-names');
+
+            Route::get('/tree', [VendorCategoryController::class, 'getCategoryTree'])->name('tree');
+        });
 
 
-// ==================== SIZE ROUTES ====================
+        // ==================== SIZE ROUTES ====================
         Route::prefix('sizes')->name('sizes.')->group(function () {
-        // View sizes
-        Route::get('/', [VendorSizeController::class, 'index'])->name('index');
-        Route::get('/requests', [VendorSizeController::class, 'myRequests'])->name('requests.index');
-        Route::get('/{id}', [VendorSizeController::class, 'show'])->name('show');
-        
-        // Size requests
-        Route::get('/request/create', [VendorSizeController::class, 'createRequest'])->name('request.create');
-        Route::post('/request', [VendorSizeController::class, 'storeRequest'])->name('request.store');
-        Route::get('/requests/{id}', [VendorSizeController::class, 'showRequest'])->name('requests.show');
-        Route::delete('/requests/{id}', [VendorSizeController::class, 'cancelRequest'])->name('requests.cancel');
-        
-        // AJAX endpoints
-        Route::get('/by-category/{categoryId}', [VendorSizeController::class, 'getSizesByCategory'])->name('by-category');
-    });
+            // View sizes
+            Route::get('/', [VendorSizeController::class, 'index'])->name('index');
+            Route::get('/requests', [VendorSizeController::class, 'myRequests'])->name('requests.index');
+            Route::get('/{id}', [VendorSizeController::class, 'show'])->name('show');
+
+            // Size requests
+            Route::get('/request/create', [VendorSizeController::class, 'createRequest'])->name('request.create');
+            Route::post('/request', [VendorSizeController::class, 'storeRequest'])->name('request.store');
+            Route::get('/requests/{id}', [VendorSizeController::class, 'showRequest'])->name('requests.show');
+            Route::delete('/requests/{id}', [VendorSizeController::class, 'cancelRequest'])->name('requests.cancel');
+
+            // AJAX endpoints
+            Route::get('/by-category/{categoryId}', [VendorSizeController::class, 'getSizesByCategory'])->name('by-category');
+        });
 
 
-       // Color Routes (Read-only for vendors)
-    Route::prefix('colors')->name('colors.')->group(function () {
-        // View colors
-        Route::get('/', [VendorColorController::class, 'index'])->name('index');
-        Route::get('/requests', [VendorColorController::class, 'myRequests'])->name('requests.index');
-        Route::get('/{id}', [VendorColorController::class, 'show'])->name('show');
-        
-        // Color requests
-        Route::get('/request/create', [VendorColorController::class, 'createRequest'])->name('request.create');
-        Route::post('/request', [VendorColorController::class, 'storeRequest'])->name('request.store');
-        Route::get('/requests/{id}', [VendorColorController::class, 'showRequest'])->name('requests.show');
-        Route::delete('/requests/{id}', [VendorColorController::class, 'cancelRequest'])->name('requests.cancel');
-    });
+        // Color Routes (Read-only for vendors)
+        Route::prefix('colors')->name('colors.')->group(function () {
+            // View colors
+            Route::get('/', [VendorColorController::class, 'index'])->name('index');
+            Route::get('/requests', [VendorColorController::class, 'myRequests'])->name('requests.index');
+            Route::get('/{id}', [VendorColorController::class, 'show'])->name('show');
+
+            // Color requests
+            Route::get('/request/create', [VendorColorController::class, 'createRequest'])->name('request.create');
+            Route::post('/request', [VendorColorController::class, 'storeRequest'])->name('request.store');
+            Route::get('/requests/{id}', [VendorColorController::class, 'showRequest'])->name('requests.show');
+            Route::delete('/requests/{id}', [VendorColorController::class, 'cancelRequest'])->name('requests.cancel');
+        });
 
 
-       // ==================== ATTRIBUTE GROUP ROUTES ====================
-     // Attribute Routes (Read-only for vendors)
-    Route::prefix('attributes')->name('attributes.')->group(function () {
-        // View attributes
-        Route::get('/', [VendorAttributeController::class, 'index'])->name('index');
-        Route::get('/requests', [VendorAttributeController::class, 'myRequests'])->name('requests.index');
-        Route::get('/value-requests', [VendorAttributeController::class, 'myValueRequests'])->name('value-requests.index');
-        Route::get('/{id}', [VendorAttributeController::class, 'show'])->name('show');
-        
-        // Attribute requests
-        Route::get('/request/create', [VendorAttributeController::class, 'createRequest'])->name('request.create');
-        Route::post('/request', [VendorAttributeController::class, 'storeRequest'])->name('request.store');
-        Route::get('/requests/{id}', [VendorAttributeController::class, 'showRequest'])->name('requests.show');
-        Route::delete('/requests/{id}', [VendorAttributeController::class, 'cancelRequest'])->name('requests.cancel');
-        
-        // Attribute value requests
-        
-        Route::get('/value-request/create', [VendorAttributeController::class, 'createValueRequest'])->name('value-request.create');
-        Route::post('/value-request', [VendorAttributeController::class, 'storeValueRequest'])->name('value-request.store');
-        Route::get('/value-requests/{id}', [VendorAttributeController::class, 'showValueRequest'])->name('value-requests.show');
-        Route::delete('/value-requests/{id}', [VendorAttributeController::class, 'cancelValueRequest'])->name('value-requests.cancel');
-        
-        // AJAX endpoints
-        Route::get('/by-category/{categoryId}', [VendorAttributeController::class, 'getAttributesByCategory'])->name('by-category');
-        Route::get('/values/{attributeId}', [VendorAttributeController::class, 'getAttributeValues'])->name('values');
-    });
+        // ==================== ATTRIBUTE GROUP ROUTES ====================
+        // Attribute Routes (Read-only for vendors)
+        Route::prefix('attributes')->name('attributes.')->group(function () {
+            // View attributes
+            Route::get('/', [VendorAttributeController::class, 'index'])->name('index');
+            Route::get('/requests', [VendorAttributeController::class, 'myRequests'])->name('requests.index');
+            Route::get('/value-requests', [VendorAttributeController::class, 'myValueRequests'])->name('value-requests.index');
+            Route::get('/{id}', [VendorAttributeController::class, 'show'])->name('show');
+
+            // Attribute requests
+            Route::get('/request/create', [VendorAttributeController::class, 'createRequest'])->name('request.create');
+            Route::post('/request', [VendorAttributeController::class, 'storeRequest'])->name('request.store');
+            Route::get('/requests/{id}', [VendorAttributeController::class, 'showRequest'])->name('requests.show');
+            Route::delete('/requests/{id}', [VendorAttributeController::class, 'cancelRequest'])->name('requests.cancel');
+
+            // Attribute value requests
+
+            Route::get('/value-request/create', [VendorAttributeController::class, 'createValueRequest'])->name('value-request.create');
+            Route::post('/value-request', [VendorAttributeController::class, 'storeValueRequest'])->name('value-request.store');
+            Route::get('/value-requests/{id}', [VendorAttributeController::class, 'showValueRequest'])->name('value-requests.show');
+            Route::delete('/value-requests/{id}', [VendorAttributeController::class, 'cancelValueRequest'])->name('value-requests.cancel');
+
+            // AJAX endpoints
+            Route::get('/by-category/{categoryId}', [VendorAttributeController::class, 'getAttributesByCategory'])->name('by-category');
+            Route::get('/values/{attributeId}', [VendorAttributeController::class, 'getAttributeValues'])->name('values');
+
+
+            Route::post('/by-categories', [VendorAttributeController::class, 'getByCategories'])->name('by-categories');
+        });
+
+        // ==================== BRANDS (VENDOR) ====================
+
+        // Brand Routes (same pattern as categories)
+        Route::prefix('brands')->name('brands.')->group(function () {
+            // View brands
+            Route::get('/', [VendorBrandController::class, 'index'])->name('index');
+            Route::get('/requests', [VendorBrandController::class, 'myRequests'])->name('requests.index');
+            Route::get('/{id}', [VendorBrandController::class, 'show'])->name('show');
+
+            // Brand requests
+            Route::get('/request/create', [VendorBrandController::class, 'createRequest'])->name('request.create');
+            Route::post('/request', [VendorBrandController::class, 'storeRequest'])->name('request.store');
+
+            Route::get('/requests/{id}', [VendorBrandController::class, 'showRequest'])->name('requests.show');
+            Route::delete('/requests/{id}', [VendorBrandController::class, 'cancelRequest'])->name('requests.cancel');
+
+            // AJAX endpoints
+            Route::get('/by-category/{categoryId}', [VendorBrandController::class, 'getBrandsByCategory'])->name('by-category');
+            Route::get('/all', [VendorBrandController::class, 'getAllBrands'])->name('all');
+        });
 
 
 
@@ -471,15 +564,21 @@ Route::prefix('marketplace')->name('vendor.')->group(function () {
         Route::get('/settings', [VendorSettingsController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [VendorSettingsController::class, 'update'])->name('settings.update');
 
-        // Product Management
+        // ==================== PRODUCTS (VENDOR) ====================
+
+        // Product Routes
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/analytics', [VendorProductController::class, 'analytics'])->name('analytics');
+
+            // Toggle status
+            Route::post('/{id}/toggle-status', [VendorProductController::class, 'toggleStatus'])->name('toggle-status');
+        });
         Route::resource('products', VendorProductController::class);
-        Route::post('/products/{product}/toggle-status', [VendorProductController::class, 'toggleStatus'])->name('products.toggle-status');
-        Route::post('/products/bulk-action', [VendorProductController::class, 'bulkAction'])->name('products.bulk-action');
 
         // Order Management
-        Route::get('/products', [VendorOrderController::class, 'index'])->name('products');
-        Route::get('/orders/{order}', [VendorOrderController::class, 'show'])->name('orders.show');
-        Route::post('/orders/{order}/update-status', [VendorOrderController::class, 'updateStatus'])->name('orders.update-status');
+        // Route::get('/products', [VendorOrderController::class, 'index'])->name('products');
+        // Route::get('/orders/{order}', [VendorOrderController::class, 'show'])->name('orders.show');
+        // Route::post('/orders/{order}/update-status', [VendorOrderController::class, 'updateStatus'])->name('orders.update-status');
 
         // // Staff Management (for vendors with multiple users)
         // Route::resource('staff', VendorStaffController::class);
